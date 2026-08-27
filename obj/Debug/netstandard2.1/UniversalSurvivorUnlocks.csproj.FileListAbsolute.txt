@@ -8,3 +8,4 @@ C:\Users\Shlederick\Desktop\Proyecto Rain\UniversalSurvivorUnlocks\obj\Debug\net
 C:\Users\Shlederick\Desktop\Proyecto Rain\UniversalSurvivorUnlocks\obj\Debug\netstandard2.1\UniversalSurvivorUnlocks.csproj.CoreCompileInputs.cache
 C:\Users\Shlederick\Desktop\Proyecto Rain\UniversalSurvivorUnlocks\obj\Debug\netstandard2.1\UniversalSurvivorUnlocks.dll
 C:\Users\Shlederick\Desktop\Proyecto Rain\UniversalSurvivorUnlocks\obj\Debug\netstandard2.1\UniversalSurvivorUnlocks.pdb
+C:\Users\Shlederick\Desktop\Proyecto Rain\UniversalSurvivorUnlocks\obj\Debug\netstandard2.1\UniversalSurvivorUnlocks.sourcelink.json

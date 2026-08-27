@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using BepInEx;
 using RoR2;
 
@@ -17,7 +18,9 @@ namespace UniversalSurvivorUnlocks
             "Universal Survivor Unlocks";
 
         public const string PluginVersion =
-            "0.0.2";
+            "0.0.3";
+
+        public static List<SurvivorInfo> Survivors { get; private set; }
 
         private void Awake()
         {
@@ -34,7 +37,8 @@ namespace UniversalSurvivorUnlocks
                 "Risk of Rain 2 terminó de cargar. Detectando survivors..."
             );
 
-            SurvivorDetector.DetectSurvivors(Logger);
+            Survivors =
+                SurvivorDetector.DetectSurvivors(Logger);
 
             RoR2Application.onLoad -= OnGameLoaded;
         }
