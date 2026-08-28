@@ -2,9 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-
     <LangVersion>preview</LangVersion>
-
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <RestoreAdditionalProjectSources>
@@ -17,7 +15,6 @@
 
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.*">
       <PrivateAssets>all</PrivateAssets>
-
       <IncludeAssets>
         runtime;
         build;
@@ -45,6 +42,12 @@
     />
 
     <PackageReference
+      Include="MMHOOK.RoR2"
+      Version="*"
+      NoWarn="NU1701"
+    />
+
+    <PackageReference
       Include="RoR2BepInExPack"
       Version="*"
     />
@@ -52,6 +55,21 @@
     <PackageReference
       Include="Newtonsoft.Json"
       Version="13.0.4"
+    />
+
+    <PackageReference
+    Include="R2API.ContentManagement"
+    Version="1.0.11"
+    />
+
+    <PackageReference
+    Include="R2API.Language"
+    Version="1.1.0"
+    />
+
+    <PackageReference
+    Include="R2API.Unlockable"
+    Version="1.0.2"
     />
 
   </ItemGroup>

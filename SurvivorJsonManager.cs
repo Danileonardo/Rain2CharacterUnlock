@@ -11,6 +11,12 @@ namespace UniversalSurvivorUnlocks
 {
     public static class SurvivorJsonManager
     {
+        public static SurvivorJsonFile CurrentConfig
+        {
+            get;
+            private set;
+        } = new SurvivorJsonFile();
+
         private static string ConfigDirectory =>
             Path.Combine(
                 Paths.ConfigPath,
@@ -28,6 +34,31 @@ namespace UniversalSurvivorUnlocks
                 ConfigDirectory,
                 "Survivors.backup.json"
             );
+
+        public static void LoadForStartup(
+        ManualLogSource logger
+    )
+    {
+        Directory.CreateDirectory(
+            ConfigDirectory
+        );
+
+        if (!TryLoadExisting(
+            logger,
+            out SurvivorJsonFile file
+        ))
+        {
+            return;
+        }
+
+        CurrentConfig = file;
+
+        logger.LogInfo(
+            $"Configuración inicial cargada. " +
+            $"Disponibles guardados: " +
+            $"{CurrentConfig.AvailableSurvivors.Count}"
+        );
+    }
 
         public static void Sync(
             List<SurvivorInfo> detectedSurvivors,
@@ -194,6 +225,8 @@ namespace UniversalSurvivorUnlocks
             }
 
             SortEntries(newFile);
+
+            CurrentConfig = newFile;
 
             Save(
                 newFile,

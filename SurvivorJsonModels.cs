@@ -188,17 +188,24 @@ namespace UniversalSurvivorUnlocks
         public bool Enabled
         {
             get;
-            set;
+        set;
         } = false;
 
-        [JsonProperty("type", Order = 2)]
+        [JsonProperty("name", Order = 2)]
+        public string Name
+        {
+            get;
+            set;
+        } = "";
+
+        [JsonProperty("type", Order = 3)]
         public string Type
         {
             get;
             set;
         } = "Original";
 
-        [JsonProperty("parameters", Order = 3)]
+        [JsonProperty("parameters", Order = 4)]
         public JObject Parameters
         {
             get;

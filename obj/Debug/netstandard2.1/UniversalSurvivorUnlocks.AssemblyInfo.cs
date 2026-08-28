@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("UniversalSurvivorUnlocks")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5caa76e50f46c60a2d24981a38c467ab9779be14")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+de249e4b0e74149269ee60c64731487440acdbd2")]
 [assembly: System.Reflection.AssemblyProductAttribute("UniversalSurvivorUnlocks")]
 [assembly: System.Reflection.AssemblyTitleAttribute("UniversalSurvivorUnlocks")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
