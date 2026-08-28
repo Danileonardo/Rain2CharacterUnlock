@@ -13,20 +13,80 @@ namespace UniversalSurvivorUnlocks
 
     public class SurvivorInfo
     {
-        public SurvivorDef SurvivorDef { get; set; }
+        public SurvivorDef SurvivorDef
+        {
+            get;
+            set;
+        }
 
-        public string InternalName { get; set; }
+        public string InternalName
+        {
+            get;
+            set;
+        }
 
-        public string DisplayName { get; set; }
+        public string DisplayName
+        {
+            get;
+            set;
+        }
 
-        public string BodyName { get; set; }
+        public string BodyName
+        {
+            get;
+            set;
+        }
 
-        public string UnlockableName { get; set; }
+        public string UnlockableName
+        {
+            get;
+            set;
+        }
 
-        public ExpansionDef RequiredExpansion { get; set; }
+        public ExpansionDef RequiredExpansion
+        {
+            get;
+            set;
+        }
 
-        public string ExpansionName { get; set; }
+        public string ExpansionName
+        {
+            get;
+            set;
+        }
 
-        public SurvivorStatus Status { get; set; }
+        public SurvivorStatus Status
+        {
+            get;
+            set;
+        }
+
+        /*
+         * NUEVO
+         */
+
+        public bool IsModded
+        {
+            get;
+            set;
+        }
+
+        public bool HasOriginalUnlock
+        {
+            get;
+            set;
+        }
+
+        public string ContentPackIdentifier
+        {
+            get;
+            set;
+        }
+
+        public string SourceAssembly
+        {
+            get;
+            set;
+        }
     }
 }

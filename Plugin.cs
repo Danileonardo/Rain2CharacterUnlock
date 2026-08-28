@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using BepInEx;
+using R2API.ContentManagement;
 using RoR2;
 
 namespace UniversalSurvivorUnlocks
@@ -9,6 +10,11 @@ namespace UniversalSurvivorUnlocks
         PluginName,
         PluginVersion
     )]
+
+    [BepInDependency(
+        R2APIContentManager.PluginGUID
+    )]
+
     public class Plugin : BaseUnityPlugin
     {
         public const string PluginGuid =
@@ -17,8 +23,14 @@ namespace UniversalSurvivorUnlocks
         public const string PluginName =
             "Universal Survivor Unlocks";
 
+        /*
+         * Por ahora mantenemos esta versión
+         * mientras terminamos la detección
+         * automática de survivors modded.
+         */
         public const string PluginVersion =
-            "0.0.5";
+            "0.0.6";
+
 
         public static List<SurvivorInfo> Survivors
         {
@@ -26,80 +38,131 @@ namespace UniversalSurvivorUnlocks
             private set;
         }
 
+
+        // =========================================================
+        // AWAKE
+        // =========================================================
+
         private void Awake()
         {
             Logger.LogInfo(
                 "Universal Survivor Unlocks cargado correctamente."
             );
 
+
             /*
-             * 1. Cargamos el JSON existente al iniciar.
+             * Cargamos Survivors.json antes de que
+             * terminen de construirse los catálogos.
+             *
+             * Esto permite registrar UnlockableDefs que
+             * ya estaban configurados anteriormente.
              */
             SurvivorJsonManager.LoadForStartup(
                 Logger
             );
 
+
             /*
-             * 2. Registramos los UnlockableDef y
-             * AchievementDef personalizados.
+             * Registramos UnlockableDef + AchievementDef
+             * existentes en el JSON.
              */
             SurvivorUnlockManager
                 .RegisterConfiguredUnlockables(
                     Logger
                 );
 
+
             /*
-             * 3. Activamos únicamente el sistema
-             * visual para convertir el retrato
-             * bloqueado en una silueta negra.
+             * Sistema visual:
+             *
+             * bloqueado   -> silueta negra
+             * desbloqueado -> color original
              */
             SurvivorLockedPortraitManager.Initialize(
                 Logger
             );
 
+
             /*
-             * 4. Esperamos a que Risk of Rain 2
-             * termine de cargar sus catálogos.
+             * Esperamos a que Risk of Rain 2
+             * termine de cargar todos sus ContentPacks
+             * y SurvivorDefs.
              */
             RoR2Application.onLoad +=
                 OnGameLoaded;
         }
 
+
+        // =========================================================
+        // ROR2 TERMINÓ DE CARGAR
+        // =========================================================
+
         private void OnGameLoaded()
         {
             Logger.LogInfo(
-                "Risk of Rain 2 terminó de cargar. Detectando survivors..."
+                "Risk of Rain 2 terminó de cargar."
             );
 
-            /*
-             * Detectamos todos los survivors.
-             */
+
+            // -----------------------------------------------------
+            // 1. DETECTAR CONTENT PACKS DE MODS
+            // -----------------------------------------------------
+
+            Logger.LogInfo(
+                "Analizando ContentPacks pertenecientes a mods..."
+            );
+
+            ModdedSurvivorRegistry.Rebuild(
+                Logger
+            );
+
+
+            // -----------------------------------------------------
+            // 2. DETECTAR TODOS LOS SURVIVORS
+            // -----------------------------------------------------
+
+            Logger.LogInfo(
+                "Detectando survivors..."
+            );
+
             Survivors =
                 SurvivorDetector.DetectSurvivors(
                     Logger
                 );
 
-            /*
-             * Actualizamos Survivors.json.
-             */
+
+            // -----------------------------------------------------
+            // 3. SINCRONIZAR JSON
+            // -----------------------------------------------------
+
             SurvivorJsonManager.Sync(
                 Survivors,
                 Logger
             );
 
-            /*
-             * Asignamos nuestros UnlockableDef
-             * a los survivors que tengan
-             * challenge.enabled = true.
-             */
+
+            // -----------------------------------------------------
+            // 4. APLICAR UNLOCKS CONFIGURADOS
+            // -----------------------------------------------------
+
             SurvivorUnlockManager
                 .ApplyConfiguredUnlockables(
                     Survivors,
                     Logger
                 );
 
+
+            /*
+             * Sólo necesitamos ejecutar esto una vez
+             * durante la carga.
+             */
             RoR2Application.onLoad -=
                 OnGameLoaded;
+
+
+            Logger.LogInfo(
+                "Universal Survivor Unlocks terminó su inicialización."
+            );
         }
     }
 }

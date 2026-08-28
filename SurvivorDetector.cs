@@ -13,110 +13,260 @@ namespace UniversalSurvivorUnlocks
             ManualLogSource logger
         )
         {
-            List<SurvivorInfo> survivorsDetected =
+            List<SurvivorInfo> survivors =
                 new List<SurvivorInfo>();
 
-            foreach (SurvivorDef survivor in SurvivorCatalog.survivorDefs)
+            if (SurvivorCatalog.survivorDefs == null)
+            {
+                logger.LogWarning(
+                    "SurvivorCatalog.survivorDefs todavía no está disponible."
+                );
+
+                return survivors;
+            }
+
+            logger.LogInfo(
+                $"Survivors encontrados en SurvivorCatalog: " +
+                $"{SurvivorCatalog.survivorDefs.Length}"
+            );
+
+            foreach (
+                SurvivorDef survivor
+                in SurvivorCatalog.survivorDefs
+            )
             {
                 if (survivor == null)
                 {
                     continue;
                 }
 
-                SurvivorInfo info = BuildSurvivorInfo(
-                    survivor,
-                    logger
-                );
+                SurvivorInfo info =
+                    BuildSurvivorInfo(
+                        survivor,
+                        logger
+                    );
 
-                survivorsDetected.Add(info);
+                if (info != null)
+                {
+                    survivors.Add(
+                        info
+                    );
+                }
             }
 
             PrintResults(
-                survivorsDetected,
+                survivors,
                 logger
             );
 
-            return survivorsDetected;
+            return survivors;
         }
+
+
+        // =========================================================
+        // CONSTRUIR INFORMACIÓN DEL SURVIVOR
+        // =========================================================
 
         private static SurvivorInfo BuildSurvivorInfo(
             SurvivorDef survivor,
             ManualLogSource logger
         )
         {
+            if (survivor == null)
+            {
+                return null;
+            }
+
+
+            // -----------------------------------------------------
+            // NOMBRE INTERNO
+            // -----------------------------------------------------
+
             string internalName =
-                survivor.cachedName ?? "UnknownSurvivor";
+                !string.IsNullOrWhiteSpace(
+                    survivor.cachedName
+                )
+                    ? survivor.cachedName
+                    : "UnknownSurvivor";
+
+
+            // -----------------------------------------------------
+            // NOMBRE MOSTRADO
+            // -----------------------------------------------------
 
             string displayName =
-                Language.GetString(survivor.displayNameToken);
+                internalName;
 
-            string bodyName = "Sin Body";
+            if (
+                !string.IsNullOrWhiteSpace(
+                    survivor.displayNameToken
+                )
+            )
+            {
+                string translatedName =
+                    Language.GetString(
+                        survivor.displayNameToken
+                    );
+
+                if (
+                    !string.IsNullOrWhiteSpace(
+                        translatedName
+                    )
+                )
+                {
+                    displayName =
+                        translatedName;
+                }
+            }
+
+
+            // -----------------------------------------------------
+            // BODY
+            // -----------------------------------------------------
+
+            string bodyName =
+                "UnknownBody";
 
             if (survivor.bodyPrefab != null)
             {
-                bodyName = survivor.bodyPrefab.name;
+                bodyName =
+                    survivor.bodyPrefab.name;
             }
 
-            string unlockableName = "Ninguno";
 
-            if (survivor.unlockableDef != null)
+            // -----------------------------------------------------
+            // UNLOCK ORIGINAL
+            // -----------------------------------------------------
+
+            string unlockableName =
+                "Ninguno";
+
+            bool hasOriginalUnlock =
+                survivor.unlockableDef != null;
+
+            if (
+                survivor.unlockableDef != null &&
+                !string.IsNullOrWhiteSpace(
+                    survivor.unlockableDef.cachedName
+                )
+            )
             {
                 unlockableName =
                     survivor.unlockableDef.cachedName;
             }
 
-            ExpansionDef requiredExpansion =
-                GetRequiredExpansion(survivor);
 
-            string expansionName = "Base Game";
+            // -----------------------------------------------------
+            // EXPANSIÓN REQUERIDA
+            // -----------------------------------------------------
+
+            ExpansionDef requiredExpansion =
+                GetRequiredExpansion(
+                    survivor
+                );
+
+            string expansionName =
+                "Base Game";
 
             if (requiredExpansion != null)
             {
                 expansionName =
-                    Language.GetString(
-                        requiredExpansion.nameToken
+                    GetExpansionName(
+                        requiredExpansion
                     );
             }
 
-            SurvivorStatus status =
-                GetSurvivorStatus(
+
+            // -----------------------------------------------------
+            // ¿PERTENECE A UN MOD?
+            // -----------------------------------------------------
+
+            bool isModded =
+                ModdedSurvivorRegistry.TryGetSource(
                     survivor,
-                    requiredExpansion,
-                    logger
+                    out string contentPackIdentifier,
+                    out string sourceAssembly
                 );
 
-            return new SurvivorInfo
-            {
-                SurvivorDef = survivor,
 
-                InternalName = internalName,
+            // -----------------------------------------------------
+            // ESTADO
+            // -----------------------------------------------------
 
-                DisplayName = displayName,
+            SurvivorStatus status =
+                DetermineStatus(
+                    survivor,
+                    requiredExpansion
+                );
 
-                BodyName = bodyName,
 
-                UnlockableName = unlockableName,
+            SurvivorInfo info =
+                new SurvivorInfo
+                {
+                    SurvivorDef =
+                        survivor,
 
-                RequiredExpansion = requiredExpansion,
+                    InternalName =
+                        internalName,
 
-                ExpansionName = expansionName,
+                    DisplayName =
+                        displayName,
 
-                Status = status
-            };
+                    BodyName =
+                        bodyName,
+
+                    UnlockableName =
+                        unlockableName,
+
+                    RequiredExpansion =
+                        requiredExpansion,
+
+                    ExpansionName =
+                        expansionName,
+
+                    Status =
+                        status,
+
+                    IsModded =
+                        isModded,
+
+                    HasOriginalUnlock =
+                        hasOriginalUnlock,
+
+                    ContentPackIdentifier =
+                        contentPackIdentifier,
+
+                    SourceAssembly =
+                        sourceAssembly
+                };
+
+
+            return info;
         }
+
+
+        // =========================================================
+        // OBTENER EXPANSIÓN DEL SURVIVOR
+        // =========================================================
 
         private static ExpansionDef GetRequiredExpansion(
             SurvivorDef survivor
         )
         {
-            if (survivor.bodyPrefab == null)
+            if (
+                survivor == null ||
+                survivor.bodyPrefab == null
+            )
             {
                 return null;
             }
 
             ExpansionRequirementComponent requirement =
-                survivor.bodyPrefab
-                    .GetComponent<ExpansionRequirementComponent>();
+                survivor
+                    .bodyPrefab
+                    .GetComponent<
+                        ExpansionRequirementComponent
+                    >();
 
             if (requirement == null)
             {
@@ -126,131 +276,264 @@ namespace UniversalSurvivorUnlocks
             return requirement.requiredExpansion;
         }
 
-        private static SurvivorStatus GetSurvivorStatus(
-            SurvivorDef survivor,
-            ExpansionDef requiredExpansion,
-            ManualLogSource logger
+
+        // =========================================================
+        // OBTENER NOMBRE DE EXPANSIÓN
+        // =========================================================
+
+        private static string GetExpansionName(
+            ExpansionDef expansion
         )
         {
-            // Survivor oculto.
+            if (expansion == null)
+            {
+                return "Base Game";
+            }
+
+            if (
+                !string.IsNullOrWhiteSpace(
+                    expansion.nameToken
+                )
+            )
+            {
+                string translatedName =
+                    Language.GetString(
+                        expansion.nameToken
+                    );
+
+                if (
+                    !string.IsNullOrWhiteSpace(
+                        translatedName
+                    )
+                )
+                {
+                    return translatedName;
+                }
+            }
+
+            if (
+                !string.IsNullOrWhiteSpace(
+                    expansion.name
+                )
+            )
+            {
+                return expansion.name;
+            }
+
+            return "Unknown Expansion";
+        }
+
+
+        // =========================================================
+        // COMPROBAR SI POSEEMOS LA EXPANSIÓN
+        // =========================================================
+
+        private static bool OwnsExpansion(
+            ExpansionDef expansion
+        )
+        {
+            /*
+             * Sin expansión requerida =
+             * contenido base / libre.
+             */
+            if (expansion == null)
+            {
+                return true;
+            }
+
+            /*
+             * Algunas expansiones creadas por mods
+             * pueden no tener entitlement.
+             */
+            if (
+                expansion.requiredEntitlement == null
+            )
+            {
+                return true;
+            }
+
+            if (
+                EntitlementManager
+                    .localUserEntitlementTracker
+                == null
+            )
+            {
+                return false;
+            }
+
+            return
+                ((BaseUserEntitlementTracker<LocalUser>)
+                    EntitlementManager
+                        .localUserEntitlementTracker)
+                .AnyUserHasEntitlement(
+                    expansion.requiredEntitlement
+                );
+        }
+
+
+        // =========================================================
+        // DETERMINAR ESTADO
+        // =========================================================
+
+        private static SurvivorStatus DetermineStatus(
+            SurvivorDef survivor,
+            ExpansionDef requiredExpansion
+        )
+        {
+            /*
+             * Ejemplo vanilla:
+             * Heretic.
+             *
+             * Los hidden se excluyen posteriormente
+             * del JSON configurable.
+             */
             if (survivor.hidden)
             {
                 return SurvivorStatus.Hidden;
             }
 
-            // Un survivor normal seleccionable necesita
-            // Body y representación para la pantalla de selección.
-            if (
-                survivor.bodyPrefab == null ||
-                survivor.displayPrefab == null
-            )
+
+            /*
+             * Un SurvivorDef sin Body no puede funcionar
+             * como survivor seleccionable normal.
+             */
+            if (survivor.bodyPrefab == null)
             {
                 return SurvivorStatus.NotSelectable;
             }
 
-            // Sin expansión requerida:
-            // Base Game o survivor de mod sin DLC.
-            if (requiredExpansion == null)
-            {
-                return SurvivorStatus.Available;
-            }
 
-            // Algunas expansiones de mods pueden no usar
-            // entitlement de Steam.
-            if (requiredExpansion.requiredEntitlement == null)
+            /*
+             * Survivor perteneciente a DLC que
+             * este jugador no posee.
+             */
+            if (
+                requiredExpansion != null &&
+                !OwnsExpansion(
+                    requiredExpansion
+                )
+            )
             {
-                return SurvivorStatus.Available;
-            }
-
-            try
-            {
-                bool ownsExpansion =
-                    EntitlementManager
-                        .localUserEntitlementTracker
-                        .AnyUserHasEntitlement(
-                            requiredExpansion.requiredEntitlement
-                        );
-
-                if (!ownsExpansion)
-                {
-                    return SurvivorStatus.DlcNotOwned;
-                }
-            }
-            catch (System.Exception exception)
-            {
-                logger.LogWarning(
-                    $"No se pudo comprobar el DLC de " +
-                    $"{survivor.cachedName}: " +
-                    $"{exception.Message}"
-                );
-
-                // Si no estamos seguros, no modificamos
-                // ese survivor.
                 return SurvivorStatus.DlcNotOwned;
             }
 
+
             return SurvivorStatus.Available;
         }
+
+
+        // =========================================================
+        // IMPRIMIR RESULTADOS
+        // =========================================================
 
         private static void PrintResults(
             List<SurvivorInfo> survivors,
             ManualLogSource logger
         )
         {
-            int available = 0;
-            int dlcNotOwned = 0;
-            int hidden = 0;
-            int notSelectable = 0;
+            int availableCount = 0;
+            int dlcCount = 0;
+            int hiddenCount = 0;
+            int notSelectableCount = 0;
+            int moddedCount = 0;
 
-            foreach (SurvivorInfo survivor in survivors)
+
+            logger.LogInfo(
+                "==============================================="
+            );
+
+            logger.LogInfo(
+                "========== UNIVERSAL SURVIVOR DETECTOR =========="
+            );
+
+
+            foreach (
+                SurvivorInfo survivor
+                in survivors
+            )
             {
                 switch (survivor.Status)
                 {
                     case SurvivorStatus.Available:
-                        available++;
+                        availableCount++;
                         break;
 
                     case SurvivorStatus.DlcNotOwned:
-                        dlcNotOwned++;
+                        dlcCount++;
                         break;
 
                     case SurvivorStatus.Hidden:
-                        hidden++;
+                        hiddenCount++;
                         break;
 
                     case SurvivorStatus.NotSelectable:
-                        notSelectable++;
+                        notSelectableCount++;
                         break;
                 }
+
+
+                if (survivor.IsModded)
+                {
+                    moddedCount++;
+                }
+
+
+                logger.LogInfo(
+                    $"{survivor.DisplayName} | " +
+                    $"Internal: {survivor.InternalName} | " +
+                    $"Body: {survivor.BodyName} | " +
+                    $"Estado: {survivor.Status} | " +
+                    $"Expansion: {survivor.ExpansionName} | " +
+                    $"Unlock: {survivor.UnlockableName} | " +
+                    $"Modded: {(survivor.IsModded ? "SI" : "NO")}"
+                );
             }
 
+
             logger.LogInfo(
-                "========== UNIVERSAL SURVIVOR UNLOCKS =========="
+                "-----------------------------------------------"
             );
 
             logger.LogInfo(
-                $"Disponibles: {available}"
+                $"Disponibles: {availableCount}"
             );
 
             logger.LogInfo(
-                $"DLC no disponible: {dlcNotOwned}"
+                $"DLC no disponible: {dlcCount}"
             );
 
             logger.LogInfo(
-                $"Ocultos: {hidden}"
+                $"Ocultos: {hiddenCount}"
             );
 
             logger.LogInfo(
-                $"No seleccionables: {notSelectable}"
+                $"No seleccionables: {notSelectableCount}"
             );
 
             logger.LogInfo(
-                "========== DISPONIBLES =========="
+                $"Modded detectados: {moddedCount}"
             );
 
-            foreach (SurvivorInfo survivor in survivors)
+
+            // =====================================================
+            // LISTADO ESPECÍFICO DE SURVIVORS MODDED
+            // =====================================================
+
+            logger.LogInfo(
+                "==============================================="
+            );
+
+            logger.LogInfo(
+                "========== SURVIVORS MODDED =========="
+            );
+
+
+            foreach (
+                SurvivorInfo survivor
+                in survivors
+            )
             {
-                if (survivor.Status != SurvivorStatus.Available)
+                if (!survivor.IsModded)
                 {
                     continue;
                 }
@@ -259,48 +542,22 @@ namespace UniversalSurvivorUnlocks
                     $"{survivor.DisplayName} | " +
                     $"Internal: {survivor.InternalName} | " +
                     $"Body: {survivor.BodyName} | " +
-                    $"Origen: {survivor.ExpansionName} | " +
-                    $"Unlockable: {survivor.UnlockableName}"
+                    $"Pack: {survivor.ContentPackIdentifier} | " +
+                    $"Assembly: {survivor.SourceAssembly} | " +
+                    $"Unlock propio: " +
+                    $"{(survivor.HasOriginalUnlock ? "SI" : "NO")} | " +
+                    $"Unlock: {survivor.UnlockableName}"
                 );
             }
 
-            logger.LogInfo(
-                "========== DLC NO DISPONIBLE =========="
-            );
 
-            foreach (SurvivorInfo survivor in survivors)
+            if (moddedCount == 0)
             {
-                if (survivor.Status != SurvivorStatus.DlcNotOwned)
-                {
-                    continue;
-                }
-
                 logger.LogInfo(
-                    $"{survivor.DisplayName} | " +
-                    $"Requiere: {survivor.ExpansionName}"
+                    "No se detectaron survivors pertenecientes a ContentPacks de mods."
                 );
             }
 
-            logger.LogInfo(
-                "========== OCULTOS / NO SELECCIONABLES =========="
-            );
-
-            foreach (SurvivorInfo survivor in survivors)
-            {
-                if (
-                    survivor.Status != SurvivorStatus.Hidden &&
-                    survivor.Status != SurvivorStatus.NotSelectable
-                )
-                {
-                    continue;
-                }
-
-                logger.LogInfo(
-                    $"{survivor.DisplayName} | " +
-                    $"Internal: {survivor.InternalName} | " +
-                    $"Estado: {survivor.Status}"
-                );
-            }
 
             logger.LogInfo(
                 "==============================================="
