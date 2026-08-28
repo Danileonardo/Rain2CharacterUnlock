@@ -1,0 +1,17 @@
+# .NET build files
+bin/
+obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# Release packages
+*.zip
+*.rar
+UniversalSurvivorUnlocks_Thunderstore/
+
+# Local/generated configuration
+Survivors.json
+Survivors.backup.json
