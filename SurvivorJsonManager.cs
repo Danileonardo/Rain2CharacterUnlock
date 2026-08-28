@@ -6,6 +6,8 @@ using System.Text;
 using BepInEx;
 using BepInEx.Logging;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using RoR2;
 
 namespace UniversalSurvivorUnlocks
 {
@@ -18,19 +20,19 @@ namespace UniversalSurvivorUnlocks
         } = new SurvivorJsonFile();
 
         private static string ConfigDirectory =>
-            Path.Combine(
-                Paths.ConfigPath,
+            System.IO.Path.Combine(
+                BepInEx.Paths.ConfigPath,
                 "UniversalSurvivorUnlocks"
             );
 
         private static string JsonPath =>
-            Path.Combine(
+            System.IO.Path.Combine(
                 ConfigDirectory,
                 "Survivors.json"
             );
 
         private static string BackupPath =>
-            Path.Combine(
+            System.IO.Path.Combine(
                 ConfigDirectory,
                 "Survivors.backup.json"
             );
@@ -38,47 +40,364 @@ namespace UniversalSurvivorUnlocks
         public static void LoadForStartup(
         ManualLogSource logger
     )
-    {
-        Directory.CreateDirectory(
-            ConfigDirectory
-        );
-
-        if (!TryLoadExisting(
-            logger,
-            out SurvivorJsonFile file
-        ))
-        {
-            return;
-        }
-
-        CurrentConfig = file;
-
-        logger.LogInfo(
-            $"Configuración inicial cargada. " +
-            $"Disponibles guardados: " +
-            $"{CurrentConfig.AvailableSurvivors.Count}"
-        );
-    }
-
-        public static void Sync(
-            List<SurvivorInfo> detectedSurvivors,
-            ManualLogSource logger
-        )
         {
             Directory.CreateDirectory(
                 ConfigDirectory
             );
 
-            SurvivorJsonFile existingFile;
-
             if (!TryLoadExisting(
                 logger,
-                out existingFile
+                out SurvivorJsonFile file
             ))
             {
                 return;
             }
 
+            CurrentConfig = file;
+
+            logger.LogInfo(
+                $"Configuración inicial cargada. " +
+                $"Disponibles guardados: " +
+                $"{CurrentConfig.AvailableSurvivors.Count}"
+            );
+        }
+
+        // =========================================================
+        // BUSCAR UN SURVIVOR EN TODO EL JSON
+        // =========================================================
+
+        public static SurvivorJsonEntry GetEntryAnywhere(
+            string bodyName
+        )
+        {
+            if (
+                string.IsNullOrWhiteSpace(bodyName) ||
+                CurrentConfig == null
+            )
+            {
+                return null;
+            }
+
+
+            if (CurrentConfig.AvailableSurvivors == null)
+            {
+                CurrentConfig.AvailableSurvivors =
+                    new Dictionary<string, SurvivorJsonEntry>();
+            }
+
+
+            if (CurrentConfig.UnavailableSurvivors == null)
+            {
+                CurrentConfig.UnavailableSurvivors =
+                    new Dictionary<string, SurvivorJsonEntry>();
+            }
+
+
+            if (
+                CurrentConfig.AvailableSurvivors.TryGetValue(
+                    bodyName,
+                    out SurvivorJsonEntry availableEntry
+                )
+            )
+            {
+                return availableEntry;
+            }
+
+
+            if (
+                CurrentConfig.UnavailableSurvivors.TryGetValue(
+                    bodyName,
+                    out SurvivorJsonEntry unavailableEntry
+                )
+            )
+            {
+                return unavailableEntry;
+            }
+
+
+            return null;
+        }
+
+
+        // =========================================================
+        // CREAR CONFIGURACIÓN AUTOMÁTICA
+        // PARA UN SURVIVOR MODDED NUEVO
+        // =========================================================
+
+        public static SurvivorJsonEntry CreateAutomaticEntry(
+            SurvivorDef survivor,
+            string contentPackIdentifier,
+            string sourceAssembly,
+            ManualLogSource logger
+        )
+        {
+            if (
+                survivor == null ||
+                survivor.bodyPrefab == null
+            )
+            {
+                return null;
+            }
+
+
+            string bodyName =
+                survivor.bodyPrefab.name;
+
+
+            /*
+             * Si el survivor ya existe en el JSON,
+             * respetamos completamente su configuración.
+             */
+            SurvivorJsonEntry existing =
+                GetEntryAnywhere(
+                    bodyName
+                );
+
+
+            if (existing != null)
+            {
+                return existing;
+            }
+
+
+            // =====================================================
+            // OBTENER NOMBRE
+            // =====================================================
+
+            string displayName =
+                bodyName;
+
+
+            try
+            {
+                if (
+                    !string.IsNullOrWhiteSpace(
+                        survivor.displayNameToken
+                    )
+                )
+                {
+                    string translatedName =
+                        Language.GetString(
+                            survivor.displayNameToken
+                        );
+
+
+                    if (
+                        !string.IsNullOrWhiteSpace(
+                            translatedName
+                        ) &&
+                        !string.Equals(
+                            translatedName,
+                            survivor.displayNameToken,
+                            StringComparison.Ordinal
+                        )
+                    )
+                    {
+                        displayName =
+                            translatedName;
+                    }
+                }
+            }
+            catch
+            {
+                /*
+                 * Durante esta fase temprana el sistema
+                 * de idioma puede todavía no estar listo.
+                 */
+            }
+
+
+            /*
+             * Si seguimos teniendo SoraBody,
+             * PaladinBody, etc.,
+             * quitamos "Body" como fallback.
+             */
+            if (
+                displayName == bodyName &&
+                bodyName.EndsWith(
+                    "Body",
+                    StringComparison.Ordinal
+                )
+            )
+            {
+                displayName =
+                    bodyName.Substring(
+                        0,
+                        bodyName.Length - 4
+                    );
+            }
+
+
+            // =====================================================
+            // CREAR ENTRY AUTOMÁTICA
+            // =====================================================
+
+            SurvivorJsonEntry entry =
+                new SurvivorJsonEntry
+                {
+                    DisplayName =
+                        displayName,
+
+                    InternalName =
+                        !string.IsNullOrWhiteSpace(
+                            survivor.cachedName
+                        )
+                            ? survivor.cachedName
+                            : bodyName,
+
+                    BodyName =
+                        bodyName,
+
+                    Source =
+                        !string.IsNullOrWhiteSpace(
+                            contentPackIdentifier
+                        )
+                            ? contentPackIdentifier
+                            : !string.IsNullOrWhiteSpace(
+                                sourceAssembly
+                            )
+                                ? sourceAssembly
+                                : "Modded",
+
+                    OriginalUnlock =
+                        "Ninguno",
+
+                    Available =
+                        true,
+
+                    Status =
+                        "Available",
+
+                    Reason =
+                        "",
+
+                    Challenge =
+                        new SurvivorChallengeJson
+                        {
+                            Enabled =
+                                true,
+
+                            Name =
+                                "Desafío de desbloqueo",
+
+                            Type =
+                                "KillEnemies",
+
+                            Parameters =
+                                new JObject
+                                {
+                                    ["amount"] =
+                                        100
+                                }
+                        }
+                };
+
+
+            // =====================================================
+            // ASEGURAR DICCIONARIOS
+            // =====================================================
+
+            if (CurrentConfig == null)
+            {
+                CurrentConfig =
+                    new SurvivorJsonFile();
+            }
+
+
+            if (CurrentConfig.AvailableSurvivors == null)
+            {
+                CurrentConfig.AvailableSurvivors =
+                    new Dictionary<string, SurvivorJsonEntry>();
+            }
+
+
+            if (CurrentConfig.UnavailableSurvivors == null)
+            {
+                CurrentConfig.UnavailableSurvivors =
+                    new Dictionary<string, SurvivorJsonEntry>();
+            }
+
+
+            /*
+             * Si por alguna razón estaba marcado
+             * como no disponible, lo quitamos de ahí.
+             */
+            CurrentConfig.UnavailableSurvivors.Remove(
+                bodyName
+            );
+
+
+            /*
+             * Lo agregamos SOLAMENTE en memoria.
+             *
+             * SurvivorJsonManager.Sync()
+             * se encargará posteriormente
+             * de escribir Survivors.json.
+             */
+            CurrentConfig.AvailableSurvivors[
+                bodyName
+            ] =
+                entry;
+
+
+            logger.LogInfo(
+                $"Configuración automática creada en memoria | " +
+                $"Survivor: {displayName} | " +
+                $"Body: {bodyName} | " +
+                $"Pack: {entry.Source} | " +
+                $"Challenge: KillEnemies 100"
+            );
+
+
+            return entry;
+        }
+
+        public static void Sync(
+    List<SurvivorInfo> detectedSurvivors,
+    ManualLogSource logger
+)
+        {
+            Directory.CreateDirectory(
+                ConfigDirectory
+            );
+
+            /*
+ * NO volvemos a leer Survivors.json.
+ *
+ * CurrentConfig puede contener survivors
+ * descubiertos durante GenerateContentPackAsync
+ * antes de que hayan sido escritos al disco.
+ */
+            SurvivorJsonFile existingFile =
+                CurrentConfig
+                ?? new SurvivorJsonFile();
+
+
+            if (existingFile.AvailableSurvivors == null)
+            {
+                existingFile.AvailableSurvivors =
+                    new Dictionary<
+                        string,
+                        SurvivorJsonEntry
+                    >();
+            }
+
+
+            if (existingFile.UnavailableSurvivors == null)
+            {
+                existingFile.UnavailableSurvivors =
+                    new Dictionary<
+                        string,
+                        SurvivorJsonEntry
+                    >();
+            }
+
+            /*
+             * Recuperamos las configuraciones anteriores.
+             *
+             * Esto nos permite conservar una misión si un
+             * survivor modded desaparece y vuelve después.
+             */
             Dictionary<string, SurvivorJsonEntry> savedRecords =
                 CombineExistingRecords(
                     existingFile
@@ -87,20 +406,32 @@ namespace UniversalSurvivorUnlocks
             SurvivorJsonFile newFile =
                 new SurvivorJsonFile();
 
-            HashSet<string> detectedIds =
+            /*
+             * Survivors MOD que están actualmente instalados.
+             */
+            HashSet<string> detectedModdedIds =
                 new HashSet<string>();
+
+            /*
+             * Survivors oficiales detectados.
+             *
+             * Sirve para eliminar del JSON cualquier registro
+             * antiguo de Vanilla o DLC.
+             */
+            HashSet<string> detectedOfficialIds =
+                new HashSet<string>();
+
+
+            // =========================================================
+            // DETECTAR Y CLASIFICAR
+            // =========================================================
 
             foreach (
                 SurvivorInfo survivor
                 in detectedSurvivors
             )
             {
-                // Los ocultos y no seleccionables
-                // NO aparecen en el JSON.
-                if (
-                    survivor.Status == SurvivorStatus.Hidden ||
-                    survivor.Status == SurvivorStatus.NotSelectable
-                )
+                if (survivor == null)
                 {
                     continue;
                 }
@@ -110,16 +441,69 @@ namespace UniversalSurvivorUnlocks
 
                 if (
                     string.IsNullOrWhiteSpace(id) ||
-                    id == "Sin Body"
+                    id == "Sin Body" ||
+                    id == "UnknownBody"
                 )
                 {
                     continue;
                 }
 
-                detectedIds.Add(id);
+
+                // =====================================================
+                // CONTENIDO OFICIAL
+                // =====================================================
+
+                if (!survivor.IsModded)
+                {
+                    /*
+                     * Vanilla y DLC se registran solamente
+                     * para saber que deben eliminarse de
+                     * cualquier JSON antiguo.
+                     *
+                     * NO los agregamos al nuevo JSON.
+                     */
+                    detectedOfficialIds.Add(
+                        id
+                    );
+
+                    continue;
+                }
+
+
+                // =====================================================
+                // CONTENIDO MODDED
+                // =====================================================
+
+                detectedModdedIds.Add(
+                    id
+                );
+
+
+                /*
+                 * Si un mod crea un SurvivorDef oculto o
+                 * no seleccionable tampoco queremos
+                 * configurarlo.
+                 */
+                if (
+                    survivor.Status ==
+                        SurvivorStatus.Hidden ||
+                    survivor.Status ==
+                        SurvivorStatus.NotSelectable
+                )
+                {
+                    continue;
+                }
+
 
                 SurvivorJsonEntry entry;
 
+                /*
+                 * Si ya existía una configuración,
+                 * la recuperamos.
+                 *
+                 * Esto conserva la misión editada
+                 * por el usuario.
+                 */
                 if (!savedRecords.TryGetValue(
                     id,
                     out entry
@@ -129,8 +513,11 @@ namespace UniversalSurvivorUnlocks
                         new SurvivorJsonEntry();
                 }
 
-                // Actualizamos solamente datos detectados.
-                // La challenge existente NO se reemplaza.
+
+                // =====================================================
+                // ACTUALIZAR METADATOS DEL MOD
+                // =====================================================
+
                 entry.DisplayName =
                     survivor.DisplayName;
 
@@ -140,11 +527,44 @@ namespace UniversalSurvivorUnlocks
                 entry.BodyName =
                     survivor.BodyName;
 
-                entry.Source =
-                    survivor.ExpansionName;
+
+                /*
+                 * Ya NO usamos ExpansionName.
+                 *
+                 * Para personajes modded usamos el
+                 * identificador real de su ContentPack.
+                 *
+                 * Ejemplo:
+                 * com.Dragonyck.Sora
+                 */
+                if (
+                    !string.IsNullOrWhiteSpace(
+                        survivor.ContentPackIdentifier
+                    )
+                )
+                {
+                    entry.Source =
+                        survivor.ContentPackIdentifier;
+                }
+                else if (
+                    !string.IsNullOrWhiteSpace(
+                        survivor.SourceAssembly
+                    )
+                )
+                {
+                    entry.Source =
+                        survivor.SourceAssembly;
+                }
+                else
+                {
+                    entry.Source =
+                        "Modded";
+                }
+
 
                 entry.OriginalUnlock =
                     survivor.UnlockableName;
+
 
                 if (entry.Challenge == null)
                 {
@@ -152,66 +572,137 @@ namespace UniversalSurvivorUnlocks
                         new SurvivorChallengeJson();
                 }
 
-                switch (survivor.Status)
+
+                // =====================================================
+                // SURVIVOR MOD DISPONIBLE
+                // =====================================================
+
+                if (
+                    survivor.Status ==
+                    SurvivorStatus.Available
+                )
                 {
-                    case SurvivorStatus.Available:
+                    entry.Available =
+                        true;
 
-                        entry.Available = true;
+                    entry.Status =
+                        "Available";
 
-                        entry.Status =
-                            "Available";
+                    entry.Reason =
+                        "";
 
-                        entry.Reason = "";
+                    newFile
+                        .AvailableSurvivors[id] =
+                        entry;
 
-                        newFile
-                            .AvailableSurvivors[id] =
-                            entry;
-
-                        break;
-
-                    case SurvivorStatus.DlcNotOwned:
-
-                        entry.Available = false;
-
-                        entry.Status =
-                            "DlcNotOwned";
-
-                        entry.Reason =
-                            "Requires DLC: " +
-                            survivor.ExpansionName;
-
-                        newFile
-                            .UnavailableSurvivors[id] =
-                            entry;
-
-                        break;
+                    continue;
                 }
+
+
+                // =====================================================
+                // SURVIVOR MOD NO DISPONIBLE
+                // =====================================================
+
+                entry.Available =
+                    false;
+
+                entry.Status =
+                    survivor.Status.ToString();
+
+                if (
+                    survivor.Status ==
+                    SurvivorStatus.DlcNotOwned
+                )
+                {
+                    entry.Reason =
+                        "Requires DLC: " +
+                        survivor.ExpansionName;
+                }
+                else
+                {
+                    entry.Reason =
+                        "Survivor actualmente no disponible.";
+                }
+
+                newFile
+                    .UnavailableSurvivors[id] =
+                    entry;
             }
 
-            // Si existía anteriormente pero ahora
-            // no aparece en SurvivorCatalog,
-            // conservamos todos sus datos.
+
+            // =========================================================
+            // CONSERVAR MODS QUE FUERON DESINSTALADOS
+            // =========================================================
+
             foreach (
-                KeyValuePair<string, SurvivorJsonEntry> pair
+                KeyValuePair<
+                    string,
+                    SurvivorJsonEntry
+                > pair
                 in savedRecords
             )
             {
-                if (detectedIds.Contains(pair.Key))
+                string id =
+                    pair.Key;
+
+
+                /*
+                 * Si es un survivor oficial conocido,
+                 * lo descartamos definitivamente.
+                 */
+                if (
+                    detectedOfficialIds.Contains(
+                        id
+                    )
+                )
                 {
                     continue;
                 }
 
+
+                /*
+                 * Si el survivor mod sigue instalado,
+                 * ya fue procesado arriba.
+                 */
+                if (
+                    detectedModdedIds.Contains(
+                        id
+                    )
+                )
+                {
+                    continue;
+                }
+
+
                 SurvivorJsonEntry entry =
                     pair.Value;
 
-                entry.Available = false;
+                if (entry == null)
+                {
+                    continue;
+                }
+
+
+                /*
+                 * Este registro no pertenece actualmente
+                 * a ningún survivor oficial ni a ningún
+                 * survivor mod instalado.
+                 *
+                 * Lo consideramos contenido modded
+                 * que posiblemente fue desinstalado.
+                 *
+                 * Conservamos su configuración.
+                 */
+                entry.Available =
+                    false;
 
                 entry.Status =
                     "MissingContent";
 
                 entry.Reason =
-                    "Survivor not detected. " +
-                    "Its mod or required content may be disabled or uninstalled.";
+                    "Survivor mod no detectado. " +
+                    "El mod puede estar desactivado o desinstalado.";
+
 
                 if (entry.Challenge == null)
                 {
@@ -219,18 +710,36 @@ namespace UniversalSurvivorUnlocks
                         new SurvivorChallengeJson();
                 }
 
+
                 newFile
-                    .UnavailableSurvivors[pair.Key] =
+                    .UnavailableSurvivors[id] =
                     entry;
             }
 
-            SortEntries(newFile);
 
-            CurrentConfig = newFile;
+            // =========================================================
+            // TERMINAR
+            // =========================================================
+
+            SortEntries(
+                newFile
+            );
+
+            CurrentConfig =
+                newFile;
 
             Save(
                 newFile,
                 logger
+            );
+
+
+            logger.LogInfo(
+                $"JSON modded sincronizado | " +
+                $"Disponibles: " +
+                $"{newFile.AvailableSurvivors.Count} | " +
+                $"No disponibles: " +
+                $"{newFile.UnavailableSurvivors.Count}"
             );
         }
 

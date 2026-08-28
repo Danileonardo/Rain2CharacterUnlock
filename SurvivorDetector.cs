@@ -139,20 +139,38 @@ namespace UniversalSurvivorUnlocks
             // -----------------------------------------------------
 
             string unlockableName =
-                "Ninguno";
+    "Ninguno";
+
+
+            UnlockableDef detectedUnlock =
+                survivor.unlockableDef;
+
+
+            /*
+             * Nuestro propio UnlockableDef no debe
+             * contar como un desbloqueo original
+             * perteneciente al autor del survivor.
+             */
+            bool customUnlock =
+                SurvivorUnlockManager.IsCustomUnlock(
+                    detectedUnlock
+                );
+
 
             bool hasOriginalUnlock =
-                survivor.unlockableDef != null;
+                detectedUnlock != null &&
+                !customUnlock;
+
 
             if (
-                survivor.unlockableDef != null &&
+                hasOriginalUnlock &&
                 !string.IsNullOrWhiteSpace(
-                    survivor.unlockableDef.cachedName
+                    detectedUnlock.cachedName
                 )
             )
             {
                 unlockableName =
-                    survivor.unlockableDef.cachedName;
+                    detectedUnlock.cachedName;
             }
 
 
