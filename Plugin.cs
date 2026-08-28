@@ -18,9 +18,13 @@ namespace UniversalSurvivorUnlocks
             "Universal Survivor Unlocks";
 
         public const string PluginVersion =
-            "0.0.3";
+            "0.0.4";
 
-        public static List<SurvivorInfo> Survivors { get; private set; }
+        public static List<SurvivorInfo> Survivors
+        {
+            get;
+            private set;
+        }
 
         private void Awake()
         {
@@ -28,7 +32,8 @@ namespace UniversalSurvivorUnlocks
                 "Universal Survivor Unlocks cargado correctamente."
             );
 
-            RoR2Application.onLoad += OnGameLoaded;
+            RoR2Application.onLoad +=
+                OnGameLoaded;
         }
 
         private void OnGameLoaded()
@@ -38,9 +43,17 @@ namespace UniversalSurvivorUnlocks
             );
 
             Survivors =
-                SurvivorDetector.DetectSurvivors(Logger);
+                SurvivorDetector.DetectSurvivors(
+                    Logger
+                );
 
-            RoR2Application.onLoad -= OnGameLoaded;
+            SurvivorJsonManager.Sync(
+                Survivors,
+                Logger
+            );
+
+            RoR2Application.onLoad -=
+                OnGameLoaded;
         }
     }
 }

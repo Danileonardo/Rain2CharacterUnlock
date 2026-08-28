@@ -2,7 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+
     <LangVersion>preview</LangVersion>
+
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
     <RestoreAdditionalProjectSources>
@@ -15,12 +17,21 @@
 
     <PackageReference Include="BepInEx.Analyzers" Version="1.0.*">
       <PrivateAssets>all</PrivateAssets>
+
       <IncludeAssets>
-        runtime; build; native; contentfiles; analyzers; buildtransitive
+        runtime;
+        build;
+        native;
+        contentfiles;
+        analyzers;
+        buildtransitive
       </IncludeAssets>
     </PackageReference>
 
-    <PackageReference Include="BepInEx.Core" Version="5.4.21" />
+    <PackageReference
+      Include="BepInEx.Core"
+      Version="5.4.21"
+    />
 
     <PackageReference
       Include="UnityEngine.Modules"
@@ -36,6 +47,11 @@
     <PackageReference
       Include="RoR2BepInExPack"
       Version="*"
+    />
+
+    <PackageReference
+      Include="Newtonsoft.Json"
+      Version="13.0.4"
     />
 
   </ItemGroup>
