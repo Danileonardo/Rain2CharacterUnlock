@@ -10,23 +10,43 @@ namespace UniversalSurvivorUnlocks
 {
     public static class SurvivorUnlockManager
     {
-        private static readonly Dictionary<
-            string,
-            UnlockableDef
-        > CustomUnlockables =
-            new Dictionary<
-                string,
-                UnlockableDef
-            >();
+        /*
+         * Unlockables creados por nuestro mod.
+         *
+         * Ejemplo:
+         * UniversalSurvivorUnlocks.CommandoBody
+         */
+        private static readonly Dictionary<string, UnlockableDef>
+            CustomUnlockables =
+                new Dictionary<string, UnlockableDef>();
 
-        private static readonly Dictionary<
-            SurvivorDef,
-            UnlockableDef
-        > OriginalUnlockables =
-            new Dictionary<
-                SurvivorDef,
-                UnlockableDef
-            >();
+        /*
+         * Achievements asociados a nuestros UnlockableDef.
+         */
+        private static readonly Dictionary<string, AchievementDef>
+            CustomAchievements =
+                new Dictionary<string, AchievementDef>();
+
+        /*
+         * Iconos generados en runtime para los achievements.
+         */
+        private static readonly Dictionary<string, Sprite>
+            CustomAchievementIcons =
+                new Dictionary<string, Sprite>();
+
+        /*
+         * Guardamos el unlock original de cada survivor
+         * para poder restaurarlo si la misión personalizada
+         * se desactiva.
+         */
+        private static readonly Dictionary<SurvivorDef, UnlockableDef>
+            OriginalUnlockables =
+                new Dictionary<SurvivorDef, UnlockableDef>();
+
+
+        // =========================================================
+        // DETECTAR SI UN UNLOCK PERTENECE A NUESTRO MOD
+        // =========================================================
 
         public static bool IsCustomUnlock(
             UnlockableDef unlockableDef
@@ -37,12 +57,18 @@ namespace UniversalSurvivorUnlocks
                 return false;
             }
 
-            return unlockableDef.cachedName != null &&
-                   unlockableDef.cachedName.StartsWith(
-                       "UniversalSurvivorUnlocks.",
-                       StringComparison.Ordinal
-                   );
+            return
+                unlockableDef.cachedName != null &&
+                unlockableDef.cachedName.StartsWith(
+                    "UniversalSurvivorUnlocks.",
+                    StringComparison.Ordinal
+                );
         }
+
+
+        // =========================================================
+        // REGISTRAR LOS UNLOCKABLES CONFIGURADOS
+        // =========================================================
 
         public static void RegisterConfiguredUnlockables(
             ManualLogSource logger
@@ -60,10 +86,7 @@ namespace UniversalSurvivorUnlocks
             }
 
             foreach (
-                KeyValuePair<
-                    string,
-                    SurvivorJsonEntry
-                > pair
+                KeyValuePair<string, SurvivorJsonEntry> pair
                 in config.AvailableSurvivors
             )
             {
@@ -95,6 +118,11 @@ namespace UniversalSurvivorUnlocks
             }
         }
 
+
+        // =========================================================
+        // CREAR UN UNLOCKABLE + ACHIEVEMENT
+        // =========================================================
+
         private static void RegisterOneUnlockable(
             string bodyName,
             SurvivorJsonEntry entry,
@@ -125,9 +153,11 @@ namespace UniversalSurvivorUnlocks
             string challengeDescription =
                 BuildChallengeDescription(entry);
 
-            /*
-             * Textos usados por RoR2.
-             */
+
+            // -----------------------------------------------------
+            // TEXTOS
+            // -----------------------------------------------------
+
             LanguageAPI.Add(
                 unlockableNameToken,
                 entry.DisplayName
@@ -143,12 +173,13 @@ namespace UniversalSurvivorUnlocks
                 challengeDescription
             );
 
-            /*
-             * Creamos el UnlockableDef real.
-             */
+
+            // -----------------------------------------------------
+            // UNLOCKABLE DEF
+            // -----------------------------------------------------
+
             UnlockableDef unlockable =
-                ScriptableObject
-                    .CreateInstance<UnlockableDef>();
+                ScriptableObject.CreateInstance<UnlockableDef>();
 
             unlockable.cachedName =
                 identifier;
@@ -162,11 +193,29 @@ namespace UniversalSurvivorUnlocks
             unlockable.hidden =
                 false;
 
+
+            /*
+             * Icono provisional.
+             *
+             * Después, cuando SurvivorCatalog ya esté disponible,
+             * lo reemplazaremos por el retrato del personaje
+             * con nuestro marco generado en runtime.
+             */
             unlockable.achievementIcon =
                 LegacyResourcesAPI.Load<Sprite>(
                     "Textures/MiscIcons/texUnlockIcon"
                 );
 
+
+            /*
+             * Texto mostrado al poner el mouse encima
+             * del survivor bloqueado.
+             *
+             * Ejemplo:
+             *
+             * Requiere «Exterminador»
+             * Derrota 100 enemigos.
+             */
             unlockable.getHowToUnlockString =
                 () =>
                 {
@@ -183,6 +232,7 @@ namespace UniversalSurvivorUnlocks
                         }
                     );
                 };
+
 
             unlockable.getUnlockedString =
                 () =>
@@ -201,19 +251,16 @@ namespace UniversalSurvivorUnlocks
                     );
                 };
 
-            /*
-             * Añadimos el UnlockableDef al contenido.
-             */
+
             ContentAddition.AddUnlockableDef(
                 unlockable
             );
 
-            /*
-             * ÉSTA era la pieza que nos faltaba.
-             *
-             * Creamos un AchievementDef asociado al
-             * UnlockableDef.
-             */
+
+            // -----------------------------------------------------
+            // ACHIEVEMENT DEF
+            // -----------------------------------------------------
+
             AchievementDef achievementDef =
                 new AchievementDef
                 {
@@ -244,6 +291,7 @@ namespace UniversalSurvivorUnlocks
                         null
                 };
 
+
 #pragma warning disable CS0618
 
             bool achievementAdded =
@@ -252,6 +300,7 @@ namespace UniversalSurvivorUnlocks
                 );
 
 #pragma warning restore CS0618
+
 
             if (!achievementAdded)
             {
@@ -263,10 +312,20 @@ namespace UniversalSurvivorUnlocks
                 return;
             }
 
+
+            /*
+             * Guardamos referencias.
+             */
+            CustomAchievements[
+                bodyName
+            ] =
+                achievementDef;
+
             CustomUnlockables[
                 bodyName
             ] =
                 unlockable;
+
 
             logger.LogInfo(
                 $"Unlock registrado correctamente | " +
@@ -275,6 +334,11 @@ namespace UniversalSurvivorUnlocks
                 $"Achievement: {achievementIdentifier}"
             );
         }
+
+
+        // =========================================================
+        // ASIGNAR LOS UNLOCKS A LOS SURVIVORS
+        // =========================================================
 
         public static void ApplyConfiguredUnlockables(
             List<SurvivorInfo> survivors,
@@ -302,21 +366,22 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
+
                 SurvivorDef survivorDef =
                     survivorInfo.SurvivorDef;
 
                 string bodyName =
                     survivorInfo.BodyName;
 
+
                 /*
-                 * Guardamos el unlock original
+                 * Guardamos el UnlockableDef original
                  * una sola vez.
                  */
                 if (
-                    !OriginalUnlockables
-                        .ContainsKey(
-                            survivorDef
-                        )
+                    !OriginalUnlockables.ContainsKey(
+                        survivorDef
+                    )
                 )
                 {
                     OriginalUnlockables[
@@ -325,13 +390,14 @@ namespace UniversalSurvivorUnlocks
                         survivorDef.unlockableDef;
                 }
 
+
                 SurvivorJsonEntry entry =
                     GetEntry(bodyName);
 
+
                 /*
-                 * Si nuestra misión NO está activa,
-                 * dejamos/restauramos el desbloqueo
-                 * original.
+                 * Si la misión personalizada está apagada,
+                 * restauramos el unlock original.
                  */
                 if (!RequiresCustomUnlock(entry))
                 {
@@ -343,6 +409,10 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
+
+                /*
+                 * Buscamos nuestro UnlockableDef.
+                 */
                 if (
                     !CustomUnlockables.TryGetValue(
                         bodyName,
@@ -358,8 +428,25 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
+
+                /*
+                 * Asignamos nuestro desbloqueo.
+                 */
                 survivorDef.unlockableDef =
                     customUnlock;
+
+
+                /*
+                 * Ahora que tenemos acceso al SurvivorDef
+                 * completo, tomamos su portraitIcon y creamos
+                 * el icono del achievement con marco.
+                 */
+                ApplySurvivorAchievementIcon(
+                    survivorInfo,
+                    customUnlock,
+                    logger
+                );
+
 
                 logger.LogInfo(
                     $"Unlock personalizado asignado: " +
@@ -368,6 +455,406 @@ namespace UniversalSurvivorUnlocks
                 );
             }
         }
+
+
+        // =========================================================
+        // CREAR ICONO DEL ACHIEVEMENT DESDE EL PORTRAIT
+        // =========================================================
+
+        private static void ApplySurvivorAchievementIcon(
+            SurvivorInfo survivorInfo,
+            UnlockableDef unlockable,
+            ManualLogSource logger
+        )
+        {
+            if (
+                survivorInfo == null ||
+                survivorInfo.SurvivorDef == null ||
+                survivorInfo.SurvivorDef.bodyPrefab == null
+            )
+            {
+                return;
+            }
+
+
+            CharacterBody body =
+                survivorInfo
+                    .SurvivorDef
+                    .bodyPrefab
+                    .GetComponent<CharacterBody>();
+
+
+            if (
+                body == null ||
+                body.portraitIcon == null
+            )
+            {
+                logger.LogWarning(
+                    $"No se encontró portraitIcon para " +
+                    $"{survivorInfo.BodyName}."
+                );
+
+                return;
+            }
+
+
+            Sprite icon;
+
+
+            /*
+             * Si todavía no generamos el sprite,
+             * lo creamos.
+             */
+            if (
+                !CustomAchievementIcons.TryGetValue(
+                    survivorInfo.BodyName,
+                    out icon
+                ) ||
+                icon == null
+            )
+            {
+                icon =
+                    CreateFramedAchievementIcon(
+                        body.portraitIcon,
+                        survivorInfo.BodyName
+                    );
+
+
+                if (icon == null)
+                {
+                    logger.LogWarning(
+                        $"No se pudo crear el icono con marco para " +
+                        $"{survivorInfo.BodyName}."
+                    );
+
+                    return;
+                }
+
+
+                CustomAchievementIcons[
+                    survivorInfo.BodyName
+                ] =
+                    icon;
+            }
+
+
+            /*
+             * Icono del UnlockableDef.
+             */
+            unlockable.achievementIcon =
+                icon;
+
+
+            /*
+             * Icono del AchievementDef.
+             */
+            if (
+                CustomAchievements.TryGetValue(
+                    survivorInfo.BodyName,
+                    out AchievementDef achievementDef
+                )
+            )
+            {
+                achievementDef.achievedIcon =
+                    icon;
+            }
+
+
+            logger.LogInfo(
+                $"Icono de achievement con marco actualizado: " +
+                $"{survivorInfo.DisplayName}"
+            );
+        }
+
+
+        // =========================================================
+        // CREAR COPIA DEL RETRATO EN MEMORIA
+        // =========================================================
+
+        private static Sprite CreateFramedAchievementIcon(
+            Texture source,
+            string bodyName
+        )
+        {
+            if (source == null)
+            {
+                return null;
+            }
+
+
+            /*
+             * Creamos una RenderTexture temporal.
+             *
+             * De esta forma podemos copiar incluso texturas
+             * que no tengan Read/Write habilitado.
+             */
+            RenderTexture temporary =
+                RenderTexture.GetTemporary(
+                    source.width,
+                    source.height,
+                    0,
+                    RenderTextureFormat.ARGB32
+                );
+
+
+            RenderTexture previous =
+                RenderTexture.active;
+
+
+            try
+            {
+                /*
+                 * Copiamos el retrato original.
+                 */
+                Graphics.Blit(
+                    source,
+                    temporary
+                );
+
+
+                RenderTexture.active =
+                    temporary;
+
+
+                /*
+                 * Creamos nuestra propia Texture2D.
+                 *
+                 * Esta textura sólo existe en memoria.
+                 */
+                Texture2D texture =
+                    new Texture2D(
+                        source.width,
+                        source.height,
+                        TextureFormat.RGBA32,
+                        false
+                    );
+
+
+                texture.ReadPixels(
+                    new Rect(
+                        0,
+                        0,
+                        source.width,
+                        source.height
+                    ),
+                    0,
+                    0
+                );
+
+
+                texture.Apply();
+
+
+                texture.name =
+                    $"USU_{bodyName}_AchievementTexture";
+
+
+                texture.wrapMode =
+                    TextureWrapMode.Clamp;
+
+
+                texture.filterMode =
+                    FilterMode.Bilinear;
+
+
+                /*
+                 * Dibujamos el recuadro.
+                 */
+                DrawAchievementFrame(
+                    texture
+                );
+
+
+                /*
+                 * Convertimos la textura a Sprite.
+                 */
+                Sprite sprite =
+                    Sprite.Create(
+                        texture,
+                        new Rect(
+                            0,
+                            0,
+                            texture.width,
+                            texture.height
+                        ),
+                        new Vector2(
+                            0.5f,
+                            0.5f
+                        ),
+                        100f
+                    );
+
+
+                sprite.name =
+                    $"USU_{bodyName}_AchievementIcon";
+
+
+                return sprite;
+            }
+            finally
+            {
+                /*
+                 * Restauramos el RenderTexture anterior
+                 * y liberamos el temporal.
+                 */
+                RenderTexture.active =
+                    previous;
+
+
+                RenderTexture.ReleaseTemporary(
+                    temporary
+                );
+            }
+        }
+
+
+        // =========================================================
+        // DIBUJAR MARCO DEL ACHIEVEMENT
+        // =========================================================
+
+        private static void DrawAchievementFrame(
+            Texture2D texture
+        )
+        {
+            int width =
+                texture.width;
+
+            int height =
+                texture.height;
+
+
+            /*
+             * El grosor se adapta al tamaño del retrato.
+             *
+             * 128x128 -> aproximadamente 2-3 px
+             * 256x256 -> aproximadamente 4-5 px
+             */
+            int borderThickness =
+                Mathf.Max(
+                    2,
+                    Mathf.RoundToInt(
+                        Mathf.Min(
+                            width,
+                            height
+                        ) * 0.018f
+                    )
+                );
+
+
+            /*
+             * Parte principal del marco.
+             *
+             * Es un azul/gris parecido al usado
+             * por los achievements vanilla.
+             */
+            Color32 frameColor =
+                new Color32(
+                    73,
+                    99,
+                    124,
+                    255
+                );
+
+
+            /*
+             * Borde exterior oscuro.
+             */
+            Color32 outerColor =
+                new Color32(
+                    20,
+                    25,
+                    30,
+                    255
+                );
+
+
+            int outerThickness =
+                Mathf.Max(
+                    1,
+                    borderThickness / 2
+                );
+
+
+            /*
+             * Primero dibujamos el borde exterior.
+             */
+            DrawTextureBorder(
+                texture,
+                outerColor,
+                borderThickness +
+                outerThickness
+            );
+
+
+            /*
+             * Después dibujamos el borde principal.
+             */
+            DrawTextureBorder(
+                texture,
+                frameColor,
+                borderThickness
+            );
+
+
+            texture.Apply();
+        }
+
+
+        // =========================================================
+        // DIBUJAR UN BORDE RECTANGULAR
+        // =========================================================
+
+        private static void DrawTextureBorder(
+            Texture2D texture,
+            Color32 color,
+            int thickness
+        )
+        {
+            int width =
+                texture.width;
+
+            int height =
+                texture.height;
+
+
+            for (
+                int y = 0;
+                y < height;
+                y++
+            )
+            {
+                for (
+                    int x = 0;
+                    x < width;
+                    x++
+                )
+                {
+                    bool border =
+                        x < thickness ||
+                        x >= width - thickness ||
+                        y < thickness ||
+                        y >= height - thickness;
+
+
+                    if (!border)
+                    {
+                        continue;
+                    }
+
+
+                    texture.SetPixel(
+                        x,
+                        y,
+                        color
+                    );
+                }
+            }
+        }
+
+
+        // =========================================================
+        // SABER SI EL JSON PIDE NUESTRO DESBLOQUEO
+        // =========================================================
 
         private static bool RequiresCustomUnlock(
             SurvivorJsonEntry entry
@@ -381,10 +868,12 @@ namespace UniversalSurvivorUnlocks
                 return false;
             }
 
+
             if (!entry.Challenge.Enabled)
             {
                 return false;
             }
+
 
             if (
                 string.IsNullOrWhiteSpace(
@@ -395,6 +884,7 @@ namespace UniversalSurvivorUnlocks
                 return false;
             }
 
+
             return !string.Equals(
                 entry.Challenge.Type,
                 "Original",
@@ -402,12 +892,18 @@ namespace UniversalSurvivorUnlocks
             );
         }
 
+
+        // =========================================================
+        // OBTENER SURVIVOR DESDE EL JSON
+        // =========================================================
+
         private static SurvivorJsonEntry GetEntry(
             string bodyName
         )
         {
             SurvivorJsonFile config =
                 SurvivorJsonManager.CurrentConfig;
+
 
             if (
                 config == null ||
@@ -417,6 +913,7 @@ namespace UniversalSurvivorUnlocks
                 return null;
             }
 
+
             config
                 .AvailableSurvivors
                 .TryGetValue(
@@ -424,8 +921,14 @@ namespace UniversalSurvivorUnlocks
                     out SurvivorJsonEntry entry
                 );
 
+
             return entry;
         }
+
+
+        // =========================================================
+        // NOMBRE DE LA MISIÓN
+        // =========================================================
 
         private static string GetChallengeName(
             SurvivorJsonEntry entry
@@ -441,8 +944,14 @@ namespace UniversalSurvivorUnlocks
                 return entry.Challenge.Name;
             }
 
+
             return "Desafío personalizado";
         }
+
+
+        // =========================================================
+        // DESCRIPCIÓN DE LA MISIÓN
+        // =========================================================
 
         private static string BuildChallengeDescription(
             SurvivorJsonEntry entry
@@ -457,8 +966,10 @@ namespace UniversalSurvivorUnlocks
                     "Completa el desafío para desbloquear este personaje.";
             }
 
+
             JObject parameters =
                 entry.Challenge.Parameters;
+
 
             switch (entry.Challenge.Type)
             {
@@ -471,9 +982,11 @@ namespace UniversalSurvivorUnlocks
                             1
                         );
 
+
                     return
                         $"Derrota {amount} enemigos.";
                 }
+
 
                 case "KillBoss":
                 {
@@ -484,9 +997,11 @@ namespace UniversalSurvivorUnlocks
                             1
                         );
 
+
                     return
                         $"Derrota {amount} jefes.";
                 }
+
 
                 case "ReachLevel":
                 {
@@ -497,9 +1012,11 @@ namespace UniversalSurvivorUnlocks
                             1
                         );
 
+
                     return
                         $"Alcanza el nivel {level}.";
                 }
+
 
                 case "ReachStage":
                 {
@@ -510,16 +1027,25 @@ namespace UniversalSurvivorUnlocks
                             1
                         );
 
+
                     return
                         $"Alcanza la fase {stage}.";
                 }
 
+
                 default:
+                {
                     return
                         $"Completa la misión " +
                         $"\"{entry.Challenge.Type}\".";
+                }
             }
         }
+
+
+        // =========================================================
+        // LEER ENTEROS DEL JSON
+        // =========================================================
 
         private static int GetInt(
             JObject parameters,
@@ -532,8 +1058,10 @@ namespace UniversalSurvivorUnlocks
                 return defaultValue;
             }
 
+
             JToken token =
                 parameters[key];
+
 
             if (
                 token == null ||
@@ -544,8 +1072,14 @@ namespace UniversalSurvivorUnlocks
                 return defaultValue;
             }
 
+
             return token.Value<int>();
         }
+
+
+        // =========================================================
+        // CONVERTIR NOMBRE A TOKEN
+        // =========================================================
 
         private static string MakeToken(
             string value
