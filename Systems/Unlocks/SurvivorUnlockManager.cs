@@ -1443,7 +1443,7 @@ namespace UniversalSurvivorUnlocks
 
                         return
                             $"Mantén {amount} efectos de estado válidos activos " +
-                            $"simultáneamente en una sola partida.";
+                            $"simultáneamente en una partida.";
                     }
 
 

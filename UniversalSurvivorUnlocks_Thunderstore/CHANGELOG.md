@@ -4,6 +4,28 @@ All notable changes to Universal Survivor Unlocks will be documented in this fil
 
 The format is based on a simple versioned changelog intended for Thunderstore and GitHub releases.
 
+## 0.1.3
+
+- Added the built-in default unlock preset for Dragonyck's Sora.
+- Sora now automatically receives the `Guerrero de la llave` challenge when first detected by Universal Survivor Unlocks.
+- The default Sora challenge uses `ApplyStatusEffects` and requires 100 valid active status effects simultaneously during a single run.
+- Added automatic migration for Sora configurations using the legacy default `KillEnemies 100` challenge.
+- Existing customized Sora challenge configurations are preserved and are not overwritten.
+
+## 0.1.1
+
+- Added initial support for configurable survivor challenges.
+- Added `ApplyStatusEffects` challenge tracking.
+- Status effect progress is calculated from effects currently active during a run.
+- Negative status effects are counted only on enemies.
+- Positive status effects are counted only on allies.
+- Stackable effects contribute once per active stack.
+- Non-stackable effects contribute once per affected entity.
+- Multiple enemies and allies can contribute to the total simultaneously.
+- Status effects stop contributing when they expire, are removed, or the affected entity dies.
+- Added server-side tracking groundwork for multiplayer-compatible challenges.
+- Improved dynamic survivor unlock handling and challenge configuration.
+
 ## [0.1.0] - Initial Public Release
 
 ### Added

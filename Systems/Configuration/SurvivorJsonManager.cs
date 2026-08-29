@@ -38,28 +38,192 @@ namespace UniversalSurvivorUnlocks
             );
 
         public static void LoadForStartup(
-        ManualLogSource logger
-    )
+    ManualLogSource logger
+)
         {
             Directory.CreateDirectory(
                 ConfigDirectory
             );
 
-            if (!TryLoadExisting(
-                logger,
-                out SurvivorJsonFile file
-            ))
+
+            if (
+                !TryLoadExisting(
+                    logger,
+                    out SurvivorJsonFile file
+                )
+            )
             {
                 return;
             }
 
-            CurrentConfig = file;
+
+            CurrentConfig =
+                file;
+
+
+            // =====================================================
+            // MIGRACIONES DE PRESETS CONOCIDOS
+            // =====================================================
+
+            ApplyKnownPresetMigrations(
+                CurrentConfig,
+                logger
+            );
+
 
             logger.LogInfo(
                 $"Configuración inicial cargada. " +
                 $"Disponibles guardados: " +
                 $"{CurrentConfig.AvailableSurvivors.Count}"
             );
+        }
+
+        // =========================================================
+        // MIGRAR PRESETS ANTIGUOS
+        // =========================================================
+
+        private static void ApplyKnownPresetMigrations(
+            SurvivorJsonFile file,
+            ManualLogSource logger
+        )
+        {
+            if (file == null)
+            {
+                return;
+            }
+
+
+            int migrated =
+                0;
+
+
+            migrated +=
+                ApplyKnownPresetMigrationsToEntries(
+                    file.AvailableSurvivors,
+                    logger
+                );
+
+
+            migrated +=
+                ApplyKnownPresetMigrationsToEntries(
+                    file.UnavailableSurvivors,
+                    logger
+                );
+
+
+            if (migrated <= 0)
+            {
+                return;
+            }
+
+
+            /*
+             * Guardamos inmediatamente.
+             *
+             * Esto es importante porque después de
+             * LoadForStartup() se registran los
+             * UnlockableDef / AchievementDef.
+             *
+             * Necesitamos que ya utilicen la nueva
+             * configuración durante este mismo arranque.
+             */
+            Save(
+                file,
+                logger
+            );
+
+
+            logger.LogInfo(
+                $"Migraciones de presets aplicadas: {migrated}"
+            );
+        }
+
+
+        // =========================================================
+        // MIGRAR UNA COLECCIÓN DE SURVIVORS
+        // =========================================================
+
+        private static int ApplyKnownPresetMigrationsToEntries(
+            Dictionary<
+                string,
+                SurvivorJsonEntry
+            > entries,
+            ManualLogSource logger
+        )
+        {
+            if (entries == null)
+            {
+                return 0;
+            }
+
+
+            int migrated =
+                0;
+
+
+            foreach (
+                KeyValuePair<
+                    string,
+                    SurvivorJsonEntry
+                > pair
+                in entries
+            )
+            {
+                SurvivorJsonEntry entry =
+                    pair.Value;
+
+
+                if (entry == null)
+                {
+                    continue;
+                }
+
+
+                string bodyName =
+                    !string.IsNullOrWhiteSpace(
+                        entry.BodyName
+                    )
+                        ? entry.BodyName
+                        : pair.Key;
+
+
+                string contentPackIdentifier =
+                    entry.Source;
+
+
+                if (
+                    !SurvivorChallengePresets
+                        .TryMigrateLegacyPreset(
+                            bodyName,
+                            contentPackIdentifier,
+                            entry.Challenge,
+                            out SurvivorChallengeJson migratedChallenge
+                        )
+                )
+                {
+                    continue;
+                }
+
+
+                entry.Challenge =
+                    migratedChallenge;
+
+
+                migrated++;
+
+
+                logger.LogInfo(
+                    $"Preset legado migrado | " +
+                    $"Body: {bodyName} | " +
+                    $"Pack: {contentPackIdentifier} | " +
+                    $"Nuevo challenge: " +
+                    $"{migratedChallenge.Name} / " +
+                    $"{migratedChallenge.Type}"
+                );
+            }
+
+
+            return migrated;
         }
 
         // =========================================================
@@ -147,6 +311,10 @@ namespace UniversalSurvivorUnlocks
             /*
              * Si el survivor ya existe en el JSON,
              * respetamos completamente su configuración.
+             *
+             * Esto significa que un preset NUNCA
+             * sobrescribirá una configuración que
+             * el usuario ya tenga.
              */
             SurvivorJsonEntry existing =
                 GetEntryAnywhere(
@@ -201,16 +369,17 @@ namespace UniversalSurvivorUnlocks
             catch
             {
                 /*
-                 * Durante esta fase temprana el sistema
-                 * de idioma puede todavía no estar listo.
+                 * Durante esta fase temprana
+                 * el sistema de idioma puede
+                 * todavía no estar listo.
                  */
             }
 
 
             /*
-             * Si seguimos teniendo SoraBody,
-             * PaladinBody, etc.,
-             * quitamos "Body" como fallback.
+             * Fallback:
+             * SoraBody -> Sora
+             * PaladinBody -> Paladin
              */
             if (
                 displayName == bodyName &&
@@ -225,6 +394,50 @@ namespace UniversalSurvivorUnlocks
                         0,
                         bodyName.Length - 4
                     );
+            }
+
+
+            // =====================================================
+            // BUSCAR PRESET ESPECÍFICO
+            // =====================================================
+
+            SurvivorChallengeJson challenge;
+
+
+            bool hasPreset =
+                SurvivorChallengePresets
+                    .TryCreatePreset(
+                        bodyName,
+                        contentPackIdentifier,
+                        out challenge
+                    );
+
+
+            // =====================================================
+            // SI NO HAY PRESET, USAR CONFIGURACIÓN GENÉRICA
+            // =====================================================
+
+            if (!hasPreset)
+            {
+                challenge =
+                    new SurvivorChallengeJson
+                    {
+                        Enabled =
+                            true,
+
+                        Name =
+                            "Desafío de desbloqueo",
+
+                        Type =
+                            "KillEnemies",
+
+                        Parameters =
+                            new JObject
+                            {
+                                ["amount"] =
+                                    100
+                            }
+                    };
             }
 
 
@@ -272,24 +485,7 @@ namespace UniversalSurvivorUnlocks
                         "",
 
                     Challenge =
-                        new SurvivorChallengeJson
-                        {
-                            Enabled =
-                                true,
-
-                            Name =
-                                "Desafío de desbloqueo",
-
-                            Type =
-                                "KillEnemies",
-
-                            Parameters =
-                                new JObject
-                                {
-                                    ["amount"] =
-                                        100
-                                }
-                        }
+                        challenge
                 };
 
 
@@ -307,46 +503,72 @@ namespace UniversalSurvivorUnlocks
             if (CurrentConfig.AvailableSurvivors == null)
             {
                 CurrentConfig.AvailableSurvivors =
-                    new Dictionary<string, SurvivorJsonEntry>();
+                    new Dictionary<
+                        string,
+                        SurvivorJsonEntry
+                    >();
             }
 
 
             if (CurrentConfig.UnavailableSurvivors == null)
             {
                 CurrentConfig.UnavailableSurvivors =
-                    new Dictionary<string, SurvivorJsonEntry>();
+                    new Dictionary<
+                        string,
+                        SurvivorJsonEntry
+                    >();
             }
 
 
             /*
-             * Si por alguna razón estaba marcado
-             * como no disponible, lo quitamos de ahí.
+             * Si estaba marcado como no disponible,
+             * lo retiramos de esa sección.
              */
-            CurrentConfig.UnavailableSurvivors.Remove(
-                bodyName
-            );
+            CurrentConfig
+                .UnavailableSurvivors
+                .Remove(
+                    bodyName
+                );
 
 
             /*
-             * Lo agregamos SOLAMENTE en memoria.
+             * Se agrega solamente en memoria.
              *
-             * SurvivorJsonManager.Sync()
-             * se encargará posteriormente
-             * de escribir Survivors.json.
+             * Sync() escribirá posteriormente
+             * Survivors.json.
              */
-            CurrentConfig.AvailableSurvivors[
-                bodyName
-            ] =
+            CurrentConfig
+                .AvailableSurvivors[
+                    bodyName
+                ] =
                 entry;
 
 
-            logger.LogInfo(
-                $"Configuración automática creada en memoria | " +
-                $"Survivor: {displayName} | " +
-                $"Body: {bodyName} | " +
-                $"Pack: {entry.Source} | " +
-                $"Challenge: KillEnemies 100"
-            );
+            // =====================================================
+            // LOG
+            // =====================================================
+
+            if (hasPreset)
+            {
+                logger.LogInfo(
+                    $"Preset de desbloqueo aplicado | " +
+                    $"Survivor: {displayName} | " +
+                    $"Body: {bodyName} | " +
+                    $"Pack: {entry.Source} | " +
+                    $"Challenge: {challenge.Type} | " +
+                    $"Nombre: {challenge.Name}"
+                );
+            }
+            else
+            {
+                logger.LogInfo(
+                    $"Configuración automática creada en memoria | " +
+                    $"Survivor: {displayName} | " +
+                    $"Body: {bodyName} | " +
+                    $"Pack: {entry.Source} | " +
+                    $"Challenge: KillEnemies 100"
+                );
+            }
 
 
             return entry;
