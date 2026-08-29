@@ -1442,9 +1442,8 @@ namespace UniversalSurvivorUnlocks
 
 
                         return
-                            $"Alcanza {amount} efectos de estado activos al mismo tiempo. " +
-                            $"Los efectos perjudiciales cuentan sólo en enemigos y los " +
-                            $"beneficiosos sólo en aliados. Las acumulaciones cuentan por separado.";
+                            $"Mantén {amount} efectos de estado válidos activos " +
+                            $"simultáneamente en una sola partida.";
                     }
 
 
