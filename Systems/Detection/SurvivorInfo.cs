@@ -43,12 +43,6 @@ namespace UniversalSurvivorUnlocks
             set;
         }
 
-        public ExpansionDef RequiredExpansion
-        {
-            get;
-            set;
-        }
-
         public string ExpansionName
         {
             get;

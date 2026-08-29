@@ -27,7 +27,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public const string PluginVersion =
-            "0.1.0";
+            "0.1.1";
 
 
         public static List<SurvivorInfo> Survivors
@@ -98,6 +98,14 @@ namespace UniversalSurvivorUnlocks
         {
             Logger.LogInfo(
                 "Risk of Rain 2 terminó de cargar."
+            );
+
+            StatusEffectScanner.Rebuild(
+                Logger
+            );
+
+            StatusEffectTracker.Initialize(
+                Logger
             );
 
 

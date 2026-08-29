@@ -3,7 +3,6 @@ using BepInEx.Logging;
 using RoR2;
 using RoR2.EntitlementManagement;
 using RoR2.ExpansionManagement;
-using UnityEngine;
 
 namespace UniversalSurvivorUnlocks
 {
@@ -42,8 +41,7 @@ namespace UniversalSurvivorUnlocks
 
                 SurvivorInfo info =
                     BuildSurvivorInfo(
-                        survivor,
-                        logger
+                        survivor
                     );
 
                 if (info != null)
@@ -68,8 +66,7 @@ namespace UniversalSurvivorUnlocks
         // =========================================================
 
         private static SurvivorInfo BuildSurvivorInfo(
-            SurvivorDef survivor,
-            ManualLogSource logger
+            SurvivorDef survivor
         )
         {
             if (survivor == null)
@@ -235,9 +232,6 @@ namespace UniversalSurvivorUnlocks
 
                     UnlockableName =
                         unlockableName,
-
-                    RequiredExpansion =
-                        requiredExpansion,
 
                     ExpansionName =
                         expansionName,

@@ -607,14 +607,17 @@ namespace UniversalSurvivorUnlocks
                         unlockable.achievementIcon,
 
                     type =
-                        typeof(
-                            UniversalSurvivorAchievement
+                        ChallengeManager
+                        .GetAchievementType(
+                            entry.Challenge
                         ),
 
                     serverTrackerType =
-                        null
+                    ChallengeManager
+                        .GetServerTrackerType(
+                            entry.Challenge
+                        )
                 };
-
 
 #pragma warning disable CS0618
 
@@ -1426,6 +1429,22 @@ namespace UniversalSurvivorUnlocks
 
                         return
                             $"Alcanza la fase {stage}.";
+                    }
+
+                case "ApplyStatusEffects":
+                    {
+                        int amount =
+                            GetInt(
+                                parameters,
+                                "amount",
+                                100
+                            );
+
+
+                        return
+                            $"Alcanza {amount} efectos de estado activos al mismo tiempo. " +
+                            $"Los efectos perjudiciales cuentan sólo en enemigos y los " +
+                            $"beneficiosos sólo en aliados. Las acumulaciones cuentan por separado.";
                     }
 
 
