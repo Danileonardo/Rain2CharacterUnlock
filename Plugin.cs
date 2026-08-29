@@ -112,6 +112,29 @@ namespace UniversalSurvivorUnlocks
                 Logger
             );
 
+            BossCriticalKillTracker.Initialize(
+                Logger
+            );
+
+            HoldItemStackTracker.Initialize(
+                Logger
+            );
+
+            BackstabBossKillTracker.Initialize(
+                Logger
+            );
+
+            ExplosionKillTracker.Initialize(
+                Logger
+            );
+
+            AirborneExplosionKillTracker.Initialize(
+                Logger
+            );
+
+            PrecisionExecutionStreakTracker.Initialize(
+                Logger
+            );
 
             /*
              * NO hacemos Rebuild.

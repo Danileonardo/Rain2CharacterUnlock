@@ -34,9 +34,15 @@ namespace UniversalSurvivorUnlocks
             {
                 case "applystatuseffects":
                 case "healhealth":
+                case "bosscriticalkill":
+                case "holditemstack":
+                case "backstabbosskill":
+                case "airborneexplosionkills":
+                case "precisionexecutionstreak":
                     return typeof(
                         UniversalServerTrackedAchievement
                     );
+
 
                 default:
                     return typeof(
@@ -76,10 +82,37 @@ namespace UniversalSurvivorUnlocks
                     return typeof(
                         ApplyStatusEffectsServerAchievement
                     );
-            
+
+
                 case "healhealth":
                     return typeof(
                         HealHealthServerAchievement
+                    );
+
+
+                case "bosscriticalkill":
+                    return typeof(
+                        BossCriticalKillServerAchievement
+                    );
+
+                case "holditemstack":
+                    return typeof(
+                        HoldItemStackServerAchievement
+                    );
+
+                case "backstabbosskill":
+                    return typeof(
+                        BackstabBossKillServerAchievement
+                    );
+
+                case "airborneexplosionkills":
+                    return typeof(
+                        AirborneExplosionKillsServerAchievement
+                    );
+
+                case "precisionexecutionstreak":
+                    return typeof(
+                        PrecisionExecutionStreakServerAchievement
                     );
 
                 default:

@@ -2,7 +2,7 @@
 
 > **Universal Survivor Unlocks** adds progression-based unlock requirements to compatible modded survivors in **Risk of Rain 2** when those survivors do not provide their own character unlock system.
 
-The goal is to make modded survivors feel more naturally integrated into Risk of Rain 2 progression instead of always becoming immediately available after installation.
+The goal is to make modded survivors feel more naturally integrated into Risk of Rain 2 progression instead of becoming immediately available after installation.
 
 ---
 
@@ -19,11 +19,11 @@ The goal is to make modded survivors feel more naturally integrated into Risk of
 | Persistent `Survivors.json` configuration | ✅ Implemented |
 | Configuration backup | ✅ Implemented |
 | Survivor uninstall / reinstall configuration recovery | ✅ Implemented |
-| `ApplyStatusEffects` gameplay challenge | ✅ Implemented |
-| Server-side challenge tracking groundwork | ✅ Implemented |
-| Host-authoritative multiplayer configuration | ⚠ Planned / In development |
-| Full multiplayer validation | ⚠ Experimental |
-| `KillEnemies` gameplay tracking | ⚠ Not yet implemented |
+| Built-in survivor challenge presets | ✅ Implemented |
+| Server-side gameplay challenge tracking | ✅ Implemented |
+| Host-authoritative multiplayer design | 🧪 Experimental |
+| Full multiplayer validation | 🧪 In testing |
+| `KillEnemies` fallback tracker | ❌ Not implemented |
 
 ---
 
@@ -31,18 +31,18 @@ The goal is to make modded survivors feel more naturally integrated into Risk of
 
 - Automatically detects installed modded survivors.
 - Automatically assigns unlock requirements to compatible modded survivors that do not already provide one.
-- Respects unlock requirements created by the original survivor mod authors.
+- Respects unlock requirements created by original survivor mod authors.
 - Does not replace Vanilla or official DLC survivor progression.
 - Creates real Risk of Rain 2 `UnlockableDef` entries.
 - Uses the game's normal locked survivor behavior.
 - Displays modded survivor portraits in generated achievements.
 - Automatically generates a configurable `Survivors.json`.
-- Preserves survivor configuration when a survivor mod is disabled or uninstalled.
-- Restores previous configuration when the survivor becomes available again.
+- Preserves unavailable survivor configuration for reinstall recovery.
 - Automatically creates a backup of the previous configuration.
-- Supports configurable survivor challenges.
-- Includes gameplay tracking for `ApplyStatusEffects`.
-- Includes server-side challenge tracking groundwork for multiplayer-compatible challenges.
+- Supports built-in survivor-specific challenge presets.
+- Supports multiple server-side gameplay challenge types.
+- Tracks challenge progress per run where required.
+- Supports player-owned minion attribution for relevant challenges.
 - Supports different modded survivor `ContentPack` implementations.
 - Compatible with **RealerCheatUnlocks** for testing and manual unlock management.
 
@@ -58,11 +58,33 @@ When Risk of Rain 2 finishes loading, Universal Survivor Unlocks scans the survi
 | 2 | Check whether each survivor already has an unlock requirement. |
 | 3 | If the original mod already provides an unlock, leave it untouched. |
 | 4 | If no original unlock exists, Universal Survivor Unlocks can assign its own generated unlock. |
-| 5 | The survivor remains locked until that generated unlock is granted. |
+| 5 | If a built-in preset exists for that survivor, it is used as the default challenge. |
+| 6 | Otherwise, a generic fallback challenge configuration is created. |
+| 7 | The survivor remains locked until the generated unlock is granted. |
 
 > **Original survivor unlock systems always take priority.**
 
 Universal Survivor Unlocks does not intentionally replace the progression of Vanilla or official DLC survivors.
+
+---
+
+## ✦ Built-In Survivor Presets
+
+Universal Survivor Unlocks currently includes built-in presets for the following compatible modded survivors.
+
+| Survivor | Default challenge | Requirement |
+|---|---|---|
+| Sora | **Elegido de la Llave Espada** | Maintain 100 valid status effects simultaneously during one run. |
+| Ralsei | **Oración de Esperanza** | Restore a total of 5000 health to the player team during one run. |
+| Jhin | **El Cuarto Acto** | Land the final blow on a boss with a critical hit dealing at least 4444 damage. |
+| Scout | **Sed Termonuclear** | Have one player hold 15 Energy Drinks at the same time. |
+| Spy | **Sin que me veas venir** | Kill a boss with Bandit's Serrated Dagger using a valid backstab. |
+| Rocket | **La gravedad es opcional** | Kill 15 enemies with explosions without touching the ground. |
+| HUNK | **La Parca No Falla** | Reach either 24 consecutive Railgunner weak-point hits or 24 consecutive Bandit Lights Out kills. |
+
+These survivor mods are **not required dependencies** of Universal Survivor Unlocks.
+
+The current preset text is authored in Spanish. Broader localization support is planned for a future release.
 
 ---
 
@@ -126,7 +148,7 @@ This allows previously earned survivor unlocks to remain associated with the pla
 | Locked | ✅ | ✅ | 🔒 Remains locked |
 | Unlocked | ✅ | ✅ | 🔓 Remains unlocked |
 
-The generated unlock identifier should remain stable between releases so previously earned unlocks can continue to be recognized.
+Generated unlock identifiers are intended to remain stable between releases so previously earned unlocks can continue to be recognized.
 
 ---
 
@@ -195,6 +217,7 @@ Its saved configuration is preserved instead of being immediately deleted. If th
       "challenge": {
         "enabled": true,
         "name": "Example Challenge",
+        "description": "Complete the configured challenge.",
         "type": "ApplyStatusEffects",
         "parameters": {
           "amount": 100,
@@ -206,11 +229,7 @@ Its saved configuration is preserved instead of being immediately deleted. If th
 }
 ```
 
-Most metadata fields are maintained automatically by Universal Survivor Unlocks. Normally, users should only modify:
-
-```text
-challenge
-```
+Most metadata fields are maintained automatically by Universal Survivor Unlocks.
 
 ---
 
@@ -222,6 +241,7 @@ A challenge uses the following basic structure:
 "challenge": {
   "enabled": true,
   "name": "Challenge Name",
+  "description": "Challenge description.",
   "type": "ChallengeType",
   "parameters": {}
 }
@@ -231,178 +251,105 @@ A challenge uses the following basic structure:
 |---|---|
 | `enabled` | Enables or disables the Universal Survivor Unlocks challenge. |
 | `name` | Defines the displayed challenge name. |
+| `description` | Defines the displayed challenge description. |
 | `type` | Defines which challenge tracker should be used. |
 | `parameters` | Contains settings specific to the selected challenge type. |
 
-Example:
+---
+
+## ✦ Implemented Challenge Types
+
+### `ApplyStatusEffects`
+
+Maintains a configured number of valid active status effects simultaneously during the same run.
+
+- Negative effects count on enemies.
+- Positive effects count on Player-team allies.
+- Stackable effects count once per active stack.
+- Non-stackable effects count once per affected entity.
+- Effects stop contributing when they expire, are removed, or the affected entity dies.
+
+### `HealHealth`
+
+Tracks actual health restored to living Player-team entities during a run.
+
+- Includes players, turrets, drones and other valid allies.
+- Includes natural regeneration and other real healing sources.
+- Counts actual health restored.
+- Does not count overheal, barrier or shield gain.
+- Progress is cumulative for the run.
+
+### `BossCriticalKill`
+
+Completes when the final blow on a boss is a critical hit that meets the configured minimum damage requirement.
+
+The damage requirement applies to a single lethal critical hit. Damage is not accumulated across multiple attacks or players.
+
+### `HoldItemStack`
+
+Completes when one individual player simultaneously holds the configured number of the required item.
+
+Player inventories are not combined.
+
+The current Scout preset uses:
 
 ```json
-"challenge": {
-  "enabled": true,
-  "name": "Status Master",
-  "type": "ApplyStatusEffects",
-  "parameters": {
-    "amount": 100,
-    "singleRun": true
-  }
-}
+"item": "SprintBonus",
+"amount": 15
 ```
 
----
+which corresponds to **Energy Drink**.
 
-# ✦ ApplyStatusEffects
+### `BackstabBossKill`
 
-`ApplyStatusEffects` is currently the first fully implemented gameplay challenge type.
+Completes when Bandit's **Serrated Dagger** delivers the lethal hit to a boss from a valid backstab position.
 
-The challenge is completed when the configured number of valid status effects are active **simultaneously** during the same run.
+The tracker uses Risk of Rain 2's backstab logic instead of treating ordinary side or front attacks as valid.
 
-For example:
+### `AirborneExplosionKills`
 
-```json
-"amount": 100
-```
+Tracks explosion / blast kills belonging to one player while that player remains airborne.
 
-means:
+- The explosion itself must deliver the lethal damage.
+- Merely damaging an enemy with an explosion does not count.
+- Damage-over-time that kills later does not count as an explosion kill.
+- Blast / shockwave attacks are valid.
+- Explosive skills, items and equipment can contribute when their blast causes the kill.
+- Player-owned explosive minions or drones can contribute to their owner's counter.
+- The owner player must be airborne; whether the drone or minion is airborne is irrelevant.
+- Touching the ground resets that player's streak.
+- Players never combine their streaks.
 
-> Maintain at least **100 valid active status effects at the same time**.
+### `PrecisionExecutionStreak`
 
----
+Provides two alternate precision routes.
 
-## Negative Status Effects
+**Railgunner route**
 
-Negative status effects count only while they are active on enemies.
+Reach the configured number of consecutive M99 weak-point hits. A failed M99 weak-point attempt resets the Railgunner streak.
 
-```text
-Negative Effect
-+
-Enemy
-=
-Counts
-```
+**Bandit route**
 
-Examples may include valid debuffs, damage-over-time effects, slowing effects, weakening effects, and crowd-control states.
+Reach the configured number of consecutive kills with **Lights Out**. A Lights Out use that does not kill resets the Bandit streak.
 
-The exact available effects depend on the currently loaded game content and installed mods.
-
----
-
-## Positive Status Effects
-
-Positive status effects count only while they are active on allies or members of the player team.
-
-```text
-Positive Effect
-+
-Ally
-=
-Counts
-```
-
-Negative status effects affecting allied players do not contribute to the positive total. Positive effects on enemies are not counted as valid enemy debuffs.
-
----
-
-## Stackable Effects
-
-Stackable effects contribute once for **every currently active stack**.
-
-```text
-Bleed x25
-=
-25 active effects
-```
-
-Example across multiple enemies:
-
-```text
-Enemy A
-Bleed x20
-
-Enemy B
-Bleed x15
-
-TOTAL = 35
-```
-
----
-
-## Non-Stackable Effects
-
-A non-stackable effect contributes once per affected entity.
-
-```text
-Slow on Enemy A = 1
-Slow on Enemy B = 1
-Slow on Enemy C = 1
-
-TOTAL = 3
-```
-
-Multiple internal stacks of a non-stackable effect do not make that effect contribute multiple times on the same entity.
-
----
-
-## Multiple Targets
-
-Status effects from multiple valid entities are added together.
-
-```text
-Enemy A
-Bleed x20
-
-Enemy B
-Burn x30
-
-Enemy C
-Bleed x25
-
-Ally
-Positive Buff x1
-
-TOTAL = 76
-```
-
-The challenge uses the total number of valid effects currently active across the battlefield.
-
----
-
-## Real-Time Tracking
-
-`ApplyStatusEffects` tracks the **current** state of the battlefield.
-
-If an effect expires, is removed, is cleansed, or the affected entity dies, that effect stops contributing to the active total.
-
-```text
-100 active effects
-↓
-10 Bleed stacks expire
-↓
-90 active effects
-```
-
-The active total can therefore increase and decrease during the run.
-
-Once the requirement is reached and the survivor unlock is granted, that unlock remains completed for that player profile.
+Other Bandit abilities do not add to the streak and are not intended to replace Lights Out.
 
 ---
 
 ## ✦ Challenge Status
 
-| Challenge Type | Gameplay Tracking | Status |
+| Challenge Type | Tracking | Validation status |
 |---|---:|---:|
-| `ApplyStatusEffects` | ✅ | Implemented |
-| `KillEnemies` | ❌ | Not yet fully implemented |
+| `ApplyStatusEffects` | ✅ | Tested |
+| `HealHealth` | ✅ | Implementation ready / final unlock validation pending |
+| `BossCriticalKill` | ✅ | Implementation ready / gameplay validation pending |
+| `HoldItemStack` | ✅ | Implementation ready / gameplay validation pending |
+| `BackstabBossKill` | ✅ | Implementation ready / gameplay validation pending |
+| `AirborneExplosionKills` | ✅ | Implementation ready / broad explosion-source validation pending |
+| `PrecisionExecutionStreak` | ✅ | Implementation ready / gameplay validation pending |
+| `KillEnemies` | ❌ | Fallback configuration only |
 
-Some automatically generated survivor configurations may currently contain:
-
-```json
-"type": "KillEnemies",
-"parameters": {
-  "amount": 100
-}
-```
-
-The configuration structure supports additional challenge types, but only challenge types with an implemented tracker should currently be considered functional.
+The newer challenge types are being validated through a general gameplay and multiplayer test pass.
 
 ---
 
@@ -428,68 +375,42 @@ This helps prevent conflicts with progression systems designed by other mod auth
 
 Universal Survivor Unlocks dynamically detects compatible modded survivors instead of requiring a hardcoded dependency for every character.
 
-| Survivor / Mod | Detection | Unlock handling |
-|---|---:|---:|
-| Sora | ✅ | ✅ Tested |
-| Ralsei | ✅ | ✅ Tested |
-| HUNK | ✅ | ✅ Tested |
-| Enforcer | ✅ | Original unlock respected |
-| Nemesis Enforcer | ✅ | Original unlock respected |
-| Auriel | ✅ | Original unlock respected |
-
-These survivor mods are **not required dependencies** of Universal Survivor Unlocks.
-
----
-
-## ✦ Sora Compatibility
-
-Universal Survivor Unlocks has been extensively tested with **Sora by Dragonyck**.
-
-Sora itself is **not created or maintained by Universal Survivor Unlocks**. Universal Survivor Unlocks only provides external compatibility and unlock integration when appropriate.
-
-| Test | Result |
+| Survivor / Mod | Detection / integration |
 |---|---:|
-| Automatic survivor detection | ✅ |
-| Generated USU unlock requirement | ✅ |
-| Locked survivor behavior | ✅ |
-| Unlock persistence | ✅ |
-| Survivor uninstall / reinstall while locked | ✅ |
-| Survivor uninstall / reinstall while unlocked | ✅ |
-| Status effect tracking | ✅ |
-| Positive status effects | ✅ |
-| Negative status effects | ✅ |
-| Stackable damage-over-time effects | ✅ |
-| Non-stackable effects | ✅ |
-| Unlock completion | ✅ |
-| Repeated unlock prevention after completion | ✅ |
+| Sora | ✅ |
+| Ralsei | ✅ |
+| Jhin | ✅ |
+| Scout | ✅ |
+| Spy | ✅ |
+| Rocket | ✅ |
+| HUNK | ✅ |
+| Enforcer | Original unlock respected |
+| Nemesis Enforcer | Original unlock respected |
+| Auriel | Original unlock respected |
 
-> Sora remains the work of its original mod author. Universal Survivor Unlocks only provides external unlock integration.
+Third-party survivor mods are **not dependencies** unless explicitly listed in `manifest.json`.
 
 ---
 
 ## ✦ Multiplayer
 
-Universal Survivor Unlocks uses server-side tracking groundwork for gameplay challenges.
+Gameplay challenge trackers are designed to run server-side.
 
-This architecture is intended to support multiplayer-compatible unlock conditions.
-
-> ⚠ **Full multiplayer behavior is still experimental.**
-
-Host-to-client challenge configuration synchronization is still being developed and tested.
-
-The planned behavior is:
+The intended multiplayer model is:
 
 ```text
-Host Configuration
+Host / Server
         ↓
-Authoritative Challenge Settings
+Authoritative gameplay tracking
         ↓
-Players In The Session
+Players in the session
 ```
 
-This would allow the Host's survivor challenge configuration to control the multiplayer session without permanently overwriting each client's personal configuration.
+Some challenges use a shared session event when one player performs the required individual action. Other challenges maintain per-player counters so progress from different players is never incorrectly combined.
 
-Until multiplayer synchronization has been fully validated, multiplayer challenge behavior should be considered experimental.
+> ⚠ **Full multiplayer behavior is still experimental and undergoing validation.**
+
+Host-to-client configuration synchronization is also still under development and should not yet be considered fully validated.
 
 ---
 
@@ -518,7 +439,7 @@ Install Universal Survivor Unlocks using:
 - Thunderstore Mod Manager
 - r2modman
 
-Required dependencies should be installed automatically when installing the package with dependencies.
+Required dependencies should be installed automatically.
 
 ### Manual Installation
 
@@ -546,11 +467,12 @@ BepInEx/
 | Dependency |
 |---|
 | BepInExPack |
+| R2API Core |
 | R2API ContentManagement |
 | R2API Language |
 | R2API Unlockable |
 
-Exact package dependency versions are defined in:
+Exact dependency versions are defined in:
 
 ```text
 manifest.json
@@ -581,8 +503,6 @@ and search for:
 Universal Survivor Unlocks
 ```
 
-The log contains detailed survivor detection information.
-
 ### Survivor Is Not Locked
 
 The survivor may already provide its own unlock requirement.
@@ -591,15 +511,13 @@ Universal Survivor Unlocks intentionally respects progression systems created by
 
 ### Survivor Was Uninstalled
 
-Universal Survivor Unlocks preserves previously detected survivor configuration where possible.
-
 The survivor may appear under:
 
 ```json
 "unavailableSurvivors"
 ```
 
-When the survivor mod becomes available again, its previous configuration can be restored.
+When the survivor mod becomes available again, its saved configuration can be restored.
 
 ### Configuration Problems
 
@@ -615,20 +533,20 @@ Make sure the JSON syntax is valid.
 
 ## ⚠ Fields Normally Managed Automatically
 
-Avoid manually changing:
+Avoid manually changing metadata fields such as:
 
-| Field |
-|---|
-| `displayName` |
-| `internalName` |
-| `bodyName` |
-| `source` |
-| `originalUnlock` |
-| `available` |
-| `status` |
-| `reason` |
+```text
+displayName
+internalName
+bodyName
+source
+originalUnlock
+available
+status
+reason
+```
 
-The recommended editable section is:
+Challenge-related fields live under:
 
 ```text
 challenge
@@ -638,36 +556,17 @@ challenge
 
 ## ✦ Current Development
 
-Current and planned development areas include:
+Current development areas include:
 
-- additional gameplay challenge types,
-- survivor-specific default challenge presets,
-- Host-authoritative multiplayer configuration,
-- multiplayer synchronization,
-- multiplayer compatibility testing,
-- kill-based challenges,
-- healing-based challenges,
-- boss-related challenges,
-- elite enemy challenges,
-- stage progression challenges,
-- difficulty-based challenges,
-- run completion challenges,
+- general gameplay validation of the new built-in presets,
+- multiplayer validation,
+- host-authoritative configuration synchronization,
+- broader explosion-source compatibility,
+- future in-game challenge configuration,
+- custom user-created presets,
+- localization support,
+- additional reusable challenge types,
 - additional survivor compatibility testing.
-
----
-
-## ✦ Planned Challenge Examples
-
-| Example |
-|---|
-| Kill a configured number of enemies |
-| Defeat specific bosses |
-| Reach a specific stage |
-| Complete a run on a specific difficulty |
-| Heal a configured amount of health |
-| Complete special survivor-specific objectives |
-
-These examples are development goals and do not necessarily represent currently implemented challenge types.
 
 ---
 

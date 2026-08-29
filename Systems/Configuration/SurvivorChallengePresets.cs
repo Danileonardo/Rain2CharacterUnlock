@@ -10,20 +10,14 @@ namespace UniversalSurvivorUnlocks
         // =========================================================
         //
         // true:
-        // Durante el desarrollo, los presets definidos aquí
-        // son la fuente de verdad.
+        // Los presets definidos aquí son la fuente de verdad
+        // durante el desarrollo.
         //
-        // Cuando cambiemos nombre, descripción, tipo o parámetros,
-        // SurvivorJsonManager actualizará automáticamente la copia
-        // guardada en Survivors.json.
+        // Podemos modificar nombre, descripción, tipo y parámetros
+        // libremente y Survivors.json se actualizará al iniciar.
         //
         // false:
-        // Comportamiento pensado para la versión final.
-        // El preset sólo se utilizará al crear/configurar por
-        // primera vez al survivor.
-        //
-        // Más adelante, antes de publicar la versión definitiva,
-        // cambiaremos este valor a false.
+        // Comportamiento futuro para la versión pública.
         // =========================================================
 
         public const bool AuthoringMode =
@@ -99,6 +93,180 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
+        // JHIN
+        // =========================================================
+
+        public static SurvivorChallengeJson CreateJhinPreset()
+        {
+            return new SurvivorChallengeJson
+            {
+                Enabled =
+                    true,
+
+                Name =
+                    "El Cuarto Acto",
+
+                Description =
+                    "Asesta el golpe final a un jefe con un crítico\n" +
+                    "de 4444 de daño o más en una sola partida.",
+
+                Type =
+                    "BossCriticalKill",
+
+                Parameters =
+                    new JObject
+                    {
+                        ["minimumDamage"] =
+                            4444,
+
+                        ["singleRun"] =
+                            true
+                    }
+            };
+        }
+
+        // =========================================================
+        // SCOUT
+        // =========================================================
+
+        public static SurvivorChallengeJson CreateScoutPreset()
+        {
+            return new SurvivorChallengeJson
+            {
+                Enabled =
+                    true,
+
+                Name =
+                    "Energía Atómica",
+
+                Description =
+                    "Acumula 15 Bebidas energéticas en total durante \n" +
+                    "la partida.",
+
+                Type =
+                    "HoldItemStack",
+
+                Parameters =
+                    new JObject
+                    {
+                        ["item"] =
+                            "SprintBonus",
+
+                        ["amount"] =
+                            15,
+
+                        ["singleRun"] =
+                            true
+                    }
+            };
+        }
+
+        // =========================================================
+        // SPY
+        // =========================================================
+
+        public static SurvivorChallengeJson CreateSpyPreset()
+        {
+            return new SurvivorChallengeJson
+            {
+                Enabled =
+                    true,
+
+                Name =
+                    "Sin que me veas venir",
+
+                Description =
+                    "Mata a un jefe apuñalándolo por la espalda\n" +
+                    "con la Daga dentada de Bandit.",
+
+                Type =
+                    "BackstabBossKill",
+
+                Parameters =
+                    new JObject
+                    {
+                        ["singleRun"] =
+                            true
+                    }
+            };
+        }
+
+        // =========================================================
+        // ROCKET
+        // =========================================================
+
+        public static SurvivorChallengeJson CreateRocketPreset()
+        {
+            return new SurvivorChallengeJson
+            {
+                Enabled =
+                    true,
+
+                Name =
+                    "La gravedad es opcional",
+
+                Description =
+                    "Mata a 15 enemigos con explosiones\n" +
+                    "sin tocar el suelo.",
+
+                Type =
+                    "AirborneExplosionKills",
+
+                Parameters =
+                    new JObject
+                    {
+                        ["amount"] =
+                            15,
+
+                        ["resetOnGround"] =
+                            true,
+
+                        ["countOwnedMinions"] =
+                            true,
+
+                        ["singleRun"] =
+                            true
+                    }
+            };
+        }
+
+        // =========================================================
+        // HUNK
+        // =========================================================
+
+        public static SurvivorChallengeJson CreateHunkPreset()
+        {
+            return new SurvivorChallengeJson
+            {
+                Enabled =
+                    true,
+
+                Name =
+                    "La Parca No Falla",
+
+                Description =
+                    "Logra 32 impactos seguidos a puntos débiles con Railgunner\n" +
+                    "o 16 bajas seguidas con Lights Out de Bandit.",
+
+                Type =
+                    "PrecisionExecutionStreak",
+
+                Parameters =
+                    new JObject
+                    {
+                        ["railgunnerWeakPoints"] =
+                            24,
+
+                        ["banditLightsOutKills"] =
+                            24,
+
+                        ["singleRun"] =
+                            true
+                    }
+            };
+        }
+
+        // =========================================================
         // ¿ES SORA?
         // =========================================================
 
@@ -147,16 +315,123 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
-        // OBTENER PRESET PARA SURVIVOR CONOCIDO
+        // ¿ES JHIN?
         // =========================================================
-        //
-        // Este es el punto central.
-        //
-        // Cada survivor al que nosotros le creemos una misión
-        // predeterminada debe agregarse aquí.
-        //
-        // Los survivors sin preset específico seguirán utilizando
-        // el desafío genérico configurado por SurvivorJsonManager.
+
+        private static bool IsJhin(
+            string bodyName,
+            string contentPackIdentifier
+        )
+        {
+            return
+                string.Equals(
+                    bodyName,
+                    "JhinBody",
+                    StringComparison.Ordinal
+                )
+                &&
+                string.Equals(
+                    contentPackIdentifier,
+                    "com.seroronin.JhinMod",
+                    StringComparison.OrdinalIgnoreCase
+                );
+        }
+
+        // =========================================================
+        // ¿ES SCOUT?
+        // =========================================================
+
+        private static bool IsScout(
+            string bodyName,
+            string contentPackIdentifier
+        )
+        {
+            return
+                string.Equals(
+                    bodyName,
+                    "ScoutBody",
+                    StringComparison.Ordinal
+                )
+                &&
+                string.Equals(
+                    contentPackIdentifier,
+                    "com.kenko.Scout",
+                    StringComparison.OrdinalIgnoreCase
+                );
+        }
+
+        // =========================================================
+        // ¿ES SPY?
+        // =========================================================
+
+        private static bool IsSpy(
+            string bodyName,
+            string contentPackIdentifier
+        )
+        {
+            return
+                string.Equals(
+                    bodyName,
+                    "SpyBody",
+                    StringComparison.Ordinal
+                )
+                &&
+                string.Equals(
+                    contentPackIdentifier,
+                    "com.kenko.Spy",
+                    StringComparison.OrdinalIgnoreCase
+                );
+        }
+
+        // =========================================================
+        // ¿ES ROCKET?
+        // =========================================================
+
+        private static bool IsRocket(
+            string bodyName,
+            string contentPackIdentifier
+        )
+        {
+            return
+                string.Equals(
+                    bodyName,
+                    "RocketSurvivorBody",
+                    StringComparison.Ordinal
+                )
+                &&
+                string.Equals(
+                    contentPackIdentifier,
+                    "com.EnforcerGang.RocketSurvivor",
+                    StringComparison.OrdinalIgnoreCase
+                );
+        }
+
+        // =========================================================
+        // ¿ES HUNK?
+        // =========================================================
+
+        private static bool IsHunk(
+            string bodyName,
+            string contentPackIdentifier
+        )
+        {
+            return
+                string.Equals(
+                    bodyName,
+                    "RobHunkBody",
+                    StringComparison.Ordinal
+                )
+                &&
+                string.Equals(
+                    contentPackIdentifier,
+                    "com.rob.Hunk",
+                    StringComparison.OrdinalIgnoreCase
+                );
+        }
+
+
+        // =========================================================
+        // OBTENER PRESET PARA SURVIVOR CONOCIDO
         // =========================================================
 
         public static bool TryCreatePreset(
@@ -206,6 +481,91 @@ namespace UniversalSurvivorUnlocks
 
 
             // =====================================================
+            // JHIN
+            // =====================================================
+
+            if (
+                IsJhin(
+                    bodyName,
+                    contentPackIdentifier
+                )
+            )
+            {
+                challenge =
+                    CreateJhinPreset();
+
+                return true;
+            }
+
+            // =====================================================
+            // SCOUT
+            // =====================================================
+
+            if (
+                IsScout(
+                    bodyName,
+                    contentPackIdentifier
+                )
+            )
+            {
+                challenge =
+                    CreateScoutPreset();
+
+                return true;
+            }
+
+            // =====================================================
+            // SPY
+            // =====================================================
+
+            if (
+                IsSpy(
+                    bodyName,
+                    contentPackIdentifier
+                )
+            )
+            {
+                challenge =
+                    CreateSpyPreset();
+
+                return true;
+            }
+
+            // =====================================================
+            // ROCKET
+            // =====================================================
+
+            if (
+                IsRocket(
+                    bodyName,
+                    contentPackIdentifier
+                )
+            )
+            {
+                challenge =
+                    CreateRocketPreset();
+
+                return true;
+            }
+
+            // =====================================================
+            // HUNK
+            // =====================================================
+
+            if (
+                IsHunk(
+                    bodyName,
+                    contentPackIdentifier
+                )
+            )
+            {
+                challenge =
+                    CreateHunkPreset();
+
+                return true;
+            }
+
+            // =====================================================
             // NO EXISTE PRESET ESPECÍFICO
             // =====================================================
 
@@ -214,23 +574,7 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
-        // COMPATIBILIDAD TEMPORAL
-        // =========================================================
-        //
-        // SurvivorJsonManager todavía llama a este método.
-        //
-        // Ya NO realizamos migraciones del tipo:
-        //
-        // Guerrero de la llave
-        // ->
-        // Elegido de la Llave Espada
-        //
-        // porque durante el desarrollo los presets todavía
-        // están siendo diseñados.
-        //
-        // En el siguiente paso modificaremos SurvivorJsonManager
-        // para utilizar AuthoringMode y podremos eliminar
-        // definitivamente este método.
+        // COMPATIBILIDAD TEMPORAL / FUTURA
         // =========================================================
 
         public static bool TryMigrateLegacyPreset(
