@@ -6,6 +6,31 @@ namespace UniversalSurvivorUnlocks
     public static class SurvivorChallengePresets
     {
         // =========================================================
+        // MODO DE AUTORÍA
+        // =========================================================
+        //
+        // true:
+        // Durante el desarrollo, los presets definidos aquí
+        // son la fuente de verdad.
+        //
+        // Cuando cambiemos nombre, descripción, tipo o parámetros,
+        // SurvivorJsonManager actualizará automáticamente la copia
+        // guardada en Survivors.json.
+        //
+        // false:
+        // Comportamiento pensado para la versión final.
+        // El preset sólo se utilizará al crear/configurar por
+        // primera vez al survivor.
+        //
+        // Más adelante, antes de publicar la versión definitiva,
+        // cambiaremos este valor a false.
+        // =========================================================
+
+        public const bool AuthoringMode =
+            true;
+
+
+        // =========================================================
         // SORA
         // =========================================================
 
@@ -13,17 +38,28 @@ namespace UniversalSurvivorUnlocks
         {
             return new SurvivorChallengeJson
             {
-                Enabled = true,
+                Enabled =
+                    true,
 
-                Name = "Guerrero de la llave",
+                Name =
+                    "Elegido de la Llave Espada",
 
-                Type = "ApplyStatusEffects",
+                Description =
+                    "Mantén 100 efectos de estado válidos activos\n" +
+                    "simultáneamente en una partida.",
 
-                Parameters = new JObject
-                {
-                    ["amount"] = 100,
-                    ["singleRun"] = true
-                }
+                Type =
+                    "ApplyStatusEffects",
+
+                Parameters =
+                    new JObject
+                    {
+                        ["amount"] =
+                            100,
+
+                        ["singleRun"] =
+                            true
+                    }
             };
         }
 
@@ -36,17 +72,28 @@ namespace UniversalSurvivorUnlocks
         {
             return new SurvivorChallengeJson
             {
-                Enabled = true,
+                Enabled =
+                    true,
 
-                Name = "Oración de Esperanza",
+                Name =
+                    "Oración de Esperanza",
 
-                Type = "HealHealth",
+                Description =
+                    "Restaura un total de 5000 de salud a tu equipo\n" +
+                    "durante una sola partida.",
 
-                Parameters = new JObject
-                {
-                    ["amount"] = 5000,
-                    ["singleRun"] = true
-                }
+                Type =
+                    "HealHealth",
+
+                Parameters =
+                    new JObject
+                    {
+                        ["amount"] =
+                            5000,
+
+                        ["singleRun"] =
+                            true
+                    }
             };
         }
 
@@ -102,6 +149,15 @@ namespace UniversalSurvivorUnlocks
         // =========================================================
         // OBTENER PRESET PARA SURVIVOR CONOCIDO
         // =========================================================
+        //
+        // Este es el punto central.
+        //
+        // Cada survivor al que nosotros le creemos una misión
+        // predeterminada debe agregarse aquí.
+        //
+        // Los survivors sin preset específico seguirán utilizando
+        // el desafío genérico configurado por SurvivorJsonManager.
+        // =========================================================
 
         public static bool TryCreatePreset(
             string bodyName,
@@ -109,7 +165,8 @@ namespace UniversalSurvivorUnlocks
             out SurvivorChallengeJson challenge
         )
         {
-            challenge = null;
+            challenge =
+                null;
 
 
             // =====================================================
@@ -157,7 +214,23 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
-        // MIGRAR PRESETS AUTOMÁTICOS ANTIGUOS
+        // COMPATIBILIDAD TEMPORAL
+        // =========================================================
+        //
+        // SurvivorJsonManager todavía llama a este método.
+        //
+        // Ya NO realizamos migraciones del tipo:
+        //
+        // Guerrero de la llave
+        // ->
+        // Elegido de la Llave Espada
+        //
+        // porque durante el desarrollo los presets todavía
+        // están siendo diseñados.
+        //
+        // En el siguiente paso modificaremos SurvivorJsonManager
+        // para utilizar AuthoringMode y podremos eliminar
+        // definitivamente este método.
         // =========================================================
 
         public static bool TryMigrateLegacyPreset(
@@ -167,368 +240,10 @@ namespace UniversalSurvivorUnlocks
             out SurvivorChallengeJson migratedChallenge
         )
         {
-            migratedChallenge = null;
-
-
-            // =====================================================
-            // MIGRACIÓN DEL PRESET ANTERIOR DE RALSEI
-            //
-            // Rey Sanador
-            // HealHealth
-            // amount = 5000
-            // singleRun = true
-            //
-            // ->
-            //
-            // Oración de Esperanza
-            // HealHealth
-            // amount = 5000
-            // singleRun = true
-            // =====================================================
-
-            if (
-                IsRalsei(
-                    bodyName,
-                    contentPackIdentifier
-                )
-                &&
-                IsPreviousRalseiPreset(
-                    currentChallenge
-                )
-            )
-            {
-                migratedChallenge =
-                    CreateRalseiPreset();
-
-                return true;
-            }
-
-
-            /*
-             * A partir de aquí comprobamos el
-             * challenge genérico automático usado
-             * por versiones antiguas:
-             *
-             * Desafío de desbloqueo
-             * KillEnemies
-             * amount = 100
-             *
-             * Si el usuario modificó cualquier cosa,
-             * NO se toca.
-             */
-            if (
-                !IsLegacyAutomaticChallenge(
-                    currentChallenge
-                )
-            )
-            {
-                return false;
-            }
-
-
-            // =====================================================
-            // SORA
-            // =====================================================
-
-            if (
-                IsSora(
-                    bodyName,
-                    contentPackIdentifier
-                )
-            )
-            {
-                migratedChallenge =
-                    CreateSoraPreset();
-
-                return true;
-            }
-
-
-            // =====================================================
-            // RALSEI
-            // =====================================================
-
-            if (
-                IsRalsei(
-                    bodyName,
-                    contentPackIdentifier
-                )
-            )
-            {
-                migratedChallenge =
-                    CreateRalseiPreset();
-
-                return true;
-            }
-
-
-            // =====================================================
-            // NO HAY MIGRACIÓN CONOCIDA
-            // =====================================================
+            migratedChallenge =
+                null;
 
             return false;
-        }
-
-
-        // =========================================================
-        // ¿ES EL PRESET ANTERIOR DE RALSEI?
-        // =========================================================
-
-        private static bool IsPreviousRalseiPreset(
-            SurvivorChallengeJson challenge
-        )
-        {
-            if (challenge == null)
-            {
-                return false;
-            }
-
-
-            if (!challenge.Enabled)
-            {
-                return false;
-            }
-
-
-            if (
-                !string.Equals(
-                    challenge.Name,
-                    "Rey Sanador",
-                    StringComparison.Ordinal
-                )
-            )
-            {
-                return false;
-            }
-
-
-            if (
-                !string.Equals(
-                    challenge.Type,
-                    "HealHealth",
-                    StringComparison.OrdinalIgnoreCase
-                )
-            )
-            {
-                return false;
-            }
-
-
-            if (challenge.Parameters == null)
-            {
-                return false;
-            }
-
-
-            /*
-             * El preset anterior tenía exactamente:
-             *
-             * amount
-             * singleRun
-             *
-             * Si aparecen parámetros adicionales,
-             * asumimos que el usuario lo personalizó.
-             */
-            int parameterCount = 0;
-
-            foreach (
-                JProperty property
-                in challenge.Parameters.Properties()
-            )
-            {
-                parameterCount++;
-            }
-
-
-            if (parameterCount != 2)
-            {
-                return false;
-            }
-
-
-            JToken amountToken =
-                challenge.Parameters["amount"];
-
-
-            JToken singleRunToken =
-                challenge.Parameters["singleRun"];
-
-
-            if (
-                amountToken == null ||
-                singleRunToken == null
-            )
-            {
-                return false;
-            }
-
-
-            if (
-                !int.TryParse(
-                    amountToken.ToString(),
-                    out int amount
-                )
-            )
-            {
-                return false;
-            }
-
-
-            if (amount != 5000)
-            {
-                return false;
-            }
-
-
-            if (
-                !bool.TryParse(
-                    singleRunToken.ToString(),
-                    out bool singleRun
-                )
-            )
-            {
-                return false;
-            }
-
-
-            if (!singleRun)
-            {
-                return false;
-            }
-
-
-            /*
-             * Si tiene propiedades desconocidas
-             * agregadas por el usuario,
-             * tampoco migramos automáticamente.
-             */
-            if (
-                challenge.ExtraData != null &&
-                challenge.ExtraData.Count > 0
-            )
-            {
-                return false;
-            }
-
-
-            return true;
-        }
-
-
-        // =========================================================
-        // ¿ES EL CHALLENGE GENÉRICO ANTIGUO?
-        // =========================================================
-
-        private static bool IsLegacyAutomaticChallenge(
-            SurvivorChallengeJson challenge
-        )
-        {
-            if (challenge == null)
-            {
-                return false;
-            }
-
-
-            if (!challenge.Enabled)
-            {
-                return false;
-            }
-
-
-            if (
-                !string.Equals(
-                    challenge.Name,
-                    "Desafío de desbloqueo",
-                    StringComparison.Ordinal
-                )
-            )
-            {
-                return false;
-            }
-
-
-            if (
-                !string.Equals(
-                    challenge.Type,
-                    "KillEnemies",
-                    StringComparison.OrdinalIgnoreCase
-                )
-            )
-            {
-                return false;
-            }
-
-
-            if (challenge.Parameters == null)
-            {
-                return false;
-            }
-
-
-            /*
-             * Si tiene parámetros adicionales,
-             * asumimos que el usuario modificó
-             * la configuración.
-             */
-            int parameterCount = 0;
-
-            foreach (
-                JProperty property
-                in challenge.Parameters.Properties()
-            )
-            {
-                parameterCount++;
-            }
-
-
-            if (parameterCount != 1)
-            {
-                return false;
-            }
-
-
-            JToken amountToken =
-                challenge.Parameters["amount"];
-
-
-            if (amountToken == null)
-            {
-                return false;
-            }
-
-
-            if (
-                !int.TryParse(
-                    amountToken.ToString(),
-                    out int amount
-                )
-            )
-            {
-                return false;
-            }
-
-
-            if (amount != 100)
-            {
-                return false;
-            }
-
-
-            /*
-             * Si existen propiedades desconocidas
-             * agregadas por el usuario,
-             * tampoco migramos automáticamente.
-             */
-            if (
-                challenge.ExtraData != null &&
-                challenge.ExtraData.Count > 0
-            )
-            {
-                return false;
-            }
-
-
-            return true;
         }
     }
 }

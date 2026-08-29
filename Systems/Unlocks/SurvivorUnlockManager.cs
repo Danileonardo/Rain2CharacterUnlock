@@ -1353,8 +1353,8 @@ namespace UniversalSurvivorUnlocks
         // =========================================================
 
         private static string BuildChallengeDescription(
-            SurvivorJsonEntry entry
-        )
+    SurvivorJsonEntry entry
+)
         {
             if (
                 entry == null ||
@@ -1366,9 +1366,43 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            // =========================================================
+            // DESCRIPCIÓN PERSONALIZADA / PRESET
+            // =========================================================
+            //
+            // Si el challenge contiene una descripción escrita,
+            // esa descripción tiene prioridad.
+            //
+            // Esto permite que SurvivorChallengePresets.cs
+            // controle directamente:
+            //
+            // - Nombre
+            // - Descripción
+            // - Tipo
+            // - Parámetros
+            //
+            // Si Description está vacío, usamos el sistema
+            // automático de abajo como fallback.
+            // =========================================================
+
+            if (
+                !string.IsNullOrWhiteSpace(
+                    entry.Challenge.Description
+                )
+            )
+            {
+                return
+                    entry.Challenge.Description;
+            }
+
+
             JObject parameters =
                 entry.Challenge.Parameters;
 
+
+            // =========================================================
+            // DESCRIPCIONES AUTOMÁTICAS
+            // =========================================================
 
             switch (entry.Challenge.Type)
             {
@@ -1431,6 +1465,7 @@ namespace UniversalSurvivorUnlocks
                             $"Alcanza la fase {stage}.";
                     }
 
+
                 case "ApplyStatusEffects":
                     {
                         int amount =
@@ -1445,6 +1480,7 @@ namespace UniversalSurvivorUnlocks
                             $"Mantén {amount} efectos de estado válidos activos " +
                             $"simultáneamente en una partida.";
                     }
+
 
                 case "HealHealth":
                     {

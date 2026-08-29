@@ -27,7 +27,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public const string PluginVersion =
-            "0.1.4";
+            "0.1.5";
 
 
         public static List<SurvivorInfo> Survivors

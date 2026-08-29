@@ -19,11 +19,13 @@ namespace UniversalSurvivorUnlocks
             private set;
         } = new SurvivorJsonFile();
 
+
         private static string ConfigDirectory =>
             System.IO.Path.Combine(
                 BepInEx.Paths.ConfigPath,
                 "UniversalSurvivorUnlocks"
             );
+
 
         private static string JsonPath =>
             System.IO.Path.Combine(
@@ -31,15 +33,21 @@ namespace UniversalSurvivorUnlocks
                 "Survivors.json"
             );
 
+
         private static string BackupPath =>
             System.IO.Path.Combine(
                 ConfigDirectory,
                 "Survivors.backup.json"
             );
 
+
+        // =========================================================
+        // CARGA INICIAL
+        // =========================================================
+
         public static void LoadForStartup(
-    ManualLogSource logger
-)
+            ManualLogSource logger
+        )
         {
             Directory.CreateDirectory(
                 ConfigDirectory
@@ -62,13 +70,45 @@ namespace UniversalSurvivorUnlocks
 
 
             // =====================================================
-            // MIGRACIONES DE PRESETS CONOCIDOS
+            // MODO DE AUTORÍA
+            // =====================================================
+            //
+            // Durante el desarrollo:
+            //
+            // SurvivorChallengePresets.cs
+            //          ↓
+            //     fuente de verdad
+            //          ↓
+            //     Survivors.json
+            //
+            // Esto permite cambiar libremente
+            // nombre, descripción, tipo y parámetros
+            // de los presets originales.
+            //
+            // Cuando AuthoringMode sea false,
+            // esta sincronización NO ocurrirá.
             // =====================================================
 
-            ApplyKnownPresetMigrations(
-                CurrentConfig,
-                logger
-            );
+            if (
+                SurvivorChallengePresets
+                    .AuthoringMode
+            )
+            {
+                bool changed =
+                    ApplyAuthoringPresets(
+                        CurrentConfig,
+                        logger
+                    );
+
+
+                if (changed)
+                {
+                    Save(
+                        CurrentConfig,
+                        logger
+                    );
+                }
+            }
 
 
             logger.LogInfo(
@@ -78,72 +118,52 @@ namespace UniversalSurvivorUnlocks
             );
         }
 
+
         // =========================================================
-        // MIGRAR PRESETS ANTIGUOS
+        // SINCRONIZAR PRESETS DURANTE AUTORÍA
         // =========================================================
 
-        private static void ApplyKnownPresetMigrations(
+        private static bool ApplyAuthoringPresets(
             SurvivorJsonFile file,
             ManualLogSource logger
         )
         {
-            if (file == null)
+            if (
+                file == null ||
+                !SurvivorChallengePresets.AuthoringMode
+            )
             {
-                return;
+                return false;
             }
 
 
-            int migrated =
-                0;
+            bool changed =
+                false;
 
 
-            migrated +=
-                ApplyKnownPresetMigrationsToEntries(
+            changed |=
+                ApplyAuthoringPresetsToEntries(
                     file.AvailableSurvivors,
                     logger
                 );
 
 
-            migrated +=
-                ApplyKnownPresetMigrationsToEntries(
+            changed |=
+                ApplyAuthoringPresetsToEntries(
                     file.UnavailableSurvivors,
                     logger
                 );
 
 
-            if (migrated <= 0)
-            {
-                return;
-            }
-
-
-            /*
-             * Guardamos inmediatamente.
-             *
-             * Esto es importante porque después de
-             * LoadForStartup() se registran los
-             * UnlockableDef / AchievementDef.
-             *
-             * Necesitamos que ya utilicen la nueva
-             * configuración durante este mismo arranque.
-             */
-            Save(
-                file,
-                logger
-            );
-
-
-            logger.LogInfo(
-                $"Migraciones de presets aplicadas: {migrated}"
-            );
+            return changed;
         }
 
 
         // =========================================================
-        // MIGRAR UNA COLECCIÓN DE SURVIVORS
+        // SINCRONIZAR UNA COLECCIÓN DE SURVIVORS
         // =========================================================
 
-        private static int ApplyKnownPresetMigrationsToEntries(
+        private static bool ApplyAuthoringPresetsToEntries(
             Dictionary<
                 string,
                 SurvivorJsonEntry
@@ -153,12 +173,12 @@ namespace UniversalSurvivorUnlocks
         {
             if (entries == null)
             {
-                return 0;
+                return false;
             }
 
 
-            int migrated =
-                0;
+            bool changed =
+                false;
 
 
             foreach (
@@ -191,13 +211,16 @@ namespace UniversalSurvivorUnlocks
                     entry.Source;
 
 
+                // =================================================
+                // ¿USU TIENE UN PRESET PARA ESTE SURVIVOR?
+                // =================================================
+
                 if (
                     !SurvivorChallengePresets
-                        .TryMigrateLegacyPreset(
+                        .TryCreatePreset(
                             bodyName,
                             contentPackIdentifier,
-                            entry.Challenge,
-                            out SurvivorChallengeJson migratedChallenge
+                            out SurvivorChallengeJson preset
                         )
                 )
                 {
@@ -205,26 +228,104 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
+                // =================================================
+                // YA ESTÁ ACTUALIZADO
+                // =================================================
+
+                if (
+                    ChallengesAreEqual(
+                        entry.Challenge,
+                        preset
+                    )
+                )
+                {
+                    continue;
+                }
+
+
+                // =================================================
+                // ACTUALIZAR DESDE EL PRESET DE AUTORÍA
+                // =================================================
+
                 entry.Challenge =
-                    migratedChallenge;
+                    preset;
 
 
-                migrated++;
+                changed =
+                    true;
 
 
-                logger.LogInfo(
-                    $"Preset legado migrado | " +
+                logger?.LogInfo(
+                    $"Preset de autoría actualizado | " +
                     $"Body: {bodyName} | " +
                     $"Pack: {contentPackIdentifier} | " +
-                    $"Nuevo challenge: " +
-                    $"{migratedChallenge.Name} / " +
-                    $"{migratedChallenge.Type}"
+                    $"Nombre: {preset.Name} | " +
+                    $"Tipo: {preset.Type}"
                 );
             }
 
 
-            return migrated;
+            return changed;
         }
+
+
+        // =========================================================
+        // COMPARAR DOS CHALLENGES
+        // =========================================================
+
+        private static bool ChallengesAreEqual(
+            SurvivorChallengeJson first,
+            SurvivorChallengeJson second
+        )
+        {
+            if (
+                first == null &&
+                second == null
+            )
+            {
+                return true;
+            }
+
+
+            if (
+                first == null ||
+                second == null
+            )
+            {
+                return false;
+            }
+
+
+            try
+            {
+                JToken firstToken =
+                    JToken.FromObject(
+                        first
+                    );
+
+
+                JToken secondToken =
+                    JToken.FromObject(
+                        second
+                    );
+
+
+                return JToken.DeepEquals(
+                    firstToken,
+                    secondToken
+                );
+            }
+            catch
+            {
+                /*
+                 * Si por alguna razón no se pueden
+                 * comparar, preferimos asumir que
+                 * son diferentes durante autoría.
+                 */
+                return false;
+            }
+        }
+
 
         // =========================================================
         // BUSCAR UN SURVIVOR EN TODO EL JSON
@@ -235,7 +336,9 @@ namespace UniversalSurvivorUnlocks
         )
         {
             if (
-                string.IsNullOrWhiteSpace(bodyName) ||
+                string.IsNullOrWhiteSpace(
+                    bodyName
+                ) ||
                 CurrentConfig == null
             )
             {
@@ -243,25 +346,41 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            if (CurrentConfig.AvailableSurvivors == null)
+            if (
+                CurrentConfig
+                    .AvailableSurvivors == null
+            )
             {
-                CurrentConfig.AvailableSurvivors =
-                    new Dictionary<string, SurvivorJsonEntry>();
-            }
-
-
-            if (CurrentConfig.UnavailableSurvivors == null)
-            {
-                CurrentConfig.UnavailableSurvivors =
-                    new Dictionary<string, SurvivorJsonEntry>();
+                CurrentConfig
+                    .AvailableSurvivors =
+                    new Dictionary<
+                        string,
+                        SurvivorJsonEntry
+                    >();
             }
 
 
             if (
-                CurrentConfig.AvailableSurvivors.TryGetValue(
-                    bodyName,
-                    out SurvivorJsonEntry availableEntry
-                )
+                CurrentConfig
+                    .UnavailableSurvivors == null
+            )
+            {
+                CurrentConfig
+                    .UnavailableSurvivors =
+                    new Dictionary<
+                        string,
+                        SurvivorJsonEntry
+                    >();
+            }
+
+
+            if (
+                CurrentConfig
+                    .AvailableSurvivors
+                    .TryGetValue(
+                        bodyName,
+                        out SurvivorJsonEntry availableEntry
+                    )
             )
             {
                 return availableEntry;
@@ -269,10 +388,12 @@ namespace UniversalSurvivorUnlocks
 
 
             if (
-                CurrentConfig.UnavailableSurvivors.TryGetValue(
-                    bodyName,
-                    out SurvivorJsonEntry unavailableEntry
-                )
+                CurrentConfig
+                    .UnavailableSurvivors
+                    .TryGetValue(
+                        bodyName,
+                        out SurvivorJsonEntry unavailableEntry
+                    )
             )
             {
                 return unavailableEntry;
@@ -309,12 +430,11 @@ namespace UniversalSurvivorUnlocks
 
 
             /*
-             * Si el survivor ya existe en el JSON,
-             * respetamos completamente su configuración.
+             * Si ya existe, respetamos la entrada
+             * almacenada.
              *
-             * Esto significa que un preset NUNCA
-             * sobrescribirá una configuración que
-             * el usuario ya tenga.
+             * Durante AuthoringMode, los presets
+             * conocidos son sincronizados aparte.
              */
             SurvivorJsonEntry existing =
                 GetEntryAnywhere(
@@ -378,8 +498,9 @@ namespace UniversalSurvivorUnlocks
 
             /*
              * Fallback:
+             *
              * SoraBody -> Sora
-             * PaladinBody -> Paladin
+             * RalseiBody -> Ralsei
              */
             if (
                 displayName == bodyName &&
@@ -427,6 +548,9 @@ namespace UniversalSurvivorUnlocks
 
                         Name =
                             "Desafío de desbloqueo",
+
+                        Description =
+                            "",
 
                         Type =
                             "KillEnemies",
@@ -500,9 +624,13 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            if (CurrentConfig.AvailableSurvivors == null)
+            if (
+                CurrentConfig
+                    .AvailableSurvivors == null
+            )
             {
-                CurrentConfig.AvailableSurvivors =
+                CurrentConfig
+                    .AvailableSurvivors =
                     new Dictionary<
                         string,
                         SurvivorJsonEntry
@@ -510,9 +638,13 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            if (CurrentConfig.UnavailableSurvivors == null)
+            if (
+                CurrentConfig
+                    .UnavailableSurvivors == null
+            )
             {
-                CurrentConfig.UnavailableSurvivors =
+                CurrentConfig
+                    .UnavailableSurvivors =
                     new Dictionary<
                         string,
                         SurvivorJsonEntry
@@ -574,30 +706,40 @@ namespace UniversalSurvivorUnlocks
             return entry;
         }
 
+
+        // =========================================================
+        // SINCRONIZAR SURVIVORS DETECTADOS
+        // =========================================================
+
         public static void Sync(
-    List<SurvivorInfo> detectedSurvivors,
-    ManualLogSource logger
-)
+            List<SurvivorInfo> detectedSurvivors,
+            ManualLogSource logger
+        )
         {
             Directory.CreateDirectory(
                 ConfigDirectory
             );
 
+
             /*
- * NO volvemos a leer Survivors.json.
- *
- * CurrentConfig puede contener survivors
- * descubiertos durante GenerateContentPackAsync
- * antes de que hayan sido escritos al disco.
- */
+             * NO volvemos a leer Survivors.json.
+             *
+             * CurrentConfig puede contener survivors
+             * descubiertos durante GenerateContentPackAsync
+             * antes de que hayan sido escritos al disco.
+             */
             SurvivorJsonFile existingFile =
                 CurrentConfig
                 ?? new SurvivorJsonFile();
 
 
-            if (existingFile.AvailableSurvivors == null)
+            if (
+                existingFile
+                    .AvailableSurvivors == null
+            )
             {
-                existingFile.AvailableSurvivors =
+                existingFile
+                    .AvailableSurvivors =
                     new Dictionary<
                         string,
                         SurvivorJsonEntry
@@ -605,48 +747,61 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            if (existingFile.UnavailableSurvivors == null)
+            if (
+                existingFile
+                    .UnavailableSurvivors == null
+            )
             {
-                existingFile.UnavailableSurvivors =
+                existingFile
+                    .UnavailableSurvivors =
                     new Dictionary<
                         string,
                         SurvivorJsonEntry
                     >();
             }
+
 
             /*
              * Recuperamos las configuraciones anteriores.
              *
-             * Esto nos permite conservar una misión si un
-             * survivor modded desaparece y vuelve después.
+             * Esto nos permite conservar una misión
+             * si un survivor modded desaparece y
+             * vuelve después.
              */
-            Dictionary<string, SurvivorJsonEntry> savedRecords =
+            Dictionary<
+                string,
+                SurvivorJsonEntry
+            > savedRecords =
                 CombineExistingRecords(
                     existingFile
                 );
 
+
             SurvivorJsonFile newFile =
                 new SurvivorJsonFile();
 
+
             /*
-             * Survivors MOD que están actualmente instalados.
+             * Survivors MOD actualmente instalados.
              */
             HashSet<string> detectedModdedIds =
                 new HashSet<string>();
 
+
             /*
              * Survivors oficiales detectados.
              *
-             * Sirve para eliminar del JSON cualquier registro
-             * antiguo de Vanilla o DLC.
+             * Sirve para eliminar del JSON
+             * cualquier registro antiguo de
+             * Vanilla o DLC.
              */
             HashSet<string> detectedOfficialIds =
                 new HashSet<string>();
 
 
-            // =========================================================
+            // =====================================================
             // DETECTAR Y CLASIFICAR
-            // =========================================================
+            // =====================================================
 
             foreach (
                 SurvivorInfo survivor
@@ -658,11 +813,15 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
+
                 string id =
                     survivor.BodyName;
 
+
                 if (
-                    string.IsNullOrWhiteSpace(id) ||
+                    string.IsNullOrWhiteSpace(
+                        id
+                    ) ||
                     id == "Sin Body" ||
                     id == "UnknownBody"
                 )
@@ -671,19 +830,12 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                // =====================================================
+                // =================================================
                 // CONTENIDO OFICIAL
-                // =====================================================
+                // =================================================
 
                 if (!survivor.IsModded)
                 {
-                    /*
-                     * Vanilla y DLC se registran solamente
-                     * para saber que deben eliminarse de
-                     * cualquier JSON antiguo.
-                     *
-                     * NO los agregamos al nuevo JSON.
-                     */
                     detectedOfficialIds.Add(
                         id
                     );
@@ -692,9 +844,9 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                // =====================================================
+                // =================================================
                 // CONTENIDO MODDED
-                // =====================================================
+                // =================================================
 
                 detectedModdedIds.Add(
                     id
@@ -702,9 +854,8 @@ namespace UniversalSurvivorUnlocks
 
 
                 /*
-                 * Si un mod crea un SurvivorDef oculto o
-                 * no seleccionable tampoco queremos
-                 * configurarlo.
+                 * Survivors ocultos o no seleccionables
+                 * tampoco se configuran.
                  */
                 if (
                     survivor.Status ==
@@ -719,46 +870,39 @@ namespace UniversalSurvivorUnlocks
 
                 SurvivorJsonEntry entry;
 
+
                 /*
                  * Si ya existía una configuración,
                  * la recuperamos.
-                 *
-                 * Esto conserva la misión editada
-                 * por el usuario.
                  */
-                if (!savedRecords.TryGetValue(
-                    id,
-                    out entry
-                ))
+                if (
+                    !savedRecords.TryGetValue(
+                        id,
+                        out entry
+                    )
+                )
                 {
                     entry =
                         new SurvivorJsonEntry();
                 }
 
 
-                // =====================================================
+                // =================================================
                 // ACTUALIZAR METADATOS DEL MOD
-                // =====================================================
+                // =================================================
 
                 entry.DisplayName =
                     survivor.DisplayName;
 
+
                 entry.InternalName =
                     survivor.InternalName;
+
 
                 entry.BodyName =
                     survivor.BodyName;
 
 
-                /*
-                 * Ya NO usamos ExpansionName.
-                 *
-                 * Para personajes modded usamos el
-                 * identificador real de su ContentPack.
-                 *
-                 * Ejemplo:
-                 * com.Dragonyck.Sora
-                 */
                 if (
                     !string.IsNullOrWhiteSpace(
                         survivor.ContentPackIdentifier
@@ -795,9 +939,9 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                // =====================================================
+                // =================================================
                 // SURVIVOR MOD DISPONIBLE
-                // =====================================================
+                // =================================================
 
                 if (
                     survivor.Status ==
@@ -813,23 +957,29 @@ namespace UniversalSurvivorUnlocks
                     entry.Reason =
                         "";
 
+
                     newFile
-                        .AvailableSurvivors[id] =
+                        .AvailableSurvivors[
+                            id
+                        ] =
                         entry;
+
 
                     continue;
                 }
 
 
-                // =====================================================
+                // =================================================
                 // SURVIVOR MOD NO DISPONIBLE
-                // =====================================================
+                // =================================================
 
                 entry.Available =
                     false;
 
+
                 entry.Status =
                     survivor.Status.ToString();
+
 
                 if (
                     survivor.Status ==
@@ -846,15 +996,18 @@ namespace UniversalSurvivorUnlocks
                         "Survivor actualmente no disponible.";
                 }
 
+
                 newFile
-                    .UnavailableSurvivors[id] =
+                    .UnavailableSurvivors[
+                        id
+                    ] =
                     entry;
             }
 
 
-            // =========================================================
-            // CONSERVAR MODS QUE FUERON DESINSTALADOS
-            // =========================================================
+            // =====================================================
+            // CONSERVAR MODS DESINSTALADOS
+            // =====================================================
 
             foreach (
                 KeyValuePair<
@@ -868,10 +1021,6 @@ namespace UniversalSurvivorUnlocks
                     pair.Key;
 
 
-                /*
-                 * Si es un survivor oficial conocido,
-                 * lo descartamos definitivamente.
-                 */
                 if (
                     detectedOfficialIds.Contains(
                         id
@@ -882,10 +1031,6 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                /*
-                 * Si el survivor mod sigue instalado,
-                 * ya fue procesado arriba.
-                 */
                 if (
                     detectedModdedIds.Contains(
                         id
@@ -899,27 +1044,20 @@ namespace UniversalSurvivorUnlocks
                 SurvivorJsonEntry entry =
                     pair.Value;
 
+
                 if (entry == null)
                 {
                     continue;
                 }
 
 
-                /*
-                 * Este registro no pertenece actualmente
-                 * a ningún survivor oficial ni a ningún
-                 * survivor mod instalado.
-                 *
-                 * Lo consideramos contenido modded
-                 * que posiblemente fue desinstalado.
-                 *
-                 * Conservamos su configuración.
-                 */
                 entry.Available =
                     false;
 
+
                 entry.Status =
                     "MissingContent";
+
 
                 entry.Reason =
                     "Survivor mod no detectado. " +
@@ -934,21 +1072,52 @@ namespace UniversalSurvivorUnlocks
 
 
                 newFile
-                    .UnavailableSurvivors[id] =
+                    .UnavailableSurvivors[
+                        id
+                    ] =
                     entry;
             }
 
 
-            // =========================================================
+            // =====================================================
+            // MODO DE AUTORÍA
+            // =====================================================
+            //
+            // Aquí hacemos una segunda sincronización.
+            //
+            // Esto es útil porque durante Sync()
+            // acabamos de actualizar Source usando el
+            // ContentPackIdentifier real del survivor.
+            //
+            // De esta manera, aunque un JSON antiguo
+            // tuviera un Source diferente, el preset
+            // puede ser reconocido correctamente.
+            // =====================================================
+
+            if (
+                SurvivorChallengePresets
+                    .AuthoringMode
+            )
+            {
+                ApplyAuthoringPresets(
+                    newFile,
+                    logger
+                );
+            }
+
+
+            // =====================================================
             // TERMINAR
-            // =========================================================
+            // =====================================================
 
             SortEntries(
                 newFile
             );
 
+
             CurrentConfig =
                 newFile;
+
 
             Save(
                 newFile,
@@ -965,6 +1134,11 @@ namespace UniversalSurvivorUnlocks
             );
         }
 
+
+        // =========================================================
+        // CARGAR JSON EXISTENTE
+        // =========================================================
+
         private static bool TryLoadExisting(
             ManualLogSource logger,
             out SurvivorJsonFile file
@@ -973,10 +1147,12 @@ namespace UniversalSurvivorUnlocks
             file =
                 new SurvivorJsonFile();
 
+
             if (!File.Exists(JsonPath))
             {
                 return true;
             }
+
 
             try
             {
@@ -986,73 +1162,126 @@ namespace UniversalSurvivorUnlocks
                         Encoding.UTF8
                     );
 
+
                 SurvivorJsonFile loaded =
                     JsonConvert
-                        .DeserializeObject<SurvivorJsonFile>(
+                        .DeserializeObject<
+                            SurvivorJsonFile
+                        >(
                             json
                         );
 
+
                 if (loaded != null)
                 {
-                    file = loaded;
+                    file =
+                        loaded;
                 }
 
-                if (file.AvailableSurvivors == null)
+
+                if (
+                    file.AvailableSurvivors == null
+                )
                 {
                     file.AvailableSurvivors =
-                        new Dictionary<string, SurvivorJsonEntry>();
+                        new Dictionary<
+                            string,
+                            SurvivorJsonEntry
+                        >();
                 }
 
-                if (file.UnavailableSurvivors == null)
+
+                if (
+                    file.UnavailableSurvivors == null
+                )
                 {
                     file.UnavailableSurvivors =
-                        new Dictionary<string, SurvivorJsonEntry>();
+                        new Dictionary<
+                            string,
+                            SurvivorJsonEntry
+                        >();
                 }
+
 
                 return true;
             }
-            catch (Exception exception)
+            catch (
+                Exception exception
+            )
             {
                 logger.LogError(
                     "Survivors.json contiene un error y no será sobrescrito."
                 );
 
+
                 logger.LogError(
                     exception.Message
                 );
+
 
                 return false;
             }
         }
 
-        private static Dictionary<string, SurvivorJsonEntry>
-            CombineExistingRecords(
-                SurvivorJsonFile file
-            )
+
+        // =========================================================
+        // COMBINAR REGISTROS EXISTENTES
+        // =========================================================
+
+        private static Dictionary<
+            string,
+            SurvivorJsonEntry
+        > CombineExistingRecords(
+            SurvivorJsonFile file
+        )
         {
-            Dictionary<string, SurvivorJsonEntry> records =
-                new Dictionary<string, SurvivorJsonEntry>();
+            Dictionary<
+                string,
+                SurvivorJsonEntry
+            > records =
+                new Dictionary<
+                    string,
+                    SurvivorJsonEntry
+                >();
+
 
             foreach (
-                KeyValuePair<string, SurvivorJsonEntry> pair
+                KeyValuePair<
+                    string,
+                    SurvivorJsonEntry
+                > pair
                 in file.AvailableSurvivors
             )
             {
-                records[pair.Key] =
+                records[
+                    pair.Key
+                ] =
                     pair.Value;
             }
 
+
             foreach (
-                KeyValuePair<string, SurvivorJsonEntry> pair
+                KeyValuePair<
+                    string,
+                    SurvivorJsonEntry
+                > pair
                 in file.UnavailableSurvivors
             )
             {
-                records[pair.Key] =
+                records[
+                    pair.Key
+                ] =
                     pair.Value;
             }
 
+
             return records;
         }
+
+
+        // =========================================================
+        // ORDENAR
+        // =========================================================
 
         private static void SortEntries(
             SurvivorJsonFile file
@@ -1065,9 +1294,12 @@ namespace UniversalSurvivorUnlocks
                             pair.Value.DisplayName
                     )
                     .ToDictionary(
-                        pair => pair.Key,
-                        pair => pair.Value
+                        pair =>
+                            pair.Key,
+                        pair =>
+                            pair.Value
                     );
+
 
             file.UnavailableSurvivors =
                 file.UnavailableSurvivors
@@ -1076,10 +1308,17 @@ namespace UniversalSurvivorUnlocks
                             pair.Value.DisplayName
                     )
                     .ToDictionary(
-                        pair => pair.Key,
-                        pair => pair.Value
+                        pair =>
+                            pair.Key,
+                        pair =>
+                            pair.Value
                     );
         }
+
+
+        // =========================================================
+        // GUARDAR
+        // =========================================================
 
         private static void Save(
             SurvivorJsonFile file,
@@ -1088,7 +1327,11 @@ namespace UniversalSurvivorUnlocks
         {
             try
             {
-                if (File.Exists(JsonPath))
+                if (
+                    File.Exists(
+                        JsonPath
+                    )
+                )
                 {
                     File.Copy(
                         JsonPath,
@@ -1097,41 +1340,52 @@ namespace UniversalSurvivorUnlocks
                     );
                 }
 
+
                 string json =
                     JsonConvert.SerializeObject(
                         file,
                         Formatting.Indented
                     );
 
+
                 File.WriteAllText(
                     JsonPath,
                     json,
-                    new UTF8Encoding(false)
+                    new UTF8Encoding(
+                        false
+                    )
                 );
+
 
                 logger.LogInfo(
                     "Survivors.json actualizado correctamente."
                 );
+
 
                 logger.LogInfo(
                     $"Disponibles en JSON: " +
                     $"{file.AvailableSurvivors.Count}"
                 );
 
+
                 logger.LogInfo(
                     $"No disponibles en JSON: " +
                     $"{file.UnavailableSurvivors.Count}"
                 );
 
+
                 logger.LogInfo(
                     $"Ruta: {JsonPath}"
                 );
             }
-            catch (Exception exception)
+            catch (
+                Exception exception
+            )
             {
                 logger.LogError(
                     "No se pudo guardar Survivors.json."
                 );
+
 
                 logger.LogError(
                     exception.Message
