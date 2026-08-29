@@ -29,6 +29,29 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
+        // RALSEI
+        // =========================================================
+
+        public static SurvivorChallengeJson CreateRalseiPreset()
+        {
+            return new SurvivorChallengeJson
+            {
+                Enabled = true,
+
+                Name = "Oración de Esperanza",
+
+                Type = "HealHealth",
+
+                Parameters = new JObject
+                {
+                    ["amount"] = 5000,
+                    ["singleRun"] = true
+                }
+            };
+        }
+
+
+        // =========================================================
         // ¿ES SORA?
         // =========================================================
 
@@ -53,6 +76,30 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
+        // ¿ES RALSEI?
+        // =========================================================
+
+        private static bool IsRalsei(
+            string bodyName,
+            string contentPackIdentifier
+        )
+        {
+            return
+                string.Equals(
+                    bodyName,
+                    "RalseiBody",
+                    StringComparison.Ordinal
+                )
+                &&
+                string.Equals(
+                    contentPackIdentifier,
+                    "com.GodRayProd.RalseiMod",
+                    StringComparison.OrdinalIgnoreCase
+                );
+        }
+
+
+        // =========================================================
         // OBTENER PRESET PARA SURVIVOR CONOCIDO
         // =========================================================
 
@@ -67,12 +114,6 @@ namespace UniversalSurvivorUnlocks
 
             // =====================================================
             // SORA
-            //
-            // Mod original:
-            // com.Dragonyck.Sora
-            //
-            // Integración:
-            // Universal Survivor Unlocks
             // =====================================================
 
             if (
@@ -90,6 +131,24 @@ namespace UniversalSurvivorUnlocks
 
 
             // =====================================================
+            // RALSEI
+            // =====================================================
+
+            if (
+                IsRalsei(
+                    bodyName,
+                    contentPackIdentifier
+                )
+            )
+            {
+                challenge =
+                    CreateRalseiPreset();
+
+                return true;
+            }
+
+
+            // =====================================================
             // NO EXISTE PRESET ESPECÍFICO
             // =====================================================
 
@@ -98,7 +157,7 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
-        // MIGRAR PRESET AUTOMÁTICO ANTIGUO
+        // MIGRAR PRESETS AUTOMÁTICOS ANTIGUOS
         // =========================================================
 
         public static bool TryMigrateLegacyPreset(
@@ -111,28 +170,51 @@ namespace UniversalSurvivorUnlocks
             migratedChallenge = null;
 
 
-            /*
-             * Solamente migramos configuraciones
-             * pertenecientes a Sora.
-             */
+            // =====================================================
+            // MIGRACIÓN DEL PRESET ANTERIOR DE RALSEI
+            //
+            // Rey Sanador
+            // HealHealth
+            // amount = 5000
+            // singleRun = true
+            //
+            // ->
+            //
+            // Oración de Esperanza
+            // HealHealth
+            // amount = 5000
+            // singleRun = true
+            // =====================================================
+
             if (
-                !IsSora(
+                IsRalsei(
                     bodyName,
                     contentPackIdentifier
                 )
+                &&
+                IsPreviousRalseiPreset(
+                    currentChallenge
+                )
             )
             {
-                return false;
+                migratedChallenge =
+                    CreateRalseiPreset();
+
+                return true;
             }
 
 
             /*
-             * Sólo reemplazamos el challenge genérico
-             * exacto creado automáticamente por las
-             * versiones anteriores.
+             * A partir de aquí comprobamos el
+             * challenge genérico automático usado
+             * por versiones antiguas:
+             *
+             * Desafío de desbloqueo
+             * KillEnemies
+             * amount = 100
              *
              * Si el usuario modificó cualquier cosa,
-             * no se toca.
+             * NO se toca.
              */
             if (
                 !IsLegacyAutomaticChallenge(
@@ -144,8 +226,189 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            migratedChallenge =
-                CreateSoraPreset();
+            // =====================================================
+            // SORA
+            // =====================================================
+
+            if (
+                IsSora(
+                    bodyName,
+                    contentPackIdentifier
+                )
+            )
+            {
+                migratedChallenge =
+                    CreateSoraPreset();
+
+                return true;
+            }
+
+
+            // =====================================================
+            // RALSEI
+            // =====================================================
+
+            if (
+                IsRalsei(
+                    bodyName,
+                    contentPackIdentifier
+                )
+            )
+            {
+                migratedChallenge =
+                    CreateRalseiPreset();
+
+                return true;
+            }
+
+
+            // =====================================================
+            // NO HAY MIGRACIÓN CONOCIDA
+            // =====================================================
+
+            return false;
+        }
+
+
+        // =========================================================
+        // ¿ES EL PRESET ANTERIOR DE RALSEI?
+        // =========================================================
+
+        private static bool IsPreviousRalseiPreset(
+            SurvivorChallengeJson challenge
+        )
+        {
+            if (challenge == null)
+            {
+                return false;
+            }
+
+
+            if (!challenge.Enabled)
+            {
+                return false;
+            }
+
+
+            if (
+                !string.Equals(
+                    challenge.Name,
+                    "Rey Sanador",
+                    StringComparison.Ordinal
+                )
+            )
+            {
+                return false;
+            }
+
+
+            if (
+                !string.Equals(
+                    challenge.Type,
+                    "HealHealth",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            {
+                return false;
+            }
+
+
+            if (challenge.Parameters == null)
+            {
+                return false;
+            }
+
+
+            /*
+             * El preset anterior tenía exactamente:
+             *
+             * amount
+             * singleRun
+             *
+             * Si aparecen parámetros adicionales,
+             * asumimos que el usuario lo personalizó.
+             */
+            int parameterCount = 0;
+
+            foreach (
+                JProperty property
+                in challenge.Parameters.Properties()
+            )
+            {
+                parameterCount++;
+            }
+
+
+            if (parameterCount != 2)
+            {
+                return false;
+            }
+
+
+            JToken amountToken =
+                challenge.Parameters["amount"];
+
+
+            JToken singleRunToken =
+                challenge.Parameters["singleRun"];
+
+
+            if (
+                amountToken == null ||
+                singleRunToken == null
+            )
+            {
+                return false;
+            }
+
+
+            if (
+                !int.TryParse(
+                    amountToken.ToString(),
+                    out int amount
+                )
+            )
+            {
+                return false;
+            }
+
+
+            if (amount != 5000)
+            {
+                return false;
+            }
+
+
+            if (
+                !bool.TryParse(
+                    singleRunToken.ToString(),
+                    out bool singleRun
+                )
+            )
+            {
+                return false;
+            }
+
+
+            if (!singleRun)
+            {
+                return false;
+            }
+
+
+            /*
+             * Si tiene propiedades desconocidas
+             * agregadas por el usuario,
+             * tampoco migramos automáticamente.
+             */
+            if (
+                challenge.ExtraData != null &&
+                challenge.ExtraData.Count > 0
+            )
+            {
+                return false;
+            }
 
 
             return true;
@@ -253,8 +516,8 @@ namespace UniversalSurvivorUnlocks
 
             /*
              * Si existen propiedades desconocidas
-             * agregadas por el usuario, tampoco
-             * hacemos una migración automática.
+             * agregadas por el usuario,
+             * tampoco migramos automáticamente.
              */
             if (
                 challenge.ExtraData != null &&

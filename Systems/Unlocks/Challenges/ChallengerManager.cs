@@ -33,6 +33,7 @@ namespace UniversalSurvivorUnlocks
             switch (challengeType)
             {
                 case "applystatuseffects":
+                case "healhealth":
                     return typeof(
                         UniversalServerTrackedAchievement
                     );
@@ -74,6 +75,11 @@ namespace UniversalSurvivorUnlocks
                 case "applystatuseffects":
                     return typeof(
                         ApplyStatusEffectsServerAchievement
+                    );
+            
+                case "healhealth":
+                    return typeof(
+                        HealHealthServerAchievement
                     );
 
                 default:

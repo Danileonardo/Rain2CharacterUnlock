@@ -27,7 +27,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public const string PluginVersion =
-            "0.1.3";
+            "0.1.4";
 
 
         public static List<SurvivorInfo> Survivors
@@ -105,6 +105,10 @@ namespace UniversalSurvivorUnlocks
             );
 
             StatusEffectTracker.Initialize(
+                Logger
+            );
+
+            HealHealthTracker.Initialize(
                 Logger
             );
 

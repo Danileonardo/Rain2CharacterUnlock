@@ -1446,6 +1446,21 @@ namespace UniversalSurvivorUnlocks
                             $"simultáneamente en una partida.";
                     }
 
+                case "HealHealth":
+                    {
+                        int amount =
+                            GetInt(
+                                parameters,
+                                "amount",
+                                5000
+                            );
+
+
+                        return
+                            $"Restaura un total de {amount} de salud a tu equipo\n" +
+                            $"durante una sola partida.";
+                    }
+
 
                 default:
                     {
