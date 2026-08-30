@@ -100,6 +100,24 @@ namespace UniversalSurvivorUnlocks
                 return result;
             }
 
+
+            // =========================================================
+            // IGNORAR REGENERACIÓN PASIVA
+            // =========================================================
+            //
+            // nonRegen == false
+            // corresponde a curación proveniente de regeneración.
+            //
+            // Para Oración de Esperanza queremos contar
+            // curaciones activas y no la regeneración natural.
+            // =========================================================
+
+            if (!nonRegen)
+            {
+                return result;
+            }
+
+
             float healthAfter = self.health;
 
             float actualHealing =

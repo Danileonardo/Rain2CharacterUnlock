@@ -332,15 +332,59 @@ namespace UniversalSurvivorUnlocks
                 );
 
 
+            string damageSourceName =
+    GetDamageSourceName(
+        activeBlast
+            .damageType
+            .damageSource
+    );
+
+
+            CharacterBody sourceBody =
+                sourceMaster.GetBody();
+
+
+            string sourceBodyName =
+                sourceBody != null
+                    ? sourceBody.name
+                    : "<sin body>";
+
+
+            CharacterBody ownerBody =
+                playerOwner.GetBody();
+
+
+            string ownerBodyName =
+                ownerBody != null
+                    ? ownerBody.name
+                    : "<sin body>";
+
+
+            float lethalDamage =
+                damageReport
+                    .damageInfo
+                    .damage;
+
+
+            bool wasCritical =
+                damageReport
+                    .damageInfo
+                    .crit;
+
+
             logger?.LogInfo(
                 "[ExplosionKill] BLAST MORTAL DETECTADO | " +
                 $"Jugador dueño: {playerName} | " +
+                $"Personaje jugador: {ownerBodyName} | " +
+                $"SourceBody: {sourceBodyName} | " +
                 $"Atacante: {attackerName} | " +
                 $"Inflictor: {inflictorName} | " +
                 $"Víctima: {victimName} | " +
+                $"Daño mortal: {lethalDamage:0.##} | " +
+                $"Crítico: {wasCritical} | " +
                 $"Radio: {activeBlast.radius:0.##} | " +
-                $"DamageSource: " +
-                $"{activeBlast.damageType.damageSource}"
+                $"DamageSource: {activeBlast.damageType.damageSource} | " +
+                $"Categoría: {damageSourceName}"
             );
 
 
@@ -355,6 +399,98 @@ namespace UniversalSurvivorUnlocks
             );
         }
 
+        // =========================================================
+        // CLASIFICAR DAMAGE SOURCE
+        // =========================================================
+        //
+        // DamageSource funciona como flags.
+        //
+        // Esto NO determina todavía si una explosión
+        // es válida para Rocket.
+        //
+        // Sólo nos permite saber de qué slot de habilidad
+        // parece provenir el BlastAttack.
+        //
+        // 1 = Primary
+        // 2 = Secondary
+        // 4 = Utility
+        // 8 = Special
+        // =========================================================
+
+        private static string GetDamageSourceName(
+            DamageSource damageSource
+        )
+        {
+            int rawValue =
+                (int)damageSource;
+
+
+            if (rawValue == 0)
+            {
+                return "NoneSpecified / Proc / Item / desconocido";
+            }
+
+
+            List<string> sources =
+                new List<string>();
+
+
+            if (
+                (rawValue & 1) !=
+                0
+            )
+            {
+                sources.Add(
+                    "Primary"
+                );
+            }
+
+
+            if (
+                (rawValue & 2) !=
+                0
+            )
+            {
+                sources.Add(
+                    "Secondary"
+                );
+            }
+
+
+            if (
+                (rawValue & 4) !=
+                0
+            )
+            {
+                sources.Add(
+                    "Utility"
+                );
+            }
+
+
+            if (
+                (rawValue & 8) !=
+                0
+            )
+            {
+                sources.Add(
+                    "Special"
+                );
+            }
+
+
+            if (sources.Count <= 0)
+            {
+                return
+                    $"Otro / Raw={rawValue}";
+            }
+
+
+            return string.Join(
+                " + ",
+                sources
+            );
+        }
 
         // =========================================================
         // NOMBRE DEL JUGADOR

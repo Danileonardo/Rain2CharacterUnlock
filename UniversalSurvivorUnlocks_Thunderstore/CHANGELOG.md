@@ -4,6 +4,23 @@ All notable changes to Universal Survivor Unlocks will be documented in this fil
 
 The format is based on a simple versioned changelog intended for Thunderstore and GitHub releases.
 
+## 0.1.8
+
+### Added
+- Added Tinkaton preset: **Forjada en Chatarra**.
+- Added the new `ScrapItemBossFinisher` challenge type.
+- Added tracking for items converted into Scrap during a run.
+- Added final-hit validation for MUL-T's **Bote explosivo** against the Alloy Worship Unit.
+
+### Changed
+- Increased Ralsei's **Oración de Esperanza** healing requirement from **5,000** to **10,000**.
+- Updated Bandit's multiplayer HUNK route to reduce false streak resets for remote clients.
+- Shortened Tinkaton's challenge description to fit correctly in the survivor selection UI.
+
+### Testing
+- Continued multiplayer validation for HUNK.
+- Added diagnostic logging for Tinkaton's Scrap and final-hit conditions.
+
 ## 0.1.6
 
 ### Added

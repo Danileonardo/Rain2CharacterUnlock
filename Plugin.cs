@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using BepInEx;
 using R2API.ContentManagement;
+using R2API.Networking;
 using RoR2;
 
 namespace UniversalSurvivorUnlocks
@@ -15,6 +16,10 @@ namespace UniversalSurvivorUnlocks
         R2APIContentManager.PluginGUID
     )]
 
+    [BepInDependency(
+    NetworkingAPI.PluginGUID
+    )]
+
     public class Plugin :
         BaseUnityPlugin
     {
@@ -27,7 +32,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public const string PluginVersion =
-            "0.1.6";
+            "0.1.8";
 
 
         public static List<SurvivorInfo> Survivors
@@ -39,6 +44,17 @@ namespace UniversalSurvivorUnlocks
 
         private void Awake()
         {
+            NetworkingAPI
+                .RegisterMessageType<
+                    HunkBanditShotResultMessage
+                >();
+
+
+            NetworkingAPI
+                .RegisterMessageType<
+                    HunkRailgunnerShotResultMessage
+                >();
+
             Logger.LogInfo(
                 $"Universal Survivor Unlocks " +
                 $"{PluginVersion} cargado."
@@ -133,6 +149,10 @@ namespace UniversalSurvivorUnlocks
             );
 
             PrecisionExecutionStreakTracker.Initialize(
+                Logger
+            );
+
+            ScrapItemBossFinisherTracker.Initialize(
                 Logger
             );
 

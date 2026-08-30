@@ -73,7 +73,7 @@ namespace UniversalSurvivorUnlocks
                     "Oración de Esperanza",
 
                 Description =
-                    "Restaura un total de 5000 de salud a tu equipo\n" +
+                    "Restaura un total de 10000 de salud a tu equipo\n" +
                     "durante una sola partida.",
 
                 Type =
@@ -83,7 +83,7 @@ namespace UniversalSurvivorUnlocks
                     new JObject
                     {
                         ["amount"] =
-                            5000,
+                            10000,
 
                         ["singleRun"] =
                             true
@@ -177,7 +177,7 @@ namespace UniversalSurvivorUnlocks
 
                 Description =
                     "Mata a un jefe apuñalándolo por la espalda\n" +
-                    "con la Daga dentada de Bandit.",
+                    "con la Daga serrada - Bandit.",
 
                 Type =
                     "BackstabBossKill",
@@ -245,8 +245,8 @@ namespace UniversalSurvivorUnlocks
                     "La Parca No Falla",
 
                 Description =
-                    "Logra 32 impactos seguidos a puntos débiles con Railgunner\n" +
-                    "o 16 bajas seguidas con Lights Out de Bandit.",
+                    "Logra 24 puntos débiles seguidos con Railgunner\n" +
+                    "o 24 bajas seguidas con Luces fuera - Bandit.",
 
                 Type =
                     "PrecisionExecutionStreak",
@@ -259,6 +259,54 @@ namespace UniversalSurvivorUnlocks
 
                         ["banditLightsOutKills"] =
                             24,
+
+                        ["singleRun"] =
+                            true
+                    }
+            };
+        }
+
+        // =========================================================
+        // TINKATON
+        // =========================================================
+
+        public static SurvivorChallengeJson CreateTinkatonPreset()
+        {
+            return new SurvivorChallengeJson
+            {
+                Enabled =
+                    true,
+
+                Name =
+                    "Forjada en Chatarra",
+
+                Description =
+                    "Recicla 6 objetos; ten Justicia demoledora y acaba\n" +
+                    "con Unidad de Aleación con Bote explosivo - MUL-T.",
+
+                Type =
+                    "ScrapItemBossFinisher",
+
+                Parameters =
+                    new JObject
+                    {
+                        ["scrapAmount"] =
+                            6,
+
+                        ["requiredBody"] =
+                            "ToolbotBody",
+
+                        ["requiredItem"] =
+                            "ArmorReductionOnHit",
+
+                        ["bossBody"] =
+                            "SuperRoboBallBossBody",
+
+                        ["finalDamageSource"] =
+                            "Secondary",
+
+                        ["requiredSecondarySkillToken"] =
+                            "TOOLBOT_SECONDARY_NAME",
 
                         ["singleRun"] =
                             true
@@ -429,6 +477,28 @@ namespace UniversalSurvivorUnlocks
                 );
         }
 
+        // =========================================================
+        // ¿ES TINKATON?
+        // =========================================================
+
+        private static bool IsTinkaton(
+            string bodyName,
+            string contentPackIdentifier
+        )
+        {
+            return
+                string.Equals(
+                    bodyName,
+                    "TinkatonBody",
+                    StringComparison.Ordinal
+                )
+                &&
+                string.Equals(
+                    contentPackIdentifier,
+                    "com.Dragonyck.Tinkaton",
+                    StringComparison.OrdinalIgnoreCase
+                );
+        }
 
         // =========================================================
         // OBTENER PRESET PARA SURVIVOR CONOCIDO
@@ -561,6 +631,23 @@ namespace UniversalSurvivorUnlocks
             {
                 challenge =
                     CreateHunkPreset();
+
+                return true;
+            }
+
+            // =====================================================
+            // TINKATON
+            // =====================================================
+
+            if (
+                IsTinkaton(
+                    bodyName,
+                    contentPackIdentifier
+                )
+            )
+            {
+                challenge =
+                    CreateTinkatonPreset();
 
                 return true;
             }

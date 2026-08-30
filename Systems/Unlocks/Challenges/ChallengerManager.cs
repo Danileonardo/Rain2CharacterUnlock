@@ -39,6 +39,7 @@ namespace UniversalSurvivorUnlocks
                 case "backstabbosskill":
                 case "airborneexplosionkills":
                 case "precisionexecutionstreak":
+                case "scrapitembossfinisher":
                     return typeof(
                         UniversalServerTrackedAchievement
                     );
@@ -113,6 +114,11 @@ namespace UniversalSurvivorUnlocks
                 case "precisionexecutionstreak":
                     return typeof(
                         PrecisionExecutionStreakServerAchievement
+                    );
+
+                case "scrapitembossfinisher":
+                    return typeof(
+                        ScrapItemBossFinisherServerAchievement
                     );
 
                 default:
