@@ -241,6 +241,112 @@ namespace UniversalSurvivorUnlocks
             );
         }
 
+        // =========================================================
+        // BUSCAR ACHIEVEMENT USU
+        // =========================================================
+
+        public static bool TryGetCustomAchievement(
+            string bodyName,
+            out AchievementDef achievementDef
+        )
+        {
+            return CustomAchievements.TryGetValue(
+                bodyName,
+                out achievementDef
+            );
+        }
+
+        // =========================================================
+        // BUSCAR BODY A PARTIR DE UN UNLOCK USU
+        // =========================================================
+
+        public static bool TryGetCustomUnlockBodyName(
+            UnlockableDef unlockableDef,
+            out string bodyName
+        )
+        {
+            bodyName =
+                null;
+
+
+            if (
+                unlockableDef == null ||
+                !IsCustomUnlock(
+                    unlockableDef
+                )
+            )
+            {
+                return false;
+            }
+
+
+            foreach (
+                KeyValuePair<
+                    string,
+                    UnlockableDef
+                > pair
+                in CustomUnlockables
+            )
+            {
+                if (
+                    pair.Value ==
+                    unlockableDef
+                )
+                {
+                    bodyName =
+                        pair.Key;
+
+
+                    return true;
+                }
+            }
+
+
+            /*
+             * Fallback.
+             *
+             * Todos nuestros Unlockables siguen la forma:
+             *
+             * UniversalSurvivorUnlocks.RobHunkBody
+             *
+             * Si por alguna razón no encontramos la misma
+             * instancia en el diccionario, recuperamos el
+             * BodyName desde cachedName.
+             */
+
+            const string prefix =
+                "UniversalSurvivorUnlocks.";
+
+
+            string cachedName =
+                unlockableDef.cachedName;
+
+
+            if (
+                !string.IsNullOrWhiteSpace(
+                    cachedName
+                ) &&
+                cachedName.StartsWith(
+                    prefix,
+                    StringComparison.Ordinal
+                )
+            )
+            {
+                bodyName =
+                    cachedName.Substring(
+                        prefix.Length
+                    );
+
+
+                return
+                    !string.IsNullOrWhiteSpace(
+                        bodyName
+                    );
+            }
+
+
+            return false;
+        }
 
         // =========================================================
         // RECORDAR UNLOCK ORIGINAL

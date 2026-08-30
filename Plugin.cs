@@ -55,6 +55,11 @@ namespace UniversalSurvivorUnlocks
                     HunkRailgunnerShotResultMessage
                 >();
 
+            NetworkingAPI
+                .RegisterMessageType<
+                    SessionUnlockGrantMessage
+                >();
+
             Logger.LogInfo(
                 $"Universal Survivor Unlocks " +
                 $"{PluginVersion} cargado."
@@ -156,15 +161,23 @@ namespace UniversalSurvivorUnlocks
                 Logger
             );
 
+            SessionUnlockManager.Initialize(
+                Logger
+            );
+
+            ReplayUnlockManager.Initialize(
+                Logger
+            );
+
             /*
              * NO hacemos Rebuild.
-             *
-             * Conservamos toda la información que
-             * recopilamos desde peerLoadInfos.
-             *
-             * Sólo cruzamos los BodyPrefabs contra
-             * el catálogo final como fallback.
-             */
+                         *
+                         * Conservamos toda la información que
+                         * recopilamos desde peerLoadInfos.
+                         *
+                         * Sólo cruzamos los BodyPrefabs contra
+                         * el catálogo final como fallback.
+                         */
             ModdedSurvivorRegistry
                 .ReconcileCatalog(
                     Logger

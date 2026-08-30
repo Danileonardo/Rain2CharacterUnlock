@@ -108,7 +108,7 @@ namespace UniversalSurvivorUnlocks
 
                 Description =
                     "Asesta el golpe final a un jefe con un crítico\n" +
-                    "de 4444 de daño o más en una sola partida.",
+                    "de 44444 de daño o más en una sola partida.",
 
                 Type =
                     "BossCriticalKill",
@@ -117,7 +117,7 @@ namespace UniversalSurvivorUnlocks
                     new JObject
                     {
                         ["minimumDamage"] =
-                            4444,
+                            44444,
 
                         ["singleRun"] =
                             true
