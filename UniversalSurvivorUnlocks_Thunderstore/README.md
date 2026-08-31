@@ -1,147 +1,242 @@
 # Universal Survivor Unlocks
 
-**Universal Survivor Unlocks (USU)** adds configurable unlock challenges to modded survivors in **Risk of Rain 2**.
+**Universal Survivor Unlocks (USU)** is a configurable progression framework for **modded survivors in Risk of Rain 2**.
 
-The mod automatically detects installed modded survivors, respects characters that already have their own unlock system, and can assign USU challenges to survivors that do not.
+USU automatically detects compatible modded survivors, respects characters that already provide their own unlock requirement, and can give progression challenges to survivors that would otherwise be available immediately.
 
-> ## AI Usage Notice
-> Universal Survivor Unlocks has been developed with assistance from artificial intelligence tools during parts of the programming, design, writing, debugging, and documentation process. Some visual resources may also be created or assisted with AI tools.
+**Current release:** `0.1.9`
+
+[GitHub / Source Code](https://github.com/Danileonardo/Rain2CharacterUnlock) · [Support development / Donate](https://github.com/sponsors/Danileonardo) · Discord: `@shleiderick`
+
+> **Support / Apoyo**
 >
-> This notice is included for transparency so that players who prefer to avoid AI-assisted content can make an informed decision before installing the mod.
+> Donations help me keep the project updated and continue developing new presets, compatibility fixes, multiplayer improvements, and the universal mission system.
 >
-> **Aviso sobre uso de IA:** Universal Survivor Unlocks ha sido desarrollado con asistencia de herramientas de inteligencia artificial durante parte del proceso de programación, diseño, redacción, depuración y documentación. Algunos recursos visuales también pueden haber sido creados o asistidos mediante IA. Este aviso se incluye por transparencia para quienes prefieran evitar contenido desarrollado con estas herramientas.
+> Los donativos ayudan a mantener el proyecto actualizado y a continuar desarrollando nuevos presets, correcciones de compatibilidad, mejoras multijugador y el sistema universal de misiones.
+>
+> Questions, bug reports, survivor requests, preset ideas, and suggestions are welcome on Discord.
+>
+> Preguntas, reportes de errores, solicitudes de personajes, ideas de presets y sugerencias son bienvenidas en Discord.
 
 ---
 
-## What does USU do?
+> ## AI Usage Notice
+>
+> Universal Survivor Unlocks has been developed with assistance from artificial intelligence tools during parts of the programming, design, writing, debugging, documentation, and visual-resource workflow.
+>
+> This notice is included for transparency so players who prefer to avoid AI-assisted content can make an informed decision before installing the mod.
+>
+> **Aviso sobre uso de IA:** Universal Survivor Unlocks ha sido desarrollado con asistencia de herramientas de inteligencia artificial durante parte del proceso de programación, diseño, redacción, depuración, documentación y recursos visuales.
+>
+> Este aviso se incluye por transparencia para que quienes prefieran evitar contenido desarrollado con estas herramientas puedan decidir antes de instalar el mod.
 
-USU creates unlock challenges for modded survivors that would otherwise be available immediately.
+---
 
-Its main goals are:
+# What does USU do?
+
+USU adds progression to compatible modded survivors without replacing the systems created by other survivor authors.
+
+Main goals:
 
 - Automatically detect installed modded survivors.
 - Respect survivors that already have their own native unlock requirements.
 - Lock compatible survivors when USU assigns them a challenge.
-- Unlock them by completing configurable missions.
-- Store challenge configuration in an editable JSON file.
-- Preserve survivor configuration when character mods are temporarily uninstalled.
-- Support multiplayer with host-authoritative challenge configuration.
-- Allow both shared-progress and per-player challenge designs.
-- Keep vanilla and DLC survivor unlocks untouched.
+- Unlock survivors through gameplay instead of making every compatible character immediately available.
+- Provide built-in creator-made challenge presets.
+- Store survivor and challenge information in `Survivors.json`.
+- Preserve survivor configuration when character mods are temporarily disabled or uninstalled.
+- Support host-authoritative multiplayer.
+- Support both shared-progress and per-player challenge designs.
+- Keep vanilla and official DLC progression untouched.
+- Evolve toward a reusable mission framework instead of requiring one hardcoded script for every character.
 
 ---
 
-## Important behavior
+# Important behavior
 
-### Vanilla and DLC survivors
+## Vanilla and DLC survivors
 
-USU does **not** replace or interfere with the normal unlock requirements of vanilla or DLC survivors.
+USU does **not** replace or interfere with the normal unlock requirements of vanilla or official DLC survivors.
 
-Characters such as Commando, Huntress, Loader, Railgunner, etc. keep their original Risk of Rain 2 progression.
+Characters such as Commando, Huntress, Loader, Railgunner, and other official survivors keep their normal Risk of Rain 2 progression.
 
-### Survivors with their own unlock system
+## Modded survivors with their own unlock system
 
-If a modded survivor already defines its own unlockable, USU respects it and does not replace it.
+If a modded survivor already defines its own unlockable/progression requirement, USU respects it and leaves that survivor under the control of the original mod.
 
-### Survivors without an unlock system
+## Modded survivors without an unlock system
 
-USU can automatically give these survivors a configurable challenge and lock them until the requirement is completed.
+Compatible survivors without their own unlock requirement can receive a USU challenge and start locked until that challenge is completed.
 
 ---
 
-# Current built-in challenges
+# Creator presets and custom missions
 
-The following survivor presets are currently included in the project.
+USU is moving toward a preset-based mission system with a clear ownership rule.
+
+## Creator preset
+
+A built-in preset created for USU is the **official source preset**.
+
+Creator presets are intended to remain unchanged so updates can improve or rebalance them without destroying the original definition.
+
+## Player customization
+
+When a player customizes a creator preset, the intended model is to create/use a **separate custom mission based on that preset** instead of editing the creator preset itself.
+
+This allows USU to keep:
+
+- The original creator preset.
+- The player's customized version.
+- The technical relationship between the custom mission and the preset it came from.
+
+The public in-game editing workflow is still under development. Existing challenge configuration remains available through `Survivors.json`, while the newer mission/preset architecture is integrated progressively.
+
+---
+
+# Multiplayer
+
+USU uses a **host-authoritative** model.
+
+## Host configuration
+
+During a multiplayer session, the **host's effective challenge configuration is the authoritative mission for that lobby**.
+
+A client may have different local values or a different personal configuration, but the host determines the mission rules used during that session.
+
+The host's session configuration is not intended to permanently overwrite the client's personal `Survivors.json`.
+
+## Shared progress
+
+Shared challenges allow multiple players and valid team entities to contribute toward the same session objective.
+
+Examples:
+
+- Sora
+- Ralsei
+
+## Per-player progress
+
+Per-player challenges keep independent counters, streaks, inventories, or route state for each player.
+
+Examples:
+
+- HUNK
+- Tinkaton
+
+Players cannot combine partial individual streaks or personal requirements unless the challenge is explicitly designed as shared progress.
+
+## Session-wide completion
+
+When a valid route is completed, USU can grant the corresponding survivor unlock to connected players who still need it.
+
+---
+
+# Current built-in presets
+
+The following creator-made presets are currently included in USU.
 
 ## Sora — Elegido de la Llave Espada
 
 Apply **100 valid simultaneous status effects** during a single run.
 
-Valid effects are counted across the team and living entities:
+Valid effects include:
 
 - Negative effects on enemies.
 - Positive effects on allies.
-- Stackable effects count by stack.
-- Non-stackable effects count once per affected entity.
-- Expired effects and effects on dead entities stop contributing.
+- Stackable effects counted by active stack.
+- Non-stackable effects counted once per affected entity.
+- Effects from multiple valid living entities at the same time.
+
+Expired effects, removed effects, and effects on dead entities stop contributing.
 
 **Progress:** Shared  
-**Reward:** Session-wide
+**Completion:** Session-wide
 
 ---
 
 ## Ralsei — Oración de Esperanza
 
-Restore a total of **10,000 health** to your team during a single run.
+Restore a total of **10,000 health** to valid allied entities during a single run.
 
-The challenge uses valid non-regeneration healing and can include healing received by allied entities such as players, drones, turrets, and other friendly units.
+The challenge can include valid healing received by:
+
+- Players.
+- Allied drones.
+- Turrets.
+- Other friendly entities.
+
+Passive regeneration is ignored. Barrier, shields, and overhealing are not treated as restored health.
 
 **Progress:** Shared  
-**Reward:** Session-wide
-
-> The healing target was increased from 5,000 to 10,000 after multiplayer testing showed that healing drones and other allied healing sources could accumulate progress quickly.
+**Completion:** Session-wide
 
 ---
 
 ## Jhin — El Cuarto Acto
 
-Deliver the final blow to a boss with a sufficiently powerful critical hit.
+Deliver the final blow to a boss with a sufficiently powerful **critical hit**.
 
-The exact damage threshold can be configured in `Survivors.json`.
+The current preset uses a lethal critical-hit requirement of at least **44,444 damage**.
 
 ---
 
 ## Spy — Sin que me veas venir
 
-Kill a boss with a valid fatal backstab.
+Kill a boss with a valid **fatal backstab**.
+
+The preset is designed around a lethal backstab route and uses Risk of Rain 2's backstab/damage information to validate the finishing hit.
 
 ---
 
-## Scout — Sed Termonuclear
+## Scout — Energía Atómica
 
-Accumulate the required number of **Bebidas energéticas** during a run.
+Accumulate **15 Energy Drinks** on a single player during the run.
 
-The current preset uses **15 Energy Drinks**.
+Player inventories are tracked independently and are not combined between players.
 
 ---
 
 ## Rocket / Soldier — La gravedad es opcional
 
-Kill enemies with explosions while airborne.
+Kill **15 enemies** with valid explosions while the owning player remains **airborne**.
 
-This challenge tracks lethal explosion damage and is designed around Rocket/Soldier-style explosive combat.
+The challenge is designed around explosive Rocket/Soldier-style combat and validates the player ownership of qualifying explosive damage.
+
+Touching the ground can reset the relevant airborne streak/progress according to the configured challenge rules.
 
 ---
 
 ## HUNK — La Parca No Falla
 
-Complete **one** of the following individual streaks:
+Complete **one** of the following individual routes:
 
-- Land **24 consecutive Railgunner M99 weak-point hits**, or
-- Score **24 consecutive kills with Bandit's Luces fuera**.
+- Land **24 consecutive Railgunner M99 weak-point hits**, **OR**
+- Score **24 consecutive kills with Bandit's Luces fuera / Lights Out**.
 
-Important multiplayer rule:
+Important multiplayer rules:
 
-- Streaks belong to individual players.
+- Each player's streak is independent.
 - Two players cannot combine partial streaks.
-- Any one player who completes a valid route completes the challenge for the session.
+- Other Bandit abilities do **not** reset the Lights Out streak.
+- A real Lights Out use that fails to kill resets that player's Lights Out streak.
+- If one player completes a valid route, the challenge can complete for the session.
 
 Example:
 
 ```text
-Railgunner A = 12 weak points
-Railgunner B = 12 weak points
+Railgunner A = 12 / 24
+Railgunner B = 12 / 24
 
-Result: 12 / 24 for each player
-NOT 24 / 24 combined
+Result:
+A remains at 12 / 24
+B remains at 12 / 24
+
+They do NOT become 24 / 24 combined.
 ```
 
-Other Bandit abilities do **not** reset the Lights Out streak.
-
-Only an actual use of **Luces fuera** that fails to kill resets that player's Bandit streak.
-
 **Progress:** Per-player  
-**Reward:** Session-wide
+**Completion:** Session-wide
 
 ---
 
@@ -150,138 +245,26 @@ Only an actual use of **Luces fuera** that fails to kill resets that player's Ba
 > **Recicla 6 objetos; obtén Justicia demoledora y derriba**  
 > **a la Unidad de Aleación con Bote explosivo de MUL-T.**
 
-The challenge is designed around Tinkaton's themes of scrap, metal, a massive hammer, and bringing down a flying metallic target.
-
 Current requirements:
 
 1. Play as **MUL-T**.
 2. Convert at least **6 items into Scrap** during the same run.
-3. Have **Justicia demoledora** (`Shattering Justice`) in your inventory.
+3. Have **Justicia demoledora / Shattering Justice** in your inventory.
 4. Defeat the **Alloy Worship Unit**.
-5. The final hit must come from **Bote explosivo** (`Blast Canister`) or a valid child bomblet from the same skill.
+5. The final hit must come from **Bote explosivo / Blast Canister** or a valid child bomblet generated by the same skill.
 
-Scrap progress is remembered for the run even if the Scrap is later consumed in a 3D Printer or another interaction.
+Scrap progress belongs to the player who performed the conversions and remains remembered for the run even if the Scrap is later consumed.
 
-The requirements belong to the same player. Different players cannot combine them.
+Different players cannot combine Tinkaton's personal requirements.
 
 **Progress:** Per-player  
-**Reward:** Session-wide
+**Completion:** Session-wide
 
 ---
 
-# Multiplayer
+# Challenge systems currently used by presets
 
-USU is designed around host-authoritative multiplayer.
-
-## Challenge configuration
-
-The **host's configuration** determines the effective mission parameters for the session.
-
-A client may have different values in their local JSON, but the host's challenge configuration is the authoritative one for that lobby.
-
-## Progress types
-
-USU supports two conceptual progress styles.
-
-### Shared progress
-
-The whole team contributes to a single session total.
-
-Examples:
-
-- Sora
-- Ralsei
-
-### Per-player progress
-
-Each player has an independent counter or streak.
-
-Examples:
-
-- HUNK
-- Tinkaton
-
-If any single player completes a valid per-player route, the challenge is completed for the session.
-
----
-
-# Configuration
-
-USU stores survivor challenge information in:
-
-```text
-BepInEx/config/UniversalSurvivorUnlocks/Survivors.json
-```
-
-The file contains detected modded survivors and their challenge definitions.
-
-Example:
-
-```json
-{
-  "Challenge": {
-    "enabled": true,
-    "name": "Forjada en Chatarra",
-    "description": "Recicla 6 objetos; obtén Justicia demoledora y derriba\na la Unidad de Aleación con Bote explosivo de MUL-T.",
-    "type": "ScrapItemBossFinisher",
-    "parameters": {
-      "scrapAmount": 6,
-      "requiredBody": "ToolbotBody",
-      "requiredItem": "ArmorReductionOnHit",
-      "bossBody": "SuperRoboBallBossBody",
-      "finalDamageSource": "Secondary",
-      "requiredSecondarySkillToken": "TOOLBOT_SECONDARY_NAME",
-      "singleRun": true
-    }
-  }
-}
-```
-
----
-
-# Authoring Mode
-
-During development, USU currently uses an internal **Authoring Mode**.
-
-When enabled:
-
-- Built-in source presets are treated as the development source of truth.
-- Known survivor challenge entries can be automatically synchronized into `Survivors.json`.
-- Changes made directly to a known preset inside JSON may be overwritten on startup.
-
-This behavior is useful while developing and testing the built-in challenge library.
-
-A future public customization workflow is planned so users can freely edit challenges without source presets overwriting them.
-
----
-
-# Planned configuration system
-
-The long-term configuration system is intended to have three main parts.
-
-## Preset library
-
-A library of ready-made challenge presets that can be assigned or imported to compatible modded survivors.
-
-Presets should not be permanently tied to only the survivor they were originally designed for.
-
-## Per-survivor challenge editor
-
-An in-game interface for editing:
-
-- Challenge name
-- Description
-- Challenge type
-- Objective
-- Parameters
-
-`Survivors.json` will remain the editable persistence layer.
-
-## Reusable challenge types
-
-USU challenges are being built as reusable systems rather than one-off character-specific scripts whenever practical.
-
-Examples include:
+USU already includes multiple reusable gameplay challenge systems:
 
 - `ApplyStatusEffects`
 - `HealHealth`
@@ -291,47 +274,150 @@ Examples include:
 - `AirborneExplosionKills`
 - `PrecisionExecutionStreak`
 - `ScrapItemBossFinisher`
+- `KillEnemies`
+
+These systems are progressively being moved toward a more general mission architecture.
 
 ---
 
-# Locked survivor presentation
+# Mission System v2 foundation
 
-USU modifies the survivor selection presentation for survivors currently locked by the mod.
+Version `0.1.9` includes development groundwork for the next-generation mission format.
 
-The intended presentation includes:
+The new model is designed around:
 
-- Darkened survivor portrait.
-- Vanilla-like locked framing.
-- Challenge information on hover.
-- Unlock notification when the challenge is completed.
-- Normal full-color portrait after unlocking.
+- `MissionDefinition`
+- `MissionRoute`
+- `MissionObjective`
+- `MissionCondition`
+- `MissionRules`
+- `MissionTarget`
+- `MissionPreset`
+- Preset/custom mission source tracking
+- `Shared` and `PerPlayer` progress scopes
+- Session reward scope
+- Multiple alternative routes
 
-Vanilla and DLC survivor presentation is left untouched.
+## Route logic
+
+Conditions inside one route are treated as **AND** requirements.
+
+Different routes are treated as **OR** alternatives.
+
+Conceptually:
+
+```text
+Route A:
+Objective
+AND Condition
+AND Condition
+
+OR
+
+Route B:
+Objective
+AND Condition
+```
+
+This model is useful for challenges such as HUNK, where two completely different gameplay routes can unlock the same survivor.
+
+## Target system
+
+The mission model is being built to support reusable target categories such as:
+
+- Any enemy.
+- Enemy.
+- Elite.
+- Boss.
+- Specific body.
+- Specific boss.
+
+Specific entities use stable internal body IDs instead of localized display names.
+
+Examples:
+
+```text
+BrotherBody
+SuperRoboBallBossBody
+ScavBody
+```
+
+This allows future missions to target bosses by their internal body identity without depending on the language selected by the player.
+
+## Current v2 runtime status
+
+The v2 architecture is being integrated progressively.
+
+The current foundation includes evaluation for the `Kill` objective and initial conditions/targets, including:
+
+- `Airborne`
+- `Grounded`
+- `RequiredSurvivor`
+- `Enemy`
+- `Boss`
+- `Elite`
+- `SpecificBody`
+- `SpecificBoss`
+
+Existing creator presets continue to use the established gameplay trackers while they are migrated to the universal mission format.
+
+This section documents the architecture already present in the project; it does **not** mean every planned objective or editor option is already available to players.
+
+---
+
+# Configuration
+
+USU stores detected survivor and challenge information in:
+
+```text
+BepInEx/config/UniversalSurvivorUnlocks/Survivors.json
+```
+
+When using Thunderstore Mod Manager or r2modman, this file is inside the selected profile.
+
+USU can also maintain backup configuration data so survivor information is not lost unnecessarily when configuration is synchronized.
+
+## Important
+
+`Survivors.json` is a persistence/configuration layer.
+
+Metadata identifying a survivor is maintained by USU. Avoid changing internal survivor IDs unless you know exactly what the game/mod uses.
+
+Because the mission system is evolving, making a backup before manually editing complex challenge data is recommended.
+
+## Built-in preset synchronization in 0.1.9
+
+Built-in creator presets are still treated as source definitions by the current authoring/synchronization layer.
+
+This means direct edits to a known built-in preset inside `Survivors.json` may be replaced by the creator preset when USU synchronizes configuration.
+
+This is intentional while the separate custom-copy workflow is being integrated: the creator preset remains preserved, and future player customization is intended to live in a separate custom mission instead of modifying the source preset itself.
 
 ---
 
 # Persistence
 
-Challenge configuration is stored separately from the survivor mod itself.
+USU stores its progression/configuration separately from the survivor mod itself.
 
-This allows USU to remember configuration for a survivor even if that character mod is temporarily removed and installed again later.
+This allows the project to remember information about a modded survivor when that character mod is temporarily removed and later installed again.
 
-USU automatically reconciles the detected survivor catalog with the JSON configuration when the game starts.
+USU reconciles its detected survivor catalog with the stored configuration during startup.
 
 ---
 
-# Dependencies
+# Locked survivor presentation
 
-USU is built for the BepInEx / R2API Risk of Rain 2 modding ecosystem.
+For survivors locked by USU, the mod integrates the lock into the character selection experience.
 
-Current development dependencies include:
+The intended presentation includes:
 
-- BepInExPack
-- R2API
-- R2API Networking
-- HookGenPatcher
+- Darkened/locked survivor portrait.
+- Vanilla-like locked framing.
+- Challenge information on hover.
+- Unlock notification when the requirement is completed.
+- Normal full-color presentation after unlocking.
 
-Exact dependency versions should be taken from the Thunderstore package manifest for each release.
+Official survivors and survivors controlled by another mod's own unlock system are not given USU's generated lock presentation.
 
 ---
 
@@ -340,18 +426,35 @@ Exact dependency versions should be taken from the Thunderstore package manifest
 ## Thunderstore Mod Manager / r2modman
 
 1. Install **Universal Survivor Unlocks**.
-2. Install the required dependencies automatically through Thunderstore.
-3. Install any supported modded survivors you want to use.
-4. Launch the game once so USU can generate or reconcile `Survivors.json`.
-5. Restart the game if required after modifying configuration.
+2. Install it **with dependencies**.
+3. Install any compatible modded survivors you want to use.
+4. Launch Risk of Rain 2.
+5. USU will detect/reconcile compatible survivors and configuration automatically.
+
+The survivor mods referenced by USU presets are **not hard dependencies** of Universal Survivor Unlocks.
 
 ## Manual installation
 
 Manual installation is intended for users already familiar with BepInEx.
 
-Place the USU DLL and required package files in the appropriate BepInEx plugin directory and install all dependencies listed in the package manifest.
+Place the USU plugin in the appropriate BepInEx plugin directory and install every dependency listed in the package `manifest.json`.
 
 Using a mod manager is recommended.
+
+---
+
+# Dependencies
+
+The Thunderstore package currently declares:
+
+- `bbepis-BepInExPack-5.4.2121`
+- `RiskofThunder-R2API_Core-5.3.0`
+- `RiskofThunder-R2API_ContentManagement-1.0.11`
+- `RiskofThunder-R2API_Language-1.1.0`
+- `RiskofThunder-R2API_Unlockable-1.0.2`
+- `RiskofThunder-R2API_Networking-1.0.4`
+
+Always treat the `manifest.json` included with the current release as the authoritative dependency list.
 
 ---
 
@@ -359,95 +462,122 @@ Using a mod manager is recommended.
 
 USU is designed to coexist with:
 
-- Vanilla survivor unlocks.
-- DLC survivor unlocks.
-- Modded survivors with their own unlock systems.
-- Modded survivors without unlock systems.
-- Multiplayer sessions where all players use compatible mod profiles.
+- Vanilla survivor progression.
+- Official DLC survivor progression.
+- Modded survivors with native unlock systems.
+- Modded survivors without native unlock systems.
+- Multiplayer sessions using compatible mod profiles.
 
-Because Risk of Rain 2 mods can heavily modify skills, damage behavior, UI, networking, and unlockables, compatibility with every third-party mod cannot be guaranteed.
+Risk of Rain 2 mods can modify skills, networking, damage behavior, content loading, unlockables, and UI in many different ways, so compatibility with every third-party mod cannot be guaranteed.
 
-If another mod changes the exact behavior of a skill or survivor used by a USU challenge, that mission may need a compatibility adjustment.
-
----
-
-# Debugging
-
-USU writes detailed information to the BepInEx log while the project is under active development.
-
-Useful log prefixes include:
-
-```text
-[HUNK]
-[HealHealth]
-[ApplyStatusEffects]
-[ExplosionKill]
-[TINKATON]
-```
-
-These logs are used to validate:
-
-- Multiplayer ownership.
-- Per-player streaks.
-- Shared totals.
-- Skill origin.
-- Damage source.
-- Healing behavior.
-- Scrap conversion.
-- Boss final-hit detection.
+If another mod changes a skill or mechanic used by a USU preset, that challenge may require a compatibility adjustment.
 
 ---
 
-# Known development notes
+# Reporting bugs / requesting presets
 
-Some systems are still undergoing multiplayer and edge-case testing.
+The most useful bug report includes:
 
-In particular:
-
-- Bandit's remote Lights Out route has recently been redesigned to avoid fragile host-side shot/death timing correlation.
-- Tinkaton's Scrap and Blast Canister requirements are being validated against real runs.
-- Healing from allied drones and other friendly entities is intentionally visible during Ralsei balance testing.
-- Explosion-origin classification may be tightened further for challenges that require specific explosive abilities.
-- Dynamic localization for challenge text is planned for a future version.
-
----
-
-# Localization
-
-Current built-in challenge text is primarily authored in Spanish.
-
-When vanilla skill or item names are referenced, the project aims to use the names shown by the current Spanish Latin American (`es-419`) localization whenever confirmed.
-
-A future localization system is planned so challenge text can automatically support multiple game languages.
-
----
-
-# Contributing / bug reports
-
-When reporting a challenge problem, please include:
-
-- USU version.
+- Universal Survivor Unlocks version.
 - Risk of Rain 2 version.
-- Whether you were host or client.
+- Whether the problem happened as **host** or **client**.
 - Survivor used.
-- Challenge being attempted.
+- Challenge/preset being attempted.
 - Relevant mod list.
+- What happened.
+- What you expected to happen.
 - `LogOutput.log` from the affected session.
-- Clear description of what happened and what you expected to happen.
 
 For multiplayer issues, logs from both host and client are especially useful.
 
+You can use:
+
+- **Discord / Direct contact:** `@shleiderick`
+  - Original Discord alias: `Shleider#3336`
+- **GitHub:** https://github.com/Danileonardo/Rain2CharacterUnlock
+
+You can contact me on Discord for:
+
+- Questions.
+- Survivor requests.
+- Challenge/preset ideas.
+- Suggestions.
+- Compatibility reports.
+- General project discussion.
+
 ---
 
-# Credits
+# Supporting development / Donativos
+
+Universal Survivor Unlocks is free.
+
+If you enjoy the project and want to support continued development, you can use GitHub Sponsors:
+
+**https://github.com/sponsors/Danileonardo**
+
+Donations help support continued work on:
+
+- New survivor presets.
+- Multiplayer validation.
+- Compatibility fixes.
+- Mission System v2.
+- Configuration tools.
+- Documentation.
+- Localization.
+- Maintenance after Risk of Rain 2 updates.
+
+Donations are optional and do not grant gameplay advantages or affect unlock requirements.
+
+> **Español:** Los donativos son completamente opcionales. Ayudan a mantener el proyecto actualizado y a continuar desarrollando presets, compatibilidad, multijugador y el sistema universal de misiones. No entregan ventajas dentro del juego ni cambian los requisitos de desbloqueo.
+
+---
+
+# Survivor mod credits
+
+Universal Survivor Unlocks does **not** own the third-party survivors used by its built-in presets.
+
+Those characters, assets, survivor implementations, and original mod projects belong to their respective authors and rights holders.
+
+Built-in USU presets currently reference/test against projects including:
+
+- **Sora** — mod by **Dragonyck**  
+  https://thunderstore.io/c/riskofrain2/p/Dragonyck/Sora/
+
+- **RalseiSurvivor** — package by **GodRayProductions** and its credited contributors  
+  https://thunderstore.io/c/riskofrain2/p/GodRayProductions/RalseiSurvivor/
+
+- **Jhin** — mod by **SeroRonin**  
+  https://thunderstore.io/c/riskofrain2/p/SeroRonin/Jhin/
+
+- **Spy** — mod by **tsuyoikenko**  
+  https://thunderstore.io/c/riskofrain2/p/tsuyoikenko/Spy/
+
+- **Scout** — mod by **tsuyoikenko**  
+  https://thunderstore.io/c/riskofrain2/p/tsuyoikenko/Scout/
+
+- **Rocket** — mod by **EnforcerGang**  
+  https://thunderstore.io/c/riskofrain2/p/EnforcerGang/Rocket/
+
+- **HUNK** — mod by **public_ParticleSystem**  
+  https://thunderstore.io/c/riskofrain2/p/public_ParticleSystem/HUNK/
+
+- **Tinkaton** — package by **DragonycksModdingComms**  
+  https://thunderstore.io/c/riskofrain2/p/DragonycksModdingComms/Tinkaton/
+
+These survivor packages are referenced for compatibility/preset design and are **not automatically dependencies** of USU.
+
+Please support the original survivor mod authors as well.
+
+---
+
+# General credits
 
 **Universal Survivor Unlocks** is an independent Risk of Rain 2 modding project.
 
-Risk of Rain 2 and its original characters, items, skills, and assets belong to their respective owners.
-
-Third-party modded survivors belong to their respective mod authors.
-
-USU does not claim ownership over those characters or their original assets.
+- Risk of Rain 2, its original characters, items, skills, and assets belong to their respective owners.
+- Third-party characters and franchises belong to their respective rights holders.
+- Third-party survivor mods belong to their respective mod authors/contributors.
+- USU does not claim ownership over those characters or their original assets.
 
 ---
 
@@ -455,40 +585,61 @@ USU does not claim ownership over those characters or their original assets.
 
 USU uses AI-assisted tools as part of its development workflow.
 
-This can include assistance with:
+This may include assistance with:
 
-- Programming
-- Debugging
-- Refactoring
-- Challenge design
-- Documentation
-- Writing
-- Visual resource ideation or generation
+- Programming.
+- Debugging.
+- Refactoring.
+- Challenge design.
+- Documentation.
+- Writing.
+- Visual-resource ideation or generation.
 
-Final implementation decisions, testing, balancing, packaging, and project direction remain part of the project's human-led development process.
+Final implementation decisions, testing, balancing, packaging, project direction, and release decisions remain part of a human-led development process.
 
-This disclosure is intentionally included so users can decide for themselves whether they are comfortable installing AI-assisted content.
+This disclosure is intentionally visible so users can decide for themselves whether they are comfortable installing AI-assisted content.
 
 ---
 
 # License
 
-See the included `LICENSE` file for the project's license terms.
+Universal Survivor Unlocks is distributed under the **MIT License**.
+
+See the included `LICENSE` file for the complete license terms.
 
 ---
 
-# Current project direction
+# Project direction
 
-USU is evolving from a collection of unlock challenges into a general-purpose configurable framework for modded survivor progression.
+USU is evolving from a collection of individual unlock scripts into a general-purpose configurable progression framework for modded survivors.
 
-The long-term goal is to let players:
+Long-term goals include:
 
-- Detect any compatible modded survivor.
-- Assign a challenge preset.
-- Edit it in-game.
-- Share presets.
-- Keep configuration between installs.
-- Use the same system in multiplayer.
-- Build custom progression without modifying the survivor mod itself.
+- A reusable creator-preset library.
+- Safe player-created copies/custom missions.
+- An in-game mission editor.
+- Reusable objectives and conditions.
+- Configurable enemy, elite, boss, and specific-body targets.
+- Multi-route challenges.
+- Preset sharing/importing.
+- Better localization.
+- Strong multiplayer synchronization.
+- Persistent configuration without overwriting each player's personal setup.
 
-If you find a modded survivor that USU does not handle correctly, logs and reproduction steps are highly valuable for improving compatibility.
+---
+
+# Links
+
+**Source / Issues**  
+https://github.com/Danileonardo/Rain2CharacterUnlock
+
+**Support development / Donate**  
+https://github.com/sponsors/Danileonardo
+
+**Discord / Direct Contact**  
+Current username: `@shleiderick`  
+Original alias: `Shleider#3336`
+
+> **Thank you for playing and helping test Universal Survivor Unlocks.**
+>
+> **Gracias por jugar y ayudar a probar Universal Survivor Unlocks.**

@@ -32,7 +32,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public const string PluginVersion =
-            "0.1.8";
+            "0.1.9";
 
 
         public static List<SurvivorInfo> Survivors

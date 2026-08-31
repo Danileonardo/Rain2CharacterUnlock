@@ -260,6 +260,9 @@ namespace UniversalSurvivorUnlocks
             set;
         } = "";
 
+        // =====================================================
+        // LEGACY / SCHEMA V1
+        // =====================================================
 
         [JsonProperty("type", Order = 4)]
         public string Type
@@ -277,6 +280,19 @@ namespace UniversalSurvivorUnlocks
             set;
         } =
             new JObject();
+
+        // =========================================================
+        // MISSION SCHEMA V2
+        // =========================================================
+        //
+        // Mientras Mission sea null, se utiliza el sistema
+        // Type + Parameters actual.
+        //
+        // Esto permite migrar gradualmente los presets existentes
+        // sin romper Survivors.json antiguos.
+        // =========================================================
+
+        public MissionDefinition Mission { get; set; }
 
 
         [JsonExtensionData]

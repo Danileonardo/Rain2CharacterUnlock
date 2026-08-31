@@ -4,6 +4,93 @@ All notable changes to Universal Survivor Unlocks will be documented in this fil
 
 The format is based on a simple versioned changelog intended for Thunderstore and GitHub releases.
 
+## 0.1.9
+
+### Added
+
+- Added the first foundation of the new **Mission System v2**.
+- Added reusable mission models for:
+  - `MissionDefinition`
+  - `MissionRoute`
+  - `MissionObjective`
+  - `MissionCondition`
+  - `MissionRules`
+  - `MissionTarget`
+  - `MissionPreset`
+- Added support in the new mission model for alternative mission routes:
+  - Conditions inside a route use `AND`.
+  - Different routes can work as `OR` alternatives.
+- Added mission progress scope definitions for:
+  - `Shared`
+  - `PerPlayer`
+- Added the creator-preset / custom-mission ownership model.
+- Creator presets are treated as original source definitions and are not intended to be edited directly.
+- Added groundwork for player-created custom missions based on creator presets without replacing the original preset.
+- Added initial `Kill` objective evaluation for Mission System v2.
+- Added initial reusable mission conditions:
+  - `Airborne`
+  - `Grounded`
+  - `RequiredSurvivor`
+- Added reusable mission target categories:
+  - `Any`
+  - `Enemy`
+  - `Boss`
+  - `Elite`
+  - `SpecificBody`
+  - `SpecificBoss`
+- Added support for identifying specific enemies and bosses through stable internal body IDs such as `BrotherBody` or `SuperRoboBallBossBody`.
+- Added runtime `KillEnemies` challenge tracking.
+- Added GitHub Sponsors integration through `.github/FUNDING.yml`.
+- Added bilingual project support and donation information to the README.
+- Added Discord community sections for questions, bug reports, survivor requests, preset ideas and suggestions.
+- Added detailed credits for the third-party survivor mods referenced by USU presets.
+
+### Multiplayer
+
+- Reworked challenge completion routing around a centralized multiplayer-aware completion system.
+- Improved session-wide unlock delivery.
+- Preserved the host-authoritative challenge model.
+- The host's effective challenge configuration remains authoritative during multiplayer sessions.
+- Shared challenges can receive valid progress from multiple players.
+- Per-player challenges continue to maintain independent player progress.
+- A valid individual route can complete its challenge for the session without combining invalid partial player progress.
+- The mission architecture now explicitly represents `Shared` and `PerPlayer` progress scopes.
+- Player-local configuration is intended to remain separate from the host's effective session configuration.
+
+### Changed
+
+- Bumped Universal Survivor Unlocks to version `0.1.9`.
+- Updated package metadata for Thunderstore.
+- Updated the Thunderstore website link to the project's GitHub Sponsors page.
+- Reworked the README to better explain:
+  - Built-in creator presets.
+  - Multiplayer behavior.
+  - Configuration persistence.
+  - Mission System v2.
+  - Support and donations.
+  - Discord/community support.
+  - Survivor mod attribution.
+  - AI usage transparency.
+- Updated Jhin documentation to match the current preset requirement of **44,444 critical damage**.
+- Updated Scout documentation to match the current preset name **Energía Atómica**.
+- Documented Rocket's current requirement of **15 airborne explosion kills**.
+- Clarified that Ralsei's challenge ignores passive regeneration.
+- Improved separation between currently functional challenge trackers and the next-generation universal mission architecture.
+
+### Fixed
+
+- Fixed outdated project version metadata that was still reporting `0.1.6` in the `.csproj`.
+- Fixed inconsistent package version metadata between the plugin and Thunderstore manifests.
+- Corrected outdated README and CHANGELOG information that no longer matched current preset values.
+- Removed outdated documentation implying that all multiplayer challenge tracking was still experimental.
+- Improved documentation around creator presets so users are not encouraged to directly overwrite source presets.
+
+### Development
+
+- Existing challenge trackers remain functional while presets are progressively migrated to Mission System v2.
+- Mission System v2 currently provides architectural groundwork and initial event evaluation; not every planned objective or condition is exposed to players yet.
+- The future in-game mission editor will operate on custom mission copies instead of directly modifying creator presets.
+
 ## 0.1.8
 
 ### Added
