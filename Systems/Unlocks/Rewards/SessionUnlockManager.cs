@@ -216,27 +216,65 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                bool changed =
-                    false;
+                // =========================================================
+                // ESTADO ACTUAL DEL PERFIL
+                // =========================================================
+
+                bool hasAchievement =
+                    achievementDef != null &&
+                    profile.HasAchievement(
+                        achievementDef.identifier
+                    );
 
 
-                // =================================================
-                // RESTAURAR ACHIEVEMENT
-                // =================================================
+                bool hasUnlockable =
+                    profile.HasUnlockable(
+                        unlockable
+                    );
+
+
+                // =========================================================
+                // YA TIENE TODO
+                // =========================================================
+
+                if (
+                    hasAchievement &&
+                    hasUnlockable
+                )
+                {
+                    logger?.LogInfo(
+                        "[SESSION UNLOCK] El perfil ya tenía " +
+                        $"la recompensa | Body: {bodyName}"
+                    );
+
+
+                    continue;
+                }
+
+
+                // =========================================================
+                // CASO 1:
+                // NO TIENE EL ACHIEVEMENT
+                // =========================================================
                 //
-                // RealerCheatUnlocks utiliza exactamente el sistema
-                // de UserProfile para añadir/revocar achievements.
+                // Esta es la ruta normal de desbloqueo.
                 //
-                // Si el achievement fue revocado al volver a
-                // bloquear el survivor, lo concedemos nuevamente.
+                // Sólo añadimos el Achievement.
                 //
-                // =================================================
+                // NO llamamos también a GrantUnlockable() en este mismo
+                // instante, porque el AchievementDef ya está vinculado
+                // al Unlockable mediante unlockableRewardIdentifier.
+                //
+                // Esto evita:
+                // Achievement popup
+                // +
+                // Unlockable popup
+                //
+                // =========================================================
 
                 if (
                     achievementDef != null &&
-                    !profile.HasAchievement(
-                        achievementDef.identifier
-                    )
+                    !hasAchievement
                 )
                 {
                     profile.AddAchievement(
@@ -245,58 +283,49 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
-                    changed =
-                        true;
+                    profile.RequestEventualSave();
 
 
                     logger?.LogInfo(
-                        "[SESSION UNLOCK] Achievement concedido | " +
+                        "[SESSION UNLOCK] Recompensa concedida mediante Achievement | " +
                         $"Body: {bodyName} | " +
                         $"Achievement: {achievementDef.identifier}"
                     );
+
+
+                    continue;
                 }
 
 
-                // =================================================
-                // RESTAURAR UNLOCKABLE
-                // =================================================
+                // =========================================================
+                // CASO 2:
+                // TIENE ACHIEVEMENT, PERO LE FALTA EL UNLOCKABLE
+                // =========================================================
+                //
+                // Esto cubre mods/herramientas que hayan revocado
+                // solamente el Unlockable.
+                //
+                // Como el Achievement ya existe, no podemos volver a
+                // añadirlo.
+                //
+                // Restauramos solamente el Unlockable.
+                //
+                // =========================================================
 
-                if (
-                    !profile.HasUnlockable(
-                        unlockable
-                    )
-                )
+                if (!hasUnlockable)
                 {
                     profile.GrantUnlockable(
                         unlockable
                     );
 
 
-                    changed =
-                        true;
+                    profile.RequestEventualSave();
 
 
                     logger?.LogInfo(
-                        "[SESSION UNLOCK] Unlockable concedido | " +
+                        "[SESSION UNLOCK] Unlockable restaurado | " +
                         $"Body: {bodyName} | " +
                         $"Unlock: {unlockable.cachedName}"
-                    );
-                }
-
-
-                // =================================================
-                // GUARDAR
-                // =================================================
-
-                if (changed)
-                {
-                    profile.RequestEventualSave();
-                }
-                else
-                {
-                    logger?.LogInfo(
-                        "[SESSION UNLOCK] El perfil ya tenía " +
-                        $"la recompensa | Body: {bodyName}"
                     );
                 }
             }

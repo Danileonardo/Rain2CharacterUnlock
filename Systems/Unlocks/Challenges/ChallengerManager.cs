@@ -1,129 +1,60 @@
 using System;
 
+
 namespace UniversalSurvivorUnlocks
 {
     public static class ChallengeManager
     {
         // =========================================================
-        // TIPO DE ACHIEVEMENT
+        // ACHIEVEMENT USU
+        // =========================================================
+        //
+        // El Achievement existe para:
+        //
+        // - aparecer correctamente en el sistema de desbloqueos;
+        // - almacenar el estado en UserProfile;
+        // - conservar nombre, descripción e icono;
+        // - estar asociado al UnlockableDef.
+        //
+        // YA NO comprueba la misión por sí mismo.
+        //
         // =========================================================
 
         public static Type GetAchievementType(
             SurvivorChallengeJson challenge
         )
         {
-            if (
-                challenge == null ||
-                !challenge.Enabled
-            )
-            {
-                return typeof(
-                    UniversalSurvivorAchievement
-                );
-            }
-
-
-            string challengeType =
-                challenge.Type?
-                    .Trim()
-                    .ToLowerInvariant()
-                ?? "";
-
-
-            switch (challengeType)
-            {
-                case "applystatuseffects":
-                case "healhealth":
-                case "bosscriticalkill":
-                case "holditemstack":
-                case "backstabbosskill":
-                case "airborneexplosionkills":
-                case "precisionexecutionstreak":
-                case "scrapitembossfinisher":
-                    return typeof(
-                        UniversalServerTrackedAchievement
-                    );
-
-
-                default:
-                    return typeof(
-                        UniversalSurvivorAchievement
-                    );
-            }
+            return typeof(
+                UniversalSurvivorAchievement
+            );
         }
 
 
         // =========================================================
-        // TRACKER DEL SERVIDOR
+        // SERVER ACHIEVEMENT
+        // =========================================================
+        //
+        // Antes cada misión tenía un:
+        //
+        // XxxServerAchievement
+        //     ↓
+        // Grant()
+        //
+        // Ahora toda finalización pasa solamente por:
+        //
+        // Tracker
+        //     ↓
+        // ChallengeCompletionRouter
+        //     ↓
+        // SessionUnlockManager
+        //
         // =========================================================
 
         public static Type GetServerTrackerType(
             SurvivorChallengeJson challenge
         )
         {
-            if (
-                challenge == null ||
-                !challenge.Enabled
-            )
-            {
-                return null;
-            }
-
-
-            string challengeType =
-                challenge.Type?
-                    .Trim()
-                    .ToLowerInvariant()
-                ?? "";
-
-
-            switch (challengeType)
-            {
-                case "applystatuseffects":
-                    return typeof(
-                        ApplyStatusEffectsServerAchievement
-                    );
-
-
-                case "healhealth":
-                    return typeof(
-                        HealHealthServerAchievement
-                    );
-
-
-                case "bosscriticalkill":
-                    return typeof(
-                        BossCriticalKillServerAchievement
-                    );
-
-                case "holditemstack":
-                    return typeof(
-                        HoldItemStackServerAchievement
-                    );
-
-                case "backstabbosskill":
-                    return typeof(
-                        BackstabBossKillServerAchievement
-                    );
-
-                case "airborneexplosionkills":
-                    return typeof(
-                        AirborneExplosionKillsServerAchievement
-                    );
-
-                case "precisionexecutionstreak":
-                    return typeof(
-                        PrecisionExecutionStreakServerAchievement
-                    );
-
-                case "scrapitembossfinisher":
-                    return typeof(
-                        ScrapItemBossFinisherServerAchievement
-                    );
-
-                default:
-                    return null;
-            }
+            return null;
         }
     }
 }

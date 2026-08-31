@@ -121,10 +121,6 @@ namespace UniversalSurvivorUnlocks
                 "Risk of Rain 2 terminó de cargar."
             );
 
-            StatusEffectScanner.Rebuild(
-                Logger
-            );
-
             StatusEffectTracker.Initialize(
                 Logger
             );
@@ -161,11 +157,16 @@ namespace UniversalSurvivorUnlocks
                 Logger
             );
 
+            KillEnemiesTracker.Initialize(
+                Logger
+            );
+
+
             SessionUnlockManager.Initialize(
                 Logger
             );
 
-            ReplayUnlockManager.Initialize(
+            ChallengeCompletionRouter.Initialize(
                 Logger
             );
 
