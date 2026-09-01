@@ -8,14 +8,23 @@ namespace UniversalSurvivorUnlocks
      * HOST -> CLIENTES
      * =============================================================
      *
-     * Transporta el snapshot completo de misiones de la run.
+     * Transporta un snapshot completo de misiones.
      *
-     * Sólo contiene JSON temporal.
-     * El cliente NO escribe ese contenido en Survivors.json.
+     * IsRunSnapshot = false
+     *     Snapshot del lobby.
+     *
+     * IsRunSnapshot = true
+     *     Snapshot congelado de la run.
+     *
+     * El cliente mantiene estos datos únicamente en memoria.
+     * NUNCA se escriben en su Survivors.json.
+     * =============================================================
      */
     public sealed class SessionMissionSyncMessage :
         INetMessage
     {
+        public bool IsRunSnapshot;
+
         public string SnapshotJson;
 
 
@@ -25,11 +34,15 @@ namespace UniversalSurvivorUnlocks
 
 
         public SessionMissionSyncMessage(
-            string snapshotJson
+            string snapshotJson,
+            bool isRunSnapshot
         )
         {
             SnapshotJson =
                 snapshotJson ?? "";
+
+            IsRunSnapshot =
+                isRunSnapshot;
         }
 
 
@@ -37,6 +50,10 @@ namespace UniversalSurvivorUnlocks
             NetworkWriter writer
         )
         {
+            writer.Write(
+                IsRunSnapshot
+            );
+
             writer.Write(
                 SnapshotJson ?? ""
             );
@@ -47,6 +64,9 @@ namespace UniversalSurvivorUnlocks
             NetworkReader reader
         )
         {
+            IsRunSnapshot =
+                reader.ReadBoolean();
+
             SnapshotJson =
                 reader.ReadString();
         }
@@ -54,10 +74,6 @@ namespace UniversalSurvivorUnlocks
 
         public void OnReceived()
         {
-            /*
-             * El host ya tiene su snapshot local.
-             * Este mensaje existe únicamente para clientes.
-             */
             if (NetworkServer.active)
             {
                 return;
@@ -66,7 +82,8 @@ namespace UniversalSurvivorUnlocks
 
             SessionMissionRegistry
                 .ReceiveHostSnapshot(
-                    SnapshotJson
+                    SnapshotJson,
+                    IsRunSnapshot
                 );
         }
     }

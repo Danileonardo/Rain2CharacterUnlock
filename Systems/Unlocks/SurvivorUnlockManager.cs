@@ -1332,6 +1332,19 @@ namespace UniversalSurvivorUnlocks
             string bodyName
         )
         {
+            if (
+                SessionMissionRegistry
+                    .TryGetEffectiveEntry(
+                        bodyName,
+                        out SurvivorJsonEntry effectiveEntry
+                    ) &&
+                effectiveEntry != null
+            )
+            {
+                return effectiveEntry;
+            }
+
+
             return SurvivorJsonManager
                 .GetEntryAnywhere(
                     bodyName
@@ -1367,8 +1380,8 @@ namespace UniversalSurvivorUnlocks
         // =========================================================
 
         private static string BuildChallengeDescription(
-    SurvivorJsonEntry entry
-)
+            SurvivorJsonEntry entry
+        )
         {
             if (
                 entry == null ||
@@ -1380,25 +1393,10 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            // =========================================================
-            // DESCRIPCIÓN PERSONALIZADA / PRESET
-            // =========================================================
-            //
-            // Si el challenge contiene una descripción escrita,
-            // esa descripción tiene prioridad.
-            //
-            // Esto permite que SurvivorChallengePresets.cs
-            // controle directamente:
-            //
-            // - Nombre
-            // - Descripción
-            // - Tipo
-            // - Parámetros
-            //
-            // Si Description está vacío, usamos el sistema
-            // automático de abajo como fallback.
-            // =========================================================
-
+            /*
+             * Si el creador o usuario escribió una descripción,
+             * esa descripción es autoritativa.
+             */
             if (
                 !string.IsNullOrWhiteSpace(
                     entry.Challenge.Description

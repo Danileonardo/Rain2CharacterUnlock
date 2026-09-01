@@ -5,19 +5,29 @@ using Newtonsoft.Json.Linq;
 namespace UniversalSurvivorUnlocks
 {
     /*
-     * Snapshot temporal de las misiones efectivas
-     * de una run.
+     * =============================================================
+     * SESSION MISSION SNAPSHOT
+     * =============================================================
+     *
+     * Copia temporal de las misiones efectivas.
+     *
+     * Se usa para dos momentos distintos:
+     *
+     * LOBBY
+     *     Configuración del host visible antes de iniciar la run.
+     *
+     * RUN
+     *     Copia congelada de la configuración del lobby.
      *
      * IMPORTANTE:
      * - No se guarda en disco.
      * - No reemplaza Survivors.json.
-     * - El host crea la copia.
-     * - Los clientes reciben exactamente esa copia.
+     * - Cada entrada se conserva como JObject.
      *
-     * Guardamos cada SurvivorJsonEntry como JObject
-     * para conservar campos presentes y futuros
-     * (Mission System v2, parámetros nuevos, ExtraData, etc.)
-     * sin tener que cambiar el protocolo de red cada vez.
+     * Esto permite transportar campos presentes y futuros
+     * sin tener que modificar el protocolo por cada nuevo
+     * tipo de misión del creador.
+     * =============================================================
      */
     public sealed class SessionMissionSnapshot
     {
@@ -26,7 +36,7 @@ namespace UniversalSurvivorUnlocks
         {
             get;
             set;
-        } = 1;
+        } = 2;
 
 
         [JsonProperty("missions")]

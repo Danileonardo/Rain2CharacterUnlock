@@ -15,23 +15,25 @@ namespace UniversalSurvivorUnlocks
      * SESSION MISSION REGISTRY
      * =============================================================
      *
-     * Fuente de verdad temporal para una run.
+     * Mantiene DOS capas temporales:
      *
-     * SINGLEPLAYER:
-     *     La máquina local es también servidor.
-     *     Se crea un snapshot desde Survivors.json.
+     * 1. LobbySnapshot
+     *    - Configuración efectiva del host antes de iniciar la run.
+     *    - Es la que debe ver la selección de personajes.
      *
-     * MULTIPLAYER HOST:
-     *     El host crea el snapshot desde SU configuración local.
-     *     Ese snapshot queda congelado durante toda la run.
+     * 2. RunSnapshot
+     *    - Copia congelada al comenzar la run.
+     *    - Tiene prioridad absoluta mientras la run existe.
      *
-     * MULTIPLAYER CLIENT:
-     *     Recibe el snapshot del host y lo mantiene sólo en memoria.
+     * Prioridad de lectura:
      *
-     * Al terminar la run:
-     *     El snapshot se elimina.
+     * RunSnapshot
+     *     ↓
+     * LobbySnapshot
+     *     ↓
+     * Survivors.json local
      *
-     * NUNCA se modifica Survivors.json de un cliente.
+     * El cliente NUNCA escribe el snapshot del host en disco.
      * =============================================================
      */
     public static class SessionMissionRegistry
@@ -40,27 +42,40 @@ namespace UniversalSurvivorUnlocks
 
         private static bool initialized;
 
-        private static SessionMissionSnapshot activeSnapshot;
+        private static SessionMissionSnapshot
+            lobbySnapshot;
 
-        private static bool activeSnapshotCameFromHost;
+        private static SessionMissionSnapshot
+            runSnapshot;
 
+        private static bool
+            lobbySnapshotCameFromHost;
 
-        // =========================================================
-        // ESTADO
-        // =========================================================
-
-        public static bool HasSessionSnapshot =>
-            activeSnapshot != null;
-
-
-        public static bool SnapshotCameFromHost =>
-            HasSessionSnapshot &&
-            activeSnapshotCameFromHost;
+        private static bool
+            runSnapshotCameFromHost;
 
 
-        // =========================================================
-        // INICIALIZAR
-        // =========================================================
+        public static event Action
+            EffectiveSnapshotChanged;
+
+
+        public static bool HasLobbySnapshot =>
+            lobbySnapshot != null;
+
+
+        public static bool HasRunSnapshot =>
+            runSnapshot != null;
+
+
+        public static bool LobbySnapshotCameFromHost =>
+            HasLobbySnapshot &&
+            lobbySnapshotCameFromHost;
+
+
+        public static bool RunSnapshotCameFromHost =>
+            HasRunSnapshot &&
+            runSnapshotCameFromHost;
+
 
         public static void Initialize(
             ManualLogSource log
@@ -71,8 +86,13 @@ namespace UniversalSurvivorUnlocks
                 return;
             }
 
-            initialized = true;
-            logger = log;
+
+            initialized =
+                true;
+
+            logger =
+                log;
+
 
             Run.onRunStartGlobal +=
                 OnRunStartGlobal;
@@ -80,81 +100,71 @@ namespace UniversalSurvivorUnlocks
             Run.onRunDestroyGlobal +=
                 OnRunDestroyGlobal;
 
+
             logger?.LogInfo(
-                "[MISSION SESSION] Registro de misión de sesión inicializado."
+                "[MISSION SESSION] Registro Lobby/Run inicializado."
             );
         }
 
 
-        // =========================================================
-        // COMIENZA UNA RUN
-        // =========================================================
-
-        private static void OnRunStartGlobal(
-            Run run
-        )
+        public static void
+            RefreshLobbySnapshotAndBroadcast(
+                string reason = ""
+            )
         {
-            /*
-             * En un cliente NO limpiamos aquí.
-             *
-             * El host podría enviar el paquete muy cerca del evento
-             * de inicio de Run. Si el cliente limpiara aquí podríamos
-             * borrar un snapshot recién recibido por una carrera
-             * de eventos.
-             *
-             * La limpieza normal ocurre en onRunDestroyGlobal.
-             */
             if (!NetworkServer.active)
             {
+                return;
+            }
+
+
+            if (Run.instance != null)
+            {
                 logger?.LogInfo(
-                    "[MISSION SESSION] Cliente esperando snapshot del host."
+                    "[MISSION LOBBY] Actualización ignorada: " +
+                    "ya existe una run activa."
                 );
 
                 return;
             }
 
 
-            /*
-             * Host / singleplayer:
-             * se congela la configuración efectiva al comenzar la run.
-             */
             SessionMissionSnapshot snapshot =
                 BuildSnapshotFromLocalConfig();
 
 
-            ApplySnapshot(
+            ApplyLobbySnapshot(
                 snapshot,
                 cameFromHost: true
             );
 
 
             string json =
-                JsonConvert.SerializeObject(
-                    snapshot,
-                    Formatting.None
+                SerializeSnapshot(
+                    snapshot
                 );
 
 
             logger?.LogInfo(
-                $"[MISSION SESSION] Snapshot del host creado | " +
+                $"[MISSION LOBBY] Snapshot del host creado | " +
                 $"Misiones: {snapshot.Missions.Count} | " +
-                $"Bytes aprox.: {json.Length}"
+                $"Bytes aprox.: {json.Length}" +
+                FormatReason(
+                    reason
+                )
             );
 
 
             LogImportantMission(
                 snapshot,
                 "WooperBody",
-                "HOST"
+                "LOBBY HOST"
             );
 
 
-            /*
-             * En singleplayer no habrá clientes remotos.
-             * En multiplayer, R2API lo entregará a todos.
-             */
             new SessionMissionSyncMessage(
-                json
+                json,
+                isRunSnapshot: false
             )
             .Send(
                 NetworkDestination.Clients
@@ -162,29 +172,91 @@ namespace UniversalSurvivorUnlocks
 
 
             logger?.LogInfo(
-                $"[MISSION SESSION] Snapshot enviado a clientes | " +
+                $"[MISSION LOBBY] Snapshot enviado a clientes | " +
                 $"Misiones: {snapshot.Missions.Count}"
             );
         }
 
 
-        // =========================================================
-        // TERMINA UNA RUN
-        // =========================================================
+        private static void OnRunStartGlobal(
+            Run run
+        )
+        {
+            if (!NetworkServer.active)
+            {
+                logger?.LogInfo(
+                    "[MISSION RUN] Cliente esperando snapshot " +
+                    "congelado del host."
+                );
+
+                return;
+            }
+
+
+            SessionMissionSnapshot source =
+                lobbySnapshot
+                ?? BuildSnapshotFromLocalConfig();
+
+
+            SessionMissionSnapshot frozen =
+                CloneSnapshot(
+                    source
+                );
+
+
+            ApplyRunSnapshot(
+                frozen,
+                cameFromHost: true
+            );
+
+
+            string json =
+                SerializeSnapshot(
+                    frozen
+                );
+
+
+            logger?.LogInfo(
+                $"[MISSION RUN] Snapshot congelado por el host | " +
+                $"Misiones: {frozen.Missions.Count} | " +
+                $"Bytes aprox.: {json.Length} | " +
+                $"Fuente: " +
+                $"{(lobbySnapshot != null ? "LobbySnapshot" : "LocalConfig")}"
+            );
+
+
+            LogImportantMission(
+                frozen,
+                "WooperBody",
+                "RUN HOST"
+            );
+
+
+            new SessionMissionSyncMessage(
+                json,
+                isRunSnapshot: true
+            )
+            .Send(
+                NetworkDestination.Clients
+            );
+
+
+            logger?.LogInfo(
+                $"[MISSION RUN] Snapshot congelado enviado a clientes | " +
+                $"Misiones: {frozen.Missions.Count}"
+            );
+        }
+
 
         private static void OnRunDestroyGlobal(
             Run run
         )
         {
-            ClearSessionSnapshot(
+            ClearRunSnapshot(
                 "fin de run"
             );
         }
 
-
-        // =========================================================
-        // CREAR SNAPSHOT DESDE CONFIG LOCAL DEL HOST
-        // =========================================================
 
         private static SessionMissionSnapshot
             BuildSnapshotFromLocalConfig()
@@ -221,6 +293,7 @@ namespace UniversalSurvivorUnlocks
                 string bodyName =
                     pair.Key;
 
+
                 SurvivorJsonEntry entry =
                     pair.Value;
 
@@ -236,13 +309,6 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                /*
-                 * JObject.FromObject crea una representación
-                 * independiente del objeto original.
-                 *
-                 * Luego DeepClone asegura que el snapshot de sesión
-                 * no comparta referencias mutables con CurrentConfig.
-                 */
                 JObject entryJson =
                     JObject.FromObject(
                         entry
@@ -252,7 +318,8 @@ namespace UniversalSurvivorUnlocks
                 snapshot.Missions[
                     bodyName
                 ] =
-                    (JObject)entryJson.DeepClone();
+                    (JObject)
+                    entryJson.DeepClone();
             }
 
 
@@ -260,18 +327,11 @@ namespace UniversalSurvivorUnlocks
         }
 
 
-        // =========================================================
-        // CLIENTE RECIBE SNAPSHOT DEL HOST
-        // =========================================================
-
         public static void ReceiveHostSnapshot(
-            string json
+            string json,
+            bool isRunSnapshot
         )
         {
-            /*
-             * El host ya usa su propia copia local.
-             * No debe reemplazarla con un paquete remoto.
-             */
             if (NetworkServer.active)
             {
                 return;
@@ -312,23 +372,46 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                ApplySnapshot(
-                    snapshot,
-                    cameFromHost: true
-                );
+                if (isRunSnapshot)
+                {
+                    ApplyRunSnapshot(
+                        snapshot,
+                        cameFromHost: true
+                    );
 
 
-                logger?.LogInfo(
-                    $"[MISSION SESSION] Snapshot del host recibido | " +
-                    $"Misiones: {snapshot.Missions.Count}"
-                );
+                    logger?.LogInfo(
+                        $"[MISSION RUN] Snapshot congelado del host recibido | " +
+                        $"Misiones: {snapshot.Missions.Count}"
+                    );
 
 
-                LogImportantMission(
-                    snapshot,
-                    "WooperBody",
-                    "CLIENTE"
-                );
+                    LogImportantMission(
+                        snapshot,
+                        "WooperBody",
+                        "RUN CLIENTE"
+                    );
+                }
+                else
+                {
+                    ApplyLobbySnapshot(
+                        snapshot,
+                        cameFromHost: true
+                    );
+
+
+                    logger?.LogInfo(
+                        $"[MISSION LOBBY] Snapshot del host recibido | " +
+                        $"Misiones: {snapshot.Missions.Count}"
+                    );
+
+
+                    LogImportantMission(
+                        snapshot,
+                        "WooperBody",
+                        "LOBBY CLIENTE"
+                    );
+                }
             }
             catch (Exception exception)
             {
@@ -343,40 +426,64 @@ namespace UniversalSurvivorUnlocks
         }
 
 
-        // =========================================================
-        // APLICAR SNAPSHOT EN MEMORIA
-        // =========================================================
-
-        private static void ApplySnapshot(
+        private static void ApplyLobbySnapshot(
             SessionMissionSnapshot snapshot,
             bool cameFromHost
         )
         {
-            if (snapshot == null)
-            {
-                activeSnapshot =
-                    null;
-
-                activeSnapshotCameFromHost =
-                    false;
-
-                return;
-            }
-
-
-            /*
-             * Hacemos una segunda copia profunda.
-             * De este modo ningún consumidor puede terminar
-             * modificando accidentalmente el objeto recibido.
-             */
-            string json =
-                JsonConvert.SerializeObject(
-                    snapshot,
-                    Formatting.None
+            lobbySnapshot =
+                CloneSnapshot(
+                    snapshot
                 );
 
 
-            activeSnapshot =
+            lobbySnapshotCameFromHost =
+                lobbySnapshot != null &&
+                cameFromHost;
+
+
+            NotifyEffectiveSnapshotChanged();
+        }
+
+
+        private static void ApplyRunSnapshot(
+            SessionMissionSnapshot snapshot,
+            bool cameFromHost
+        )
+        {
+            runSnapshot =
+                CloneSnapshot(
+                    snapshot
+                );
+
+
+            runSnapshotCameFromHost =
+                runSnapshot != null &&
+                cameFromHost;
+
+
+            NotifyEffectiveSnapshotChanged();
+        }
+
+
+        private static SessionMissionSnapshot
+            CloneSnapshot(
+                SessionMissionSnapshot snapshot
+            )
+        {
+            if (snapshot == null)
+            {
+                return null;
+            }
+
+
+            string json =
+                SerializeSnapshot(
+                    snapshot
+                );
+
+
+            SessionMissionSnapshot clone =
                 JsonConvert
                     .DeserializeObject<
                         SessionMissionSnapshot
@@ -386,9 +493,9 @@ namespace UniversalSurvivorUnlocks
                 ?? new SessionMissionSnapshot();
 
 
-            if (activeSnapshot.Missions == null)
+            if (clone.Missions == null)
             {
-                activeSnapshot.Missions =
+                clone.Missions =
                     new Dictionary<
                         string,
                         JObject
@@ -396,14 +503,21 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            activeSnapshotCameFromHost =
-                cameFromHost;
+            return clone;
         }
 
 
-        // =========================================================
-        // OBTENER ENTRY EFECTIVA
-        // =========================================================
+        private static string SerializeSnapshot(
+            SessionMissionSnapshot snapshot
+        )
+        {
+            return JsonConvert.SerializeObject(
+                snapshot
+                ?? new SessionMissionSnapshot(),
+                Formatting.None
+            );
+        }
+
 
         public static bool TryGetEffectiveEntry(
             string bodyName,
@@ -414,24 +528,21 @@ namespace UniversalSurvivorUnlocks
                 null;
 
 
-            /*
-             * 1. Durante una run:
-             *    primero manda el snapshot de sesión.
-             */
             if (
-                TryGetSessionEntryJson(
+                TryGetEffectiveEntryJson(
                     bodyName,
-                    out JObject sessionEntry
+                    out JObject entryJson
                 )
             )
             {
                 try
                 {
                     entry =
-                        sessionEntry
+                        entryJson
                             .ToObject<
                                 SurvivorJsonEntry
                             >();
+
 
                     return
                         entry != null;
@@ -440,7 +551,7 @@ namespace UniversalSurvivorUnlocks
                 {
                     logger?.LogError(
                         $"[MISSION SESSION] No se pudo convertir " +
-                        $"la entrada de sesión para {bodyName}."
+                        $"la entrada efectiva para {bodyName}."
                     );
 
                     logger?.LogError(
@@ -450,20 +561,9 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            /*
-             * 2. Menú / fuera de run / fallback:
-             *    configuración local del jugador.
-             */
-            return TryGetLocalEntry(
-                bodyName,
-                out entry
-            );
+            return false;
         }
 
-
-        // =========================================================
-        // OBTENER ENTRY COMO JSON
-        // =========================================================
 
         public static bool TryGetEffectiveEntryJson(
             string bodyName,
@@ -475,15 +575,32 @@ namespace UniversalSurvivorUnlocks
 
 
             if (
-                TryGetSessionEntryJson(
+                TryGetSnapshotEntryJson(
+                    runSnapshot,
                     bodyName,
-                    out JObject sessionEntry
+                    out JObject runEntry
                 )
             )
             {
                 entryJson =
                     (JObject)
-                    sessionEntry.DeepClone();
+                    runEntry.DeepClone();
+
+                return true;
+            }
+
+
+            if (
+                TryGetSnapshotEntryJson(
+                    lobbySnapshot,
+                    bodyName,
+                    out JObject lobbyEntry
+                )
+            )
+            {
+                entryJson =
+                    (JObject)
+                    lobbyEntry.DeepClone();
 
                 return true;
             }
@@ -508,10 +625,6 @@ namespace UniversalSurvivorUnlocks
             return false;
         }
 
-
-        // =========================================================
-        // OBTENER CHALLENGE EFECTIVO COMO JSON
-        // =========================================================
 
         public static JObject GetEffectiveChallengeJson(
             string bodyName
@@ -545,10 +658,6 @@ namespace UniversalSurvivorUnlocks
                 challenge.DeepClone();
         }
 
-
-        // =========================================================
-        // HELPERS DE TEXTO
-        // =========================================================
 
         public static string GetEffectiveMissionName(
             string bodyName
@@ -601,11 +710,8 @@ namespace UniversalSurvivorUnlocks
         }
 
 
-        // =========================================================
-        // ENTRY DEL SNAPSHOT
-        // =========================================================
-
-        private static bool TryGetSessionEntryJson(
+        private static bool TryGetSnapshotEntryJson(
+            SessionMissionSnapshot snapshot,
             string bodyName,
             out JObject entryJson
         )
@@ -615,8 +721,8 @@ namespace UniversalSurvivorUnlocks
 
 
             if (
-                activeSnapshot == null ||
-                activeSnapshot.Missions == null ||
+                snapshot == null ||
+                snapshot.Missions == null ||
                 string.IsNullOrWhiteSpace(
                     bodyName
                 )
@@ -627,7 +733,7 @@ namespace UniversalSurvivorUnlocks
 
 
             if (
-                !activeSnapshot.Missions
+                !snapshot.Missions
                     .TryGetValue(
                         bodyName,
                         out JObject stored
@@ -645,10 +751,6 @@ namespace UniversalSurvivorUnlocks
             return true;
         }
 
-
-        // =========================================================
-        // ENTRY LOCAL
-        // =========================================================
 
         private static bool TryGetLocalEntry(
             string bodyName,
@@ -710,42 +812,94 @@ namespace UniversalSurvivorUnlocks
         }
 
 
-        // =========================================================
-        // LIMPIAR
-        // =========================================================
-
-        public static void ClearSessionSnapshot(
+        public static void ClearRunSnapshot(
             string reason = ""
         )
         {
             bool hadSnapshot =
-                activeSnapshot != null;
+                runSnapshot != null;
 
 
-            activeSnapshot =
+            runSnapshot =
                 null;
 
-            activeSnapshotCameFromHost =
+            runSnapshotCameFromHost =
                 false;
 
 
             if (hadSnapshot)
             {
                 logger?.LogInfo(
-                    $"[MISSION SESSION] Snapshot eliminado" +
-                    $"{(
-                        string.IsNullOrWhiteSpace(reason)
-                            ? "."
-                            : $" | Motivo: {reason}"
-                    )}"
+                    "[MISSION RUN] Snapshot eliminado" +
+                    FormatReason(
+                        reason
+                    )
                 );
+
+
+                NotifyEffectiveSnapshotChanged();
             }
         }
 
 
-        // =========================================================
-        // LOG DE PRUEBA
-        // =========================================================
+        public static void ClearLobbySnapshot(
+            string reason = ""
+        )
+        {
+            bool hadSnapshot =
+                lobbySnapshot != null;
+
+
+            lobbySnapshot =
+                null;
+
+            lobbySnapshotCameFromHost =
+                false;
+
+
+            if (hadSnapshot)
+            {
+                logger?.LogInfo(
+                    "[MISSION LOBBY] Snapshot eliminado" +
+                    FormatReason(
+                        reason
+                    )
+                );
+
+
+                NotifyEffectiveSnapshotChanged();
+            }
+        }
+
+
+        public static void ClearSessionSnapshot(
+            string reason = ""
+        )
+        {
+            ClearRunSnapshot(
+                reason
+            );
+        }
+
+
+        private static void NotifyEffectiveSnapshotChanged()
+        {
+            try
+            {
+                EffectiveSnapshotChanged?.Invoke();
+            }
+            catch (Exception exception)
+            {
+                logger?.LogError(
+                    "[MISSION SESSION] Error notificando cambio de snapshot."
+                );
+
+                logger?.LogError(
+                    exception
+                );
+            }
+        }
+
 
         private static void LogImportantMission(
             SessionMissionSnapshot snapshot,
@@ -774,7 +928,9 @@ namespace UniversalSurvivorUnlocks
 
 
             JObject challenge =
-                entry["challenge"] as JObject;
+                entry[
+                    "challenge"
+                ] as JObject;
 
 
             string missionName =
@@ -814,6 +970,21 @@ namespace UniversalSurvivorUnlocks
                 $"Tipo: {missionType} | " +
                 $"Descripción: {missionDescription}"
             );
+        }
+
+
+        private static string FormatReason(
+            string reason
+        )
+        {
+            if (string.IsNullOrWhiteSpace(reason))
+            {
+                return ".";
+            }
+
+
+            return
+                $" | Motivo: {reason}";
         }
     }
 }

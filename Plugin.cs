@@ -69,6 +69,11 @@ namespace UniversalSurvivorUnlocks
                     SessionMissionSyncMessage
                 >();
 
+            NetworkingAPI
+                .RegisterMessageType<
+                    SessionMissionLobbyRequestMessage
+                >();
+
             Logger.LogInfo(
                 $"Universal Survivor Unlocks " +
                 $"{PluginVersion} cargado."
@@ -170,12 +175,15 @@ namespace UniversalSurvivorUnlocks
                 Logger
             );
 
-
             SessionUnlockManager.Initialize(
                 Logger
             );
 
             SessionMissionRegistry.Initialize(
+                Logger
+            );
+
+            SessionMissionLobbySyncManager.Initialize(
                 Logger
             );
 
