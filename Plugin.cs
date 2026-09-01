@@ -183,6 +183,18 @@ namespace UniversalSurvivorUnlocks
                 Logger
             );
 
+            MissionRuntimeActivityPlan.Initialize(
+                Logger
+            );
+
+            MissionRuntimeBudget.Initialize(
+                Logger
+            );
+
+            MissionLogLimiter.Initialize(
+                Logger
+            );
+
             MissionProgressRegistry.Initialize(
                 Logger
             );
