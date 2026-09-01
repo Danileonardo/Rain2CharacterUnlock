@@ -1,28 +1,31 @@
+using System.Collections.Generic;
+
+using R2API.Networking;
 using R2API.Networking.Interfaces;
+
+using RoR2;
 
 using UnityEngine.Networking;
 
 
 namespace UniversalSurvivorUnlocks
 {
+    /*
+     * HOST -> CLIENTES
+     *
+     * El host ya validó que la misión terminó.
+     * Cada cliente concede/verifica la recompensa en SU UserProfile.
+     */
     public sealed class SessionUnlockGrantMessage
         : INetMessage
     {
         public string BodyName;
 
 
-        // =========================================================
-        // CONSTRUCTOR VACÍO
-        // =========================================================
-
         public SessionUnlockGrantMessage()
         {
         }
 
-
-        // =========================================================
-        // CONSTRUCTOR
-        // =========================================================
 
         public SessionUnlockGrantMessage(
             string bodyName
@@ -32,10 +35,6 @@ namespace UniversalSurvivorUnlocks
                 bodyName;
         }
 
-
-        // =========================================================
-        // SERIALIZAR
-        // =========================================================
 
         public void Serialize(
             NetworkWriter writer
@@ -48,10 +47,6 @@ namespace UniversalSurvivorUnlocks
         }
 
 
-        // =========================================================
-        // DESERIALIZAR
-        // =========================================================
-
         public void Deserialize(
             NetworkReader reader
         )
@@ -61,23 +56,57 @@ namespace UniversalSurvivorUnlocks
         }
 
 
-        // =========================================================
-        // RECIBIR
-        // =========================================================
-
         public void OnReceived()
         {
             /*
-             * El host ya validó la misión.
+             * El host ya ejecutó GrantLocally() directamente.
              *
-             * Cada cliente revisa SU propio
-             * UserProfile y solamente concede
-             * aquello que le falte.
+             * Si este mensaje llegara también al cliente local del host,
+             * no debemos volver a ejecutar la concesión ni mandar un ACK
+             * duplicado hacia el propio servidor.
              */
+            if (NetworkServer.active)
+            {
+                return;
+            }
 
-            SessionUnlockManager.GrantLocally(
-                BodyName
-            );
+
+            List<SessionUnlockGrantResult> results =
+                SessionUnlockManager
+                    .GrantLocally(
+                        BodyName
+                    );
+
+
+            foreach (
+                SessionUnlockGrantResult result
+                in results
+            )
+            {
+                NetworkUser networkUser =
+                    result
+                        .LocalUser?
+                        .currentNetworkUser;
+
+
+                if (networkUser == null)
+                {
+                    continue;
+                }
+
+
+                new SessionUnlockResultMessage(
+                    networkUser.gameObject,
+                    result.BodyName,
+                    result.AchievementBefore,
+                    result.UnlockableBefore,
+                    result.AchievementAfter,
+                    result.UnlockableAfter
+                )
+                .Send(
+                    NetworkDestination.Server
+                );
+            }
         }
     }
 }

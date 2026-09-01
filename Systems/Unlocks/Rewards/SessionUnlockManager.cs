@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 using BepInEx.Logging;
 
@@ -7,6 +8,7 @@ using R2API.Networking.Interfaces;
 
 using RoR2;
 
+using UnityEngine;
 using UnityEngine.Networking;
 
 
@@ -18,6 +20,28 @@ namespace UniversalSurvivorUnlocks
 
 
         private static bool initialized;
+
+
+        /*
+         * Sólo aceptamos confirmaciones para rewards cuya misión
+         * fue completada realmente por el host durante esta run.
+         */
+        private static readonly HashSet<string>
+            CompletedBodiesThisRun =
+                new HashSet<string>(
+                    StringComparer.Ordinal
+                );
+
+
+        /*
+         * Evita repetir el mensaje de chat si una confirmación
+         * llega más de una vez.
+         */
+        private static readonly HashSet<string>
+            AnnouncedAchievementsThisRun =
+                new HashSet<string>(
+                    StringComparer.Ordinal
+                );
 
 
         // =========================================================
@@ -42,9 +66,35 @@ namespace UniversalSurvivorUnlocks
                 pluginLogger;
 
 
+            Run.onRunStartGlobal +=
+                OnRunStart;
+
+
+            Run.onRunDestroyGlobal +=
+                OnRunEnd;
+
+
             logger?.LogInfo(
                 "SessionUnlockManager inicializado."
             );
+        }
+
+
+        private static void OnRunStart(
+            Run run
+        )
+        {
+            CompletedBodiesThisRun.Clear();
+            AnnouncedAchievementsThisRun.Clear();
+        }
+
+
+        private static void OnRunEnd(
+            Run run
+        )
+        {
+            CompletedBodiesThisRun.Clear();
+            AnnouncedAchievementsThisRun.Clear();
         }
 
 
@@ -52,14 +102,12 @@ namespace UniversalSurvivorUnlocks
         // MISIÓN COMPLETADA
         // =========================================================
         //
-        // ESTE MÉTODO SÓLO DEBE SER LLAMADO
-        // POR EL SERVIDOR / HOST.
+        // SÓLO HOST / SERVIDOR.
         //
-        // Ejemplo:
-        //
-        // SessionUnlockManager.CompleteMission(
-        //     "RobHunkBody"
-        // );
+        // El host valida la misión.
+        // El host concede su recompensa local.
+        // Los clientes reciben SessionUnlockGrantMessage y
+        // comprueban/conceden la recompensa en SU perfil.
         //
         // =========================================================
 
@@ -77,10 +125,6 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            // -----------------------------------------------------
-            // AUTORIDAD DEL HOST
-            // -----------------------------------------------------
-
             if (!NetworkServer.active)
             {
                 logger?.LogWarning(
@@ -88,14 +132,9 @@ namespace UniversalSurvivorUnlocks
                     $"misión fuera del servidor | Body: {bodyName}"
                 );
 
-
                 return;
             }
 
-
-            // -----------------------------------------------------
-            // CONFIRMAR QUE ES UN UNLOCK USU
-            // -----------------------------------------------------
 
             if (
                 !SurvivorUnlockManager
@@ -111,9 +150,13 @@ namespace UniversalSurvivorUnlocks
                     $"Body: {bodyName}"
                 );
 
-
                 return;
             }
+
+
+            CompletedBodiesThisRun.Add(
+                bodyName
+            );
 
 
             logger?.LogInfo(
@@ -126,9 +169,33 @@ namespace UniversalSurvivorUnlocks
             // HOST / JUGADORES LOCALES
             // -----------------------------------------------------
 
-            GrantLocally(
-                bodyName
-            );
+            List<SessionUnlockGrantResult> localResults =
+                GrantLocally(
+                    bodyName
+                );
+
+
+            foreach (
+                SessionUnlockGrantResult result
+                in localResults
+            )
+            {
+                NetworkUser networkUser =
+                    result
+                        .LocalUser?
+                        .currentNetworkUser;
+
+
+                HandleGrantResult(
+                    networkUser,
+                    result.BodyName,
+                    result.AchievementBefore,
+                    result.UnlockableBefore,
+                    result.AchievementAfter,
+                    result.UnlockableAfter,
+                    "HOST LOCAL"
+                );
+            }
 
 
             // -----------------------------------------------------
@@ -145,26 +212,33 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
-        // CONCEDER EN ESTE CLIENTE
+        // CONCEDER / VERIFICAR EN ESTE CLIENTE
+        // =========================================================
+        //
+        // IMPORTANTE:
+        // Este método NO decide si la misión se completó.
+        // Sólo trabaja con el UserProfile local.
+        //
         // =========================================================
 
-        public static void GrantLocally(
-            string bodyName
-        )
+        public static List<SessionUnlockGrantResult>
+            GrantLocally(
+                string bodyName
+            )
         {
+            List<SessionUnlockGrantResult> results =
+                new List<SessionUnlockGrantResult>();
+
+
             if (
                 string.IsNullOrWhiteSpace(
                     bodyName
                 )
             )
             {
-                return;
+                return results;
             }
 
-
-            // -----------------------------------------------------
-            // UNLOCKABLE
-            // -----------------------------------------------------
 
             if (
                 !SurvivorUnlockManager
@@ -180,25 +254,27 @@ namespace UniversalSurvivorUnlocks
                     $"Body: {bodyName}"
                 );
 
-
-                return;
+                return results;
             }
 
 
-            // -----------------------------------------------------
-            // ACHIEVEMENT
-            // -----------------------------------------------------
-
-            SurvivorUnlockManager
-                .TryGetCustomAchievement(
-                    bodyName,
-                    out AchievementDef achievementDef
+            if (
+                !SurvivorUnlockManager
+                    .TryGetCustomAchievement(
+                        bodyName,
+                        out AchievementDef achievementDef
+                    ) ||
+                achievementDef == null
+            )
+            {
+                logger?.LogWarning(
+                    "[SESSION UNLOCK] Achievement local no encontrado | " +
+                    $"Body: {bodyName}"
                 );
 
+                return results;
+            }
 
-            // -----------------------------------------------------
-            // PUEDE HABER MÁS DE UN LOCAL USER
-            // -----------------------------------------------------
 
             foreach (
                 LocalUser localUser
@@ -216,119 +292,339 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                // =========================================================
-                // ESTADO ACTUAL DEL PERFIL
-                // =========================================================
-
-                bool hasAchievement =
-                    achievementDef != null &&
+                bool achievementBefore =
                     profile.HasAchievement(
                         achievementDef.identifier
                     );
 
 
-                bool hasUnlockable =
+                bool unlockableBefore =
                     profile.HasUnlockable(
                         unlockable
                     );
 
 
-                // =========================================================
-                // YA TIENE TODO
-                // =========================================================
-
-                if (
-                    hasAchievement &&
-                    hasUnlockable
-                )
-                {
-                    logger?.LogInfo(
-                        "[SESSION UNLOCK] El perfil ya tenía " +
-                        $"la recompensa | Body: {bodyName}"
-                    );
+                logger?.LogInfo(
+                    "[SESSION UNLOCK LOCAL] ANTES | " +
+                    $"Body: {bodyName} | " +
+                    $"Achievement: {achievementBefore} | " +
+                    $"Unlockable: {unlockableBefore}"
+                );
 
 
-                    continue;
-                }
-
-
-                // =========================================================
-                // CASO 1:
-                // NO TIENE EL ACHIEVEMENT
-                // =========================================================
+                // -------------------------------------------------
+                // 1. ACHIEVEMENT
+                // -------------------------------------------------
                 //
-                // Esta es la ruta normal de desbloqueo.
+                // Conservamos la ruta actual porque el popup superior
+                // ya funciona correctamente.
                 //
-                // Sólo añadimos el Achievement.
-                //
-                // NO llamamos también a GrantUnlockable() en este mismo
-                // instante, porque el AchievementDef ya está vinculado
-                // al Unlockable mediante unlockableRewardIdentifier.
-                //
-                // Esto evita:
-                // Achievement popup
-                // +
-                // Unlockable popup
-                //
-                // =========================================================
+                // -------------------------------------------------
 
-                if (
-                    achievementDef != null &&
-                    !hasAchievement
-                )
+                if (!achievementBefore)
                 {
                     profile.AddAchievement(
                         achievementDef.identifier,
                         true
                     );
-
-
-                    profile.RequestEventualSave();
-
-
-                    logger?.LogInfo(
-                        "[SESSION UNLOCK] Recompensa concedida mediante Achievement | " +
-                        $"Body: {bodyName} | " +
-                        $"Achievement: {achievementDef.identifier}"
-                    );
-
-
-                    continue;
                 }
 
 
-                // =========================================================
-                // CASO 2:
-                // TIENE ACHIEVEMENT, PERO LE FALTA EL UNLOCKABLE
-                // =========================================================
-                //
-                // Esto cubre mods/herramientas que hayan revocado
-                // solamente el Unlockable.
-                //
-                // Como el Achievement ya existe, no podemos volver a
-                // añadirlo.
-                //
-                // Restauramos solamente el Unlockable.
-                //
-                // =========================================================
+                bool achievementAfterAdd =
+                    profile.HasAchievement(
+                        achievementDef.identifier
+                    );
 
-                if (!hasUnlockable)
-                {
-                    profile.GrantUnlockable(
+
+                bool unlockableAfterAdd =
+                    profile.HasUnlockable(
                         unlockable
                     );
 
 
-                    profile.RequestEventualSave();
+                // -------------------------------------------------
+                // 2. VERIFICAR EL UNLOCKABLE REAL
+                // -------------------------------------------------
+                //
+                // Ya no asumimos que AddAchievement() siempre dejó
+                // la recompensa real en el perfil.
+                //
+                // Sólo reparamos el Unlockable si DESPUÉS del
+                // Achievement sigue faltando.
+                //
+                // -------------------------------------------------
+
+                if (
+                    achievementAfterAdd &&
+                    !unlockableAfterAdd
+                )
+                {
+                    logger?.LogWarning(
+                        "[SESSION UNLOCK LOCAL] Achievement concedido " +
+                        "pero Unlockable ausente; reparando | " +
+                        $"Body: {bodyName}"
+                    );
 
 
-                    logger?.LogInfo(
-                        "[SESSION UNLOCK] Unlockable restaurado | " +
-                        $"Body: {bodyName} | " +
-                        $"Unlock: {unlockable.cachedName}"
+                    profile.GrantUnlockable(
+                        unlockable
                     );
                 }
+
+
+                bool achievementAfter =
+                    profile.HasAchievement(
+                        achievementDef.identifier
+                    );
+
+
+                bool unlockableAfter =
+                    profile.HasUnlockable(
+                        unlockable
+                    );
+
+
+                bool changed =
+                    achievementBefore !=
+                        achievementAfter ||
+                    unlockableBefore !=
+                        unlockableAfter;
+
+
+                if (changed)
+                {
+                    profile.RequestEventualSave();
+                }
+
+
+                logger?.LogInfo(
+                    "[SESSION UNLOCK LOCAL] DESPUÉS | " +
+                    $"Body: {bodyName} | " +
+                    $"Achievement: {achievementAfter} | " +
+                    $"Unlockable: {unlockableAfter} | " +
+                    $"AchievementNuevo: {!achievementBefore && achievementAfter} | " +
+                    $"UnlockableNuevo: {!unlockableBefore && unlockableAfter}"
+                );
+
+
+                results.Add(
+                    new SessionUnlockGrantResult(
+                        bodyName,
+                        localUser,
+                        achievementBefore,
+                        unlockableBefore,
+                        achievementAfter,
+                        unlockableAfter
+                    )
+                );
             }
+
+
+            return results;
+        }
+
+
+        // =========================================================
+        // RESULTADO CLIENTE -> HOST
+        // =========================================================
+
+        public static void ReceiveClientGrantResult(
+            GameObject networkUserObject,
+            string bodyName,
+            bool achievementBefore,
+            bool unlockableBefore,
+            bool achievementAfter,
+            bool unlockableAfter
+        )
+        {
+            if (!NetworkServer.active)
+            {
+                return;
+            }
+
+
+            if (
+                string.IsNullOrWhiteSpace(
+                    bodyName
+                )
+            )
+            {
+                return;
+            }
+
+
+            if (
+                !CompletedBodiesThisRun.Contains(
+                    bodyName
+                )
+            )
+            {
+                logger?.LogWarning(
+                    "[SESSION UNLOCK HOST] Se rechazó una confirmación " +
+                    "para una misión no completada por el host | " +
+                    $"Body: {bodyName}"
+                );
+
+                return;
+            }
+
+
+            if (networkUserObject == null)
+            {
+                logger?.LogWarning(
+                    "[SESSION UNLOCK HOST] ACK sin NetworkUserObject | " +
+                    $"Body: {bodyName}"
+                );
+
+                return;
+            }
+
+
+            NetworkUser networkUser =
+                networkUserObject
+                    .GetComponent<NetworkUser>();
+
+
+            if (networkUser == null)
+            {
+                logger?.LogWarning(
+                    "[SESSION UNLOCK HOST] ACK sin NetworkUser | " +
+                    $"Body: {bodyName}"
+                );
+
+                return;
+            }
+
+
+            HandleGrantResult(
+                networkUser,
+                bodyName,
+                achievementBefore,
+                unlockableBefore,
+                achievementAfter,
+                unlockableAfter,
+                "CLIENTE REMOTO"
+            );
+        }
+
+
+        // =========================================================
+        // PROCESAR RESULTADO EN HOST
+        // =========================================================
+
+        private static void HandleGrantResult(
+            NetworkUser networkUser,
+            string bodyName,
+            bool achievementBefore,
+            bool unlockableBefore,
+            bool achievementAfter,
+            bool unlockableAfter,
+            string source
+        )
+        {
+            bool achievementWasNew =
+                !achievementBefore &&
+                achievementAfter;
+
+
+            bool unlockableWasNew =
+                !unlockableBefore &&
+                unlockableAfter;
+
+
+            bool success =
+                achievementAfter &&
+                unlockableAfter;
+
+
+            string playerName =
+                networkUser != null
+                    ? networkUser.userName
+                    : "<sin NetworkUser>";
+
+
+            logger?.LogInfo(
+                "[SESSION UNLOCK HOST] Resultado recibido | " +
+                $"Fuente: {source} | " +
+                $"Jugador: {playerName} | " +
+                $"Body: {bodyName} | " +
+                $"Achievement: {achievementBefore}->{achievementAfter} | " +
+                $"Unlockable: {unlockableBefore}->{unlockableAfter} | " +
+                $"Success: {success}"
+            );
+
+
+            if (!success)
+            {
+                logger?.LogError(
+                    "[SESSION UNLOCK HOST] La recompensa NO quedó " +
+                    "completa en el perfil del jugador | " +
+                    $"Jugador: {playerName} | " +
+                    $"Body: {bodyName}"
+                );
+
+                return;
+            }
+
+
+            /*
+             * Si sólo reparamos un Unlockable antiguo pero el achievement
+             * ya existía, NO debemos fingir que el jugador acaba de ganar
+             * el achievement otra vez.
+             */
+            if (!achievementWasNew)
+            {
+                if (unlockableWasNew)
+                {
+                    logger?.LogInfo(
+                        "[SESSION UNLOCK HOST] Unlockable reparado sin " +
+                        "nuevo achievement; no se anuncia en chat | " +
+                        $"Jugador: {playerName} | " +
+                        $"Body: {bodyName}"
+                    );
+                }
+
+                return;
+            }
+
+
+            if (networkUser == null)
+            {
+                return;
+            }
+
+
+            string announcementKey =
+                networkUser
+                    .gameObject
+                    .GetInstanceID()
+                    .ToString() +
+                "|" +
+                bodyName;
+
+
+            if (
+                !AnnouncedAchievementsThisRun.Add(
+                    announcementKey
+                )
+            )
+            {
+                logger?.LogInfo(
+                    "[SESSION UNLOCK HOST] Anuncio duplicado ignorado | " +
+                    $"Jugador: {playerName} | " +
+                    $"Body: {bodyName}"
+                );
+
+                return;
+            }
+
+
+            SessionUnlockAnnouncementManager
+                .AnnounceAchievement(
+                    networkUser,
+                    bodyName,
+                    logger
+                );
         }
     }
 }

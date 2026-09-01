@@ -32,7 +32,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public const string PluginVersion =
-            "0.1.9";
+            "0.1.10";
 
 
         public static List<SurvivorInfo> Survivors
@@ -49,6 +49,10 @@ namespace UniversalSurvivorUnlocks
                     HunkBanditShotResultMessage
                 >();
 
+            NetworkingAPI
+                .RegisterMessageType<
+                    SessionUnlockResultMessage
+                >();
 
             NetworkingAPI
                 .RegisterMessageType<
@@ -58,6 +62,11 @@ namespace UniversalSurvivorUnlocks
             NetworkingAPI
                 .RegisterMessageType<
                     SessionUnlockGrantMessage
+                >();
+
+            NetworkingAPI
+                .RegisterMessageType<
+                    SessionMissionSyncMessage
                 >();
 
             Logger.LogInfo(
@@ -163,6 +172,10 @@ namespace UniversalSurvivorUnlocks
 
 
             SessionUnlockManager.Initialize(
+                Logger
+            );
+
+            SessionMissionRegistry.Initialize(
                 Logger
             );
 
