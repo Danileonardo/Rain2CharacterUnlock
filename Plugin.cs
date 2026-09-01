@@ -183,6 +183,14 @@ namespace UniversalSurvivorUnlocks
                 Logger
             );
 
+            MissionProgressRegistry.Initialize(
+                Logger
+            );
+
+            MissionStageRuntimeTracker.Initialize(
+                Logger
+            );
+
             SessionMissionLobbySyncManager.Initialize(
                 Logger
             );
