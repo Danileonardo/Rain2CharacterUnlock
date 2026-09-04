@@ -359,6 +359,12 @@ namespace UniversalSurvivorUnlocks
             BulletAttack bulletAttack
         )
         {
+            if (!MissionRuntimeActivityPlan.IsTypeActive("PrecisionExecutionStreak"))
+            {
+                orig(self, bulletAttack);
+                return;
+            }
+
             /*
              * Primero dejamos que la habilidad vanilla configure
              * normalmente el BulletAttack.
@@ -544,6 +550,12 @@ namespace UniversalSurvivorUnlocks
             BulletAttack bulletAttack
         )
         {
+            if (!MissionRuntimeActivityPlan.IsTypeActive("PrecisionExecutionStreak"))
+            {
+                orig(self, bulletAttack);
+                return;
+            }
+
             /*
              * Conservamos completamente la configuración vanilla.
              */
@@ -781,6 +793,11 @@ namespace UniversalSurvivorUnlocks
 
         private static void OnBanditClientFixedUpdate()
         {
+            if (!MissionRuntimeActivityPlan.IsTypeActive("PrecisionExecutionStreak"))
+            {
+                return;
+            }
+
             /*
              * El host no necesita esta lógica.
              *
@@ -973,6 +990,12 @@ namespace UniversalSurvivorUnlocks
             BulletAttack self
         )
         {
+            if (!MissionRuntimeActivityPlan.IsTypeActive("PrecisionExecutionStreak"))
+            {
+                orig(self);
+                return;
+            }
+
             if (
                 self == null ||
                 !BulletContexts.TryGetValue(
@@ -1113,6 +1136,11 @@ namespace UniversalSurvivorUnlocks
             DamageReport damageReport
         )
         {
+            if (!MissionRuntimeActivityPlan.IsTypeActive("PrecisionExecutionStreak"))
+            {
+                return;
+            }
+
             if (!NetworkServer.active)
             {
                 return;

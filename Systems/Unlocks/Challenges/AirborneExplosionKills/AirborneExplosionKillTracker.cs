@@ -135,6 +135,12 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            if (!MissionRuntimeActivityPlan.IsTypeActive("AirborneExplosionKills"))
+            {
+                return;
+            }
+
+
             if (playerOwner == null)
             {
                 return;
@@ -217,13 +223,20 @@ namespace UniversalSurvivorUnlocks
                     : "<desconocido>";
 
 
-            logger?.LogInfo(
-                "[AirborneExplosionKills] " +
-                "MUERTE EXPLOSIVA EN EL AIRE | " +
-                $"Jugador: {playerName} | " +
-                $"Víctima: {victimName} | " +
-                $"Contador: {currentCount}"
-            );
+            if (
+                MissionLogLimiter.ShouldLogMilestone(
+                    "legacy-airborne:" + playerOwner.GetInstanceID(),
+                    currentCount,
+                    5d
+                )
+            )
+            {
+                logger?.LogInfo(
+                    "[AirborneExplosionKills] PROGRESO | " +
+                    $"Jugador: {playerName} | " +
+                    $"Contador: {currentCount}"
+                );
+            }
 
 
             ExplosionKillCountChanged?.Invoke(
@@ -246,6 +259,12 @@ namespace UniversalSurvivorUnlocks
 
 
             if (Run.instance == null)
+            {
+                return;
+            }
+
+
+            if (!MissionRuntimeActivityPlan.IsTypeActive("AirborneExplosionKills"))
             {
                 return;
             }

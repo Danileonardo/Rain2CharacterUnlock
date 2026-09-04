@@ -69,11 +69,19 @@ namespace UniversalSurvivorUnlocks
             switch (category)
             {
                 // =================================================
-                // CUALQUIER OBJETIVO
+                // CUALQUIER ENEMIGO
                 // =================================================
 
+                // En un objetivo de tipo Kill, "Any" conserva la
+                // semántica segura esperada: cualquier ENEMIGO.
+                // No deben contar muertes de aliados, drones o el
+                // propio jugador.
+
                 case "any":
-                    return true;
+                    return IsEnemy(
+                        attackerBody,
+                        victimBody
+                    );
 
 
                 // =================================================
@@ -221,11 +229,33 @@ namespace UniversalSurvivorUnlocks
                 );
 
 
-            return string.Equals(
-                currentBody,
-                requiredBody,
-                StringComparison.OrdinalIgnoreCase
-            );
+            string[] acceptedBodies =
+                requiredBody.Split(
+                    new[] { '|', ',', ';' },
+                    StringSplitOptions.RemoveEmptyEntries
+                );
+
+
+            for (int i = 0; i < acceptedBodies.Length; i++)
+            {
+                string candidate = acceptedBodies[i]?.Trim();
+
+
+                if (
+                    !string.IsNullOrWhiteSpace(candidate) &&
+                    string.Equals(
+                        currentBody,
+                        candidate,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    return true;
+                }
+            }
+
+
+            return false;
         }
     }
 }

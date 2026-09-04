@@ -6,18 +6,27 @@ namespace UniversalSurvivorUnlocks
     /*
      * =============================================================
      * HOST -> CLIENTES
+     * SNAPSHOT CHUNK
      * =============================================================
      *
-     * Transporta un snapshot completo de misiones.
+     * Antes este mensaje intentaba transportar el snapshot completo.
      *
-     * IsRunSnapshot = false
-     *     Snapshot del lobby.
+     * En multiplayer real encontramos:
      *
-     * IsRunSnapshot = true
-     *     Snapshot congelado de la run.
+     * Snapshot:
+     *     ~5950 bytes
      *
-     * El cliente mantiene estos datos únicamente en memoria.
-     * NUNCA se escriben en su Survivors.json.
+     * Límite del canal:
+     *     1100 bytes
+     *
+     * Ahora CADA instancia de este mensaje representa únicamente
+     * un fragmento seguro del snapshot.
+     *
+     * El reensamblado vive en:
+     *
+     * SessionMissionChunkTransport
+     *
+     * El cliente NUNCA escribe estos datos en Survivors.json.
      * =============================================================
      */
     public sealed class SessionMissionSyncMessage :
@@ -25,7 +34,26 @@ namespace UniversalSurvivorUnlocks
     {
         public bool IsRunSnapshot;
 
-        public string SnapshotJson;
+        // Identifica el proceso/sesión de transporte del host.
+        public string HostTransportSessionId;
+
+        // Orden lógico de snapshots producidos por ese host.
+        public int SnapshotSequence;
+
+        // Identificador único de ESTE snapshot.
+        public string SnapshotId;
+
+        // Índice 0-based del fragmento.
+        public int ChunkIndex;
+
+        // Cantidad total de fragmentos.
+        public int ChunkCount;
+
+        // Longitud real del JSON completo codificado como UTF-8.
+        public int TotalByteLength;
+
+        // Fragmento binario convertido a Base64.
+        public string ChunkBase64;
 
 
         public SessionMissionSyncMessage()
@@ -34,15 +62,39 @@ namespace UniversalSurvivorUnlocks
 
 
         public SessionMissionSyncMessage(
-            string snapshotJson,
-            bool isRunSnapshot
+            bool isRunSnapshot,
+            string hostTransportSessionId,
+            int snapshotSequence,
+            string snapshotId,
+            int chunkIndex,
+            int chunkCount,
+            int totalByteLength,
+            string chunkBase64
         )
         {
-            SnapshotJson =
-                snapshotJson ?? "";
-
             IsRunSnapshot =
                 isRunSnapshot;
+
+            HostTransportSessionId =
+                hostTransportSessionId ?? "";
+
+            SnapshotSequence =
+                snapshotSequence;
+
+            SnapshotId =
+                snapshotId ?? "";
+
+            ChunkIndex =
+                chunkIndex;
+
+            ChunkCount =
+                chunkCount;
+
+            TotalByteLength =
+                totalByteLength;
+
+            ChunkBase64 =
+                chunkBase64 ?? "";
         }
 
 
@@ -55,7 +107,31 @@ namespace UniversalSurvivorUnlocks
             );
 
             writer.Write(
-                SnapshotJson ?? ""
+                HostTransportSessionId ?? ""
+            );
+
+            writer.Write(
+                SnapshotSequence
+            );
+
+            writer.Write(
+                SnapshotId ?? ""
+            );
+
+            writer.Write(
+                ChunkIndex
+            );
+
+            writer.Write(
+                ChunkCount
+            );
+
+            writer.Write(
+                TotalByteLength
+            );
+
+            writer.Write(
+                ChunkBase64 ?? ""
             );
         }
 
@@ -67,23 +143,45 @@ namespace UniversalSurvivorUnlocks
             IsRunSnapshot =
                 reader.ReadBoolean();
 
-            SnapshotJson =
+            HostTransportSessionId =
+                reader.ReadString();
+
+            SnapshotSequence =
+                reader.ReadInt32();
+
+            SnapshotId =
+                reader.ReadString();
+
+            ChunkIndex =
+                reader.ReadInt32();
+
+            ChunkCount =
+                reader.ReadInt32();
+
+            TotalByteLength =
+                reader.ReadInt32();
+
+            ChunkBase64 =
                 reader.ReadString();
         }
 
 
         public void OnReceived()
         {
+            /*
+             * Este flujo es host -> cliente.
+             *
+             * El host nunca debe aplicar sus propios fragmentos.
+             */
             if (NetworkServer.active)
             {
                 return;
             }
 
 
-            SessionMissionRegistry
-                .ReceiveHostSnapshot(
-                    SnapshotJson,
-                    IsRunSnapshot
+            SessionMissionChunkTransport
+                .ReceiveChunk(
+                    this
                 );
         }
     }

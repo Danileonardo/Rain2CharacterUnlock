@@ -85,6 +85,12 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            if (!MissionRuntimeActivityPlan.IsTypeActive("BossCriticalKill"))
+            {
+                return;
+            }
+
+
             if (damageReport == null)
             {
                 return;

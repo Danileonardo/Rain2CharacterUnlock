@@ -152,6 +152,32 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
+        // SNAPSHOTS PARA EDITOR / PRESETS
+        // =========================================================
+        //
+        // El editor futuro necesita poder listar exactamente los
+        // BuffDef que el mismo scanner considera válidos.
+        // Devolvemos copias para que nadie pueda modificar los
+        // diccionarios internos del scanner.
+        // =========================================================
+
+        public static List<BuffDef> GetNegativeBuffsSnapshot()
+        {
+            return new List<BuffDef>(
+                negativeBuffs.Values
+            );
+        }
+
+
+        public static List<BuffDef> GetPositiveBuffsSnapshot()
+        {
+            return new List<BuffDef>(
+                positiveBuffs.Values
+            );
+        }
+
+
+        // =========================================================
         // NEGATIVOS
         // =========================================================
 

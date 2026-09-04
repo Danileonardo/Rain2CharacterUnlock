@@ -153,10 +153,12 @@ namespace UniversalSurvivorUnlocks
             ScrapConvertedByPlayer.Clear();
 
 
-            logger?.LogInfo(
-                "[TINKATON] Nueva run | " +
-                "Contadores de chatarra reiniciados."
-            );
+            if (MissionRuntimeActivityPlan.IsTypeActive("ScrapItemBossFinisher"))
+            {
+                logger?.LogInfo(
+                    "[TINKATON] Nueva run | Contadores reiniciados."
+                );
+            }
         }
 
 
@@ -185,6 +187,12 @@ namespace UniversalSurvivorUnlocks
             UniquePickup pickupToTake
         )
         {
+            if (!MissionRuntimeActivityPlan.IsTypeActive("ScrapItemBossFinisher"))
+            {
+                orig(self, pickupToTake);
+                return;
+            }
+
             // =====================================================
             // CLIENTE
             // =====================================================
@@ -414,6 +422,12 @@ namespace UniversalSurvivorUnlocks
             DamageReport damageReport
         )
         {
+            if (!MissionRuntimeActivityPlan.IsTypeActive("ScrapItemBossFinisher"))
+            {
+                return;
+            }
+
+
             if (!NetworkServer.active)
             {
                 return;

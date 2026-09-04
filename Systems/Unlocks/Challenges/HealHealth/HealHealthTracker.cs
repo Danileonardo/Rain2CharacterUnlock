@@ -37,16 +37,20 @@ namespace UniversalSurvivorUnlocks
         {
             TotalHealing = 0f;
 
-            logger?.LogInfo(
-                "[HealHealth] Nueva run detectada | Total reiniciado a 0."
-            );
+            if (MissionRuntimeActivityPlan.IsTypeActive("HealHealth"))
+            {
+                logger?.LogInfo("[HealHealth] Nueva run | Total reiniciado.");
+            }
         }
 
         private static void OnRunEnd(Run run)
         {
-            logger?.LogInfo(
-                $"[HealHealth] Run finalizada | Total observado: {TotalHealing:0.##}"
-            );
+            if (MissionRuntimeActivityPlan.IsTypeActive("HealHealth"))
+            {
+                logger?.LogInfo(
+                    $"[HealHealth] Run finalizada | Total: {TotalHealing:0.##}"
+                );
+            }
 
             TotalHealing = 0f;
         }
@@ -82,6 +86,9 @@ namespace UniversalSurvivorUnlocks
                 return result;
 
             if (Run.instance == null)
+                return result;
+
+            if (!MissionRuntimeActivityPlan.IsTypeActive("HealHealth"))
                 return result;
 
             CharacterBody body = self.body;
@@ -136,16 +143,18 @@ namespace UniversalSurvivorUnlocks
                     ? body.gameObject.name
                     : body.name;
 
-            logger?.LogInfo(
-                $"[HealHealth] CURACIÓN | " +
-                $"Objetivo: {bodyName} | " +
-                $"Antes: {healthBefore:0.##} | " +
-                $"Después: {healthAfter:0.##} | " +
-                $"Solicitado: {amount:0.##} | " +
-                $"Real: {actualHealing:0.##} | " +
-                $"nonRegen: {nonRegen} | " +
-                $"TOTAL RUN: {TotalHealing:0.##}"
-            );
+            if (
+                MissionLogLimiter.ShouldLogMilestone(
+                    "legacy-healing",
+                    TotalHealing,
+                    1000d
+                )
+            )
+            {
+                logger?.LogInfo(
+                    $"[HealHealth] PROGRESO | Total: {TotalHealing:0.##}"
+                );
+            }
 
             HealingChanged?.Invoke(
                 actualHealing,

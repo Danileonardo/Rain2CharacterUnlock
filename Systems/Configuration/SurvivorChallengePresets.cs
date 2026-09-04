@@ -8,20 +8,61 @@ namespace UniversalSurvivorUnlocks
         // =========================================================
         // MODO DE AUTORÍA
         // =========================================================
-        //
-        // true:
-        // Los presets definidos aquí son la fuente de verdad
-        // durante el desarrollo.
-        //
-        // Podemos modificar nombre, descripción, tipo y parámetros
-        // libremente y Survivors.json se actualizará al iniciar.
-        //
-        // false:
-        // Comportamiento futuro para la versión pública.
+        // true durante desarrollo: estas definiciones actualizan
+        // Survivors.json al iniciar. En publicación pública futura
+        // se desactivará para respetar la copia editable del usuario.
         // =========================================================
 
-        public const bool AuthoringMode =
-            true;
+        public const bool AuthoringMode = true;
+
+
+        private static MissionDefinition GetRuntimeMissionOrNull(string presetId)
+        {
+            MissionPreset preset = BuiltInMissionPresetCatalog.Get(presetId);
+
+            if (
+                preset == null ||
+                !preset.RuntimeSupported ||
+                preset.Mission == null ||
+                preset.Mission.Routes == null ||
+                preset.Mission.Routes.Count == 0
+            )
+            {
+                return null;
+            }
+
+            // El catálogo usa factories: esta instancia es una copia
+            // segura y no modifica el original del creador.
+            return preset.Mission;
+        }
+
+        private static MissionConfiguration
+            CreatePresetMissionConfiguration(
+                string presetId
+        )
+        {
+            return new MissionConfiguration
+            {
+                // Los nueve presets oficiales actuales funcionan como
+                // proveedor USU. Hasta que exista una elección explícita
+                // del jugador desde la futura interfaz, se consideran un
+                // fallback automático y no una selección manual.
+                Provider =
+                    UnlockProviderKind.USU,
+
+                SelectionMode =
+                    UnlockSelectionMode.AutomaticFallback,
+
+                Source =
+                    "Preset",
+
+                BasePresetId =
+                    presetId,
+
+                CustomMission =
+                    null
+            };
+        }
 
 
         // =========================================================
@@ -32,28 +73,29 @@ namespace UniversalSurvivorUnlocks
         {
             return new SurvivorChallengeJson
             {
-                Enabled =
-                    true,
-
-                Name =
-                    "Elegido de la Llave Espada",
-
+                Enabled = true,
+                Name = "Elegido de la Llave Espada",
+                LocalizationKey = SurvivorLocalizationKeys.Sora,
                 Description =
-                    "Mantén 100 efectos de estado válidos activos\n" +
-                    "simultáneamente en una partida.",
+                    "Abre paso entre mundos en Baluarte de Ambry;\n" +
+                    "vence a sombras y completa Venganza - Mercenary",
+                LunarCoinReward = 4,
+                Type = "ApplyStatusEffects", // fallback legacy
+                Parameters = new JObject
+                {
+                    ["amount"] = 100,
+                    ["singleRun"] = true
+                },
 
-                Type =
-                    "ApplyStatusEffects",
+                MissionConfig =
+                    CreatePresetMissionConfiguration(
+                        MissionPresetIds.SoraOfficial
+                ),
 
-                Parameters =
-                    new JObject
-                    {
-                        ["amount"] =
-                            100,
-
-                        ["singleRun"] =
-                            true
-                    }
+                Mission =
+                    GetRuntimeMissionOrNull(
+                        MissionPresetIds.SoraOfficial
+                )
             };
         }
 
@@ -66,28 +108,29 @@ namespace UniversalSurvivorUnlocks
         {
             return new SurvivorChallengeJson
             {
-                Enabled =
-                    true,
-
-                Name =
-                    "Oración de Esperanza",
-
+                Enabled = true,
+                Name = "El poder de la bondad",
+                LocalizationKey = SurvivorLocalizationKeys.Ralsei,
                 Description =
-                    "Restaura un total de 10000 de salud a tu equipo\n" +
-                    "durante una sola partida.",
+                    "Usa Devoción y reúne 3 nuevos amigos Lemurianos;\n" +
+                    "completa el portal con ellos - Captain o Seeker",
+                LunarCoinReward = 3,
+                Type = "HealHealth", // fallback legacy
+                Parameters = new JObject
+                {
+                    ["amount"] = 10000,
+                    ["singleRun"] = true
+                },
+                
+                        MissionConfig =
+                    CreatePresetMissionConfiguration(
+                        MissionPresetIds.RalseiOfficial
+                ),
 
-                Type =
-                    "HealHealth",
-
-                Parameters =
-                    new JObject
-                    {
-                        ["amount"] =
-                            10000,
-
-                        ["singleRun"] =
-                            true
-                    }
+                Mission =
+                    GetRuntimeMissionOrNull(
+                        MissionPresetIds.RalseiOfficial
+                )
             };
         }
 
@@ -100,30 +143,30 @@ namespace UniversalSurvivorUnlocks
         {
             return new SurvivorChallengeJson
             {
-                Enabled =
-                    true,
-
-                Name =
-                    "El Cuarto Acto",
-
+                Enabled = true,
+                Name = "El Cuarto Acto",
+                LocalizationKey = SurvivorLocalizationKeys.Jhin,
                 Description =
-                    "Asesta el golpe final a un jefe con un crítico\n" +
-                    "de 44444 de daño o más en una sola partida.",
-
-                Type =
-                    "BossCriticalKill",
-
-                Parameters =
-                    new JObject
-                    {
-                        ["minimumDamage"] =
-                            44444,
-
-                        ["singleRun"] =
-                            true
-                    }
+                    "Convierte a un jefe en tu gran final;\n" +
+                    "asesta un crítico mortal de 44.444 de daño o más.",
+                LunarCoinReward = 4,
+                Type = "BossCriticalKill", // fallback legacy
+                Parameters = new JObject
+                {
+                    ["minimumDamage"] = 44444,
+                    ["singleRun"] = true
+                },
+                MissionConfig =
+                    CreatePresetMissionConfiguration(
+                        MissionPresetIds.JhinOfficial
+                    ),
+                Mission =
+                    GetRuntimeMissionOrNull(
+                        MissionPresetIds.JhinOfficial
+                    )
             };
         }
+
 
         // =========================================================
         // SCOUT
@@ -133,33 +176,31 @@ namespace UniversalSurvivorUnlocks
         {
             return new SurvivorChallengeJson
             {
-                Enabled =
-                    true,
-
-                Name =
-                    "Energía Atómica",
-
+                Enabled = true,
+                Name = "Sed Termonuclear",
+                LocalizationKey = SurvivorLocalizationKeys.Scout,
                 Description =
-                    "Acumula 15 Bebidas energéticas en total durante \n" +
-                    "la partida.",
-
-                Type =
-                    "HoldItemStack",
-
-                Parameters =
-                    new JObject
-                    {
-                        ["item"] =
-                            "SprintBonus",
-
-                        ["amount"] =
-                            15,
-
-                        ["singleRun"] =
-                            true
-                    }
+                    "Sacia tu sed con 8 Bebidas energéticas;\n" +
+                    "o completa el primer sector sin objetos en 4 min.",
+                LunarCoinReward = 2,
+                Type = "HoldItemStack", // fallback legacy: 15 bebidas
+                Parameters = new JObject
+                {
+                    ["item"] = "SprintBonus",
+                    ["amount"] = 8,
+                    ["singleRun"] = true
+                },
+                MissionConfig =
+                    CreatePresetMissionConfiguration(
+                        MissionPresetIds.ScoutOfficial
+                    ),
+                Mission =
+                    GetRuntimeMissionOrNull(
+                        MissionPresetIds.ScoutOfficial
+                    )
             };
         }
+
 
         // =========================================================
         // SPY
@@ -169,27 +210,29 @@ namespace UniversalSurvivorUnlocks
         {
             return new SurvivorChallengeJson
             {
-                Enabled =
-                    true,
-
-                Name =
-                    "Sin que me veas venir",
-
+                Enabled = true,
+                Name = "Sin que me veas venir",
+                LocalizationKey = SurvivorLocalizationKeys.Spy,
                 Description =
-                    "Mata a un jefe apuñalándolo por la espalda\n" +
-                    "con la Daga serrada - Bandit.",
-
-                Type =
-                    "BackstabBossKill",
-
-                Parameters =
-                    new JObject
-                    {
-                        ["singleRun"] =
-                            true
-                    }
+                    "Que el jefe nunca vea venir tu golpe final;\n" +
+                    "remátalo por detrás con Daga serrada - Bandit",
+                LunarCoinReward = 3,
+                Type = "BackstabBossKill", // fallback legacy
+                Parameters = new JObject
+                {
+                    ["singleRun"] = true
+                },
+                MissionConfig =
+                    CreatePresetMissionConfiguration(
+                        MissionPresetIds.SpyOfficial
+                    ),
+                Mission =
+                    GetRuntimeMissionOrNull(
+                        MissionPresetIds.SpyOfficial
+                    )
             };
         }
+
 
         // =========================================================
         // ROCKET
@@ -199,36 +242,32 @@ namespace UniversalSurvivorUnlocks
         {
             return new SurvivorChallengeJson
             {
-                Enabled =
-                    true,
-
-                Name =
-                    "La gravedad es opcional",
-
+                Enabled = true,
+                Name = "La gravedad es opcional",
+                LocalizationKey = SurvivorLocalizationKeys.Rocket,
                 Description =
-                    "Mata a 15 enemigos con explosiones\n" +
-                    "sin tocar el suelo.",
-
-                Type =
-                    "AirborneExplosionKills",
-
-                Parameters =
-                    new JObject
-                    {
-                        ["amount"] =
-                            15,
-
-                        ["resetOnGround"] =
-                            true,
-
-                        ["countOwnedMinions"] =
-                            true,
-
-                        ["singleRun"] =
-                            true
-                    }
+                    "Haz llover explosiones desde el cielo;\n" +
+                    "derriba 5 antes de caer; haz la hazaña 3 veces.",
+                LunarCoinReward = 4,
+                Type = "AirborneExplosionKills", // fallback legacy
+                Parameters = new JObject
+                {
+                    ["amount"] = 8,
+                    ["resetOnGround"] = true,
+                    ["countOwnedMinions"] = false,
+                    ["singleRun"] = true
+                },
+                MissionConfig =
+                    CreatePresetMissionConfiguration(
+                        MissionPresetIds.RocketOfficial
+                    ),
+                Mission =
+                    GetRuntimeMissionOrNull(
+                        MissionPresetIds.RocketOfficial
+                    )
             };
         }
+
 
         // =========================================================
         // HUNK
@@ -238,33 +277,31 @@ namespace UniversalSurvivorUnlocks
         {
             return new SurvivorChallengeJson
             {
-                Enabled =
-                    true,
-
-                Name =
-                    "La Parca No Falla",
-
+                Enabled = true,
+                Name = "La Parca No Falla",
+                LocalizationKey = SurvivorLocalizationKeys.Hunk,
                 Description =
-                    "Logra 24 puntos débiles seguidos con Railgunner\n" +
-                    "o 24 bajas seguidas con Luces fuera - Bandit.",
-
-                Type =
-                    "PrecisionExecutionStreak",
-
-                Parameters =
-                    new JObject
-                    {
-                        ["railgunnerWeakPoints"] =
-                            24,
-
-                        ["banditLightsOutKills"] =
-                            24,
-
-                        ["singleRun"] =
-                            true
-                    }
+                    "Protege la batería y sobrevive a toda costa;\n" +
+                    "escapa de la Luna o sacrifícate en el Obelisco.",
+                LunarCoinReward = 5,
+                Type = "PrecisionExecutionStreak", // fallback legacy
+                Parameters = new JObject
+                {
+                    ["railgunnerWeakPoints"] = 24,
+                    ["banditLightsOutKills"] = 24,
+                    ["singleRun"] = true
+                },
+                MissionConfig =
+                    CreatePresetMissionConfiguration(
+                        MissionPresetIds.HunkOfficial
+                    ),
+                Mission =
+                    GetRuntimeMissionOrNull(
+                        MissionPresetIds.HunkOfficial
+                    )
             };
         }
+
 
         // =========================================================
         // TINKATON
@@ -274,231 +311,112 @@ namespace UniversalSurvivorUnlocks
         {
             return new SurvivorChallengeJson
             {
-                Enabled =
-                    true,
-
-                Name =
-                    "Forjada en Chatarra",
-
+                Enabled = true,
+                Name = "Forjada en Chatarra",
+                LocalizationKey = SurvivorLocalizationKeys.Tinkaton,
                 Description =
-                    "Recicla 6 objetos; ten Justicia demoledora y acaba\n" +
-                    "con Unidad de Aleación con Bote explosivo - MUL-T.",
-
-                Type =
-                    "ScrapItemBossFinisher",
-
-                Parameters =
-                    new JObject
-                    {
-                        ["scrapAmount"] =
-                            6,
-
-                        ["requiredBody"] =
-                            "ToolbotBody",
-
-                        ["requiredItem"] =
-                            "ArmorReductionOnHit",
-
-                        ["bossBody"] =
-                            "SuperRoboBallBossBody",
-
-                        ["finalDamageSource"] =
-                            "Secondary",
-
-                        ["requiredSecondarySkillToken"] =
-                            "TOOLBOT_SECONDARY_NAME",
-
-                        ["singleRun"] =
-                            true
-                    }
+                    "Haz de 6 chatarras el inicio de tu gran golpe;\n" +
+                    "ten Justicia demoledora y vence un Ojo mecánico.",
+                LunarCoinReward = 5,
+                Type = "ScrapItemBossFinisher", // fallback legacy
+                Parameters = new JObject
+                {
+                    ["scrapAmount"] = 6,
+                    ["requiredBody"] = "ToolbotBody",
+                    ["requiredItem"] = "ArmorReductionOnHit",
+                    ["bossBody"] = "SuperRoboBallBossBody",
+                    ["finalDamageSource"] = "Secondary",
+                    ["requiredSecondarySkillToken"] = "TOOLBOT_SECONDARY_NAME",
+                    ["singleRun"] = true
+                },
+                MissionConfig =
+                    CreatePresetMissionConfiguration(
+                        MissionPresetIds.TinkatonOfficial
+                    ),
+                Mission =
+                    GetRuntimeMissionOrNull(
+                        MissionPresetIds.TinkatonOfficial
+                    )
             };
         }
 
+
         // =========================================================
-        // ¿ES SORA?
+        // WOOPER
         // =========================================================
 
-        private static bool IsSora(
-            string bodyName,
-            string contentPackIdentifier
-        )
+        public static SurvivorChallengeJson CreateWooperPreset()
         {
-            return
-                string.Equals(
-                    bodyName,
-                    "SoraBody",
-                    StringComparison.Ordinal
-                )
-                &&
-                string.Equals(
-                    contentPackIdentifier,
-                    "com.Dragonyck.Sora",
-                    StringComparison.OrdinalIgnoreCase
-                );
+            return new SurvivorChallengeJson
+            {
+                Enabled = true,
+                Name = "De vuelta al agua",
+                LocalizationKey = SurvivorLocalizationKeys.Wooper,
+                Description =
+                    "Haz de los Humedales tu hogar; marca territorio;\n" +
+                    "caza y muerde a 20 presas envenenadas - Acrid",
+                LunarCoinReward = 2,
+                Type = "KillEnemies", // fallback legacy genérico
+                Parameters = new JObject
+                {
+                    ["amount"] = 100,
+                    ["singleRun"] = true
+                },
+                MissionConfig =
+                    CreatePresetMissionConfiguration(
+                        MissionPresetIds.WooperOfficial
+                    ),
+                Mission =
+                    GetRuntimeMissionOrNull(
+                        MissionPresetIds.WooperOfficial
+                    )
+            };
         }
 
 
         // =========================================================
-        // ¿ES RALSEI?
+        // IDENTIFICACIÓN DE MODS/PERSONAJES
         // =========================================================
 
-        private static bool IsRalsei(
+        private static bool IsExact(
             string bodyName,
-            string contentPackIdentifier
+            string contentPackIdentifier,
+            string requiredBody,
+            string requiredPack
         )
         {
             return
-                string.Equals(
-                    bodyName,
-                    "RalseiBody",
-                    StringComparison.Ordinal
-                )
-                &&
-                string.Equals(
-                    contentPackIdentifier,
-                    "com.GodRayProd.RalseiMod",
-                    StringComparison.OrdinalIgnoreCase
-                );
+                string.Equals(bodyName, requiredBody, StringComparison.Ordinal) &&
+                string.Equals(contentPackIdentifier, requiredPack, StringComparison.OrdinalIgnoreCase);
         }
 
+        private static bool IsSora(string bodyName, string pack) =>
+            IsExact(bodyName, pack, "SoraBody", "com.Dragonyck.Sora");
 
-        // =========================================================
-        // ¿ES JHIN?
-        // =========================================================
+        private static bool IsRalsei(string bodyName, string pack) =>
+            IsExact(bodyName, pack, "RalseiBody", "com.GodRayProd.RalseiMod");
 
-        private static bool IsJhin(
-            string bodyName,
-            string contentPackIdentifier
-        )
-        {
-            return
-                string.Equals(
-                    bodyName,
-                    "JhinBody",
-                    StringComparison.Ordinal
-                )
-                &&
-                string.Equals(
-                    contentPackIdentifier,
-                    "com.seroronin.JhinMod",
-                    StringComparison.OrdinalIgnoreCase
-                );
-        }
+        private static bool IsJhin(string bodyName, string pack) =>
+            IsExact(bodyName, pack, "JhinBody", "com.seroronin.JhinMod");
 
-        // =========================================================
-        // ¿ES SCOUT?
-        // =========================================================
+        private static bool IsScout(string bodyName, string pack) =>
+            IsExact(bodyName, pack, "ScoutBody", "com.kenko.Scout");
 
-        private static bool IsScout(
-            string bodyName,
-            string contentPackIdentifier
-        )
-        {
-            return
-                string.Equals(
-                    bodyName,
-                    "ScoutBody",
-                    StringComparison.Ordinal
-                )
-                &&
-                string.Equals(
-                    contentPackIdentifier,
-                    "com.kenko.Scout",
-                    StringComparison.OrdinalIgnoreCase
-                );
-        }
+        private static bool IsSpy(string bodyName, string pack) =>
+            IsExact(bodyName, pack, "SpyBody", "com.kenko.Spy");
 
-        // =========================================================
-        // ¿ES SPY?
-        // =========================================================
+        private static bool IsRocket(string bodyName, string pack) =>
+            IsExact(bodyName, pack, "RocketSurvivorBody", "com.EnforcerGang.RocketSurvivor");
 
-        private static bool IsSpy(
-            string bodyName,
-            string contentPackIdentifier
-        )
-        {
-            return
-                string.Equals(
-                    bodyName,
-                    "SpyBody",
-                    StringComparison.Ordinal
-                )
-                &&
-                string.Equals(
-                    contentPackIdentifier,
-                    "com.kenko.Spy",
-                    StringComparison.OrdinalIgnoreCase
-                );
-        }
+        private static bool IsHunk(string bodyName, string pack) =>
+            IsExact(bodyName, pack, "RobHunkBody", "com.rob.Hunk");
 
-        // =========================================================
-        // ¿ES ROCKET?
-        // =========================================================
+        private static bool IsTinkaton(string bodyName, string pack) =>
+            IsExact(bodyName, pack, "TinkatonBody", "com.Dragonyck.Tinkaton");
 
-        private static bool IsRocket(
-            string bodyName,
-            string contentPackIdentifier
-        )
-        {
-            return
-                string.Equals(
-                    bodyName,
-                    "RocketSurvivorBody",
-                    StringComparison.Ordinal
-                )
-                &&
-                string.Equals(
-                    contentPackIdentifier,
-                    "com.EnforcerGang.RocketSurvivor",
-                    StringComparison.OrdinalIgnoreCase
-                );
-        }
+        private static bool IsWooper(string bodyName, string pack) =>
+            IsExact(bodyName, pack, "WooperBody", "com.Dragonyck.Wooper");
 
-        // =========================================================
-        // ¿ES HUNK?
-        // =========================================================
-
-        private static bool IsHunk(
-            string bodyName,
-            string contentPackIdentifier
-        )
-        {
-            return
-                string.Equals(
-                    bodyName,
-                    "RobHunkBody",
-                    StringComparison.Ordinal
-                )
-                &&
-                string.Equals(
-                    contentPackIdentifier,
-                    "com.rob.Hunk",
-                    StringComparison.OrdinalIgnoreCase
-                );
-        }
-
-        // =========================================================
-        // ¿ES TINKATON?
-        // =========================================================
-
-        private static bool IsTinkaton(
-            string bodyName,
-            string contentPackIdentifier
-        )
-        {
-            return
-                string.Equals(
-                    bodyName,
-                    "TinkatonBody",
-                    StringComparison.Ordinal
-                )
-                &&
-                string.Equals(
-                    contentPackIdentifier,
-                    "com.Dragonyck.Tinkaton",
-                    StringComparison.OrdinalIgnoreCase
-                );
-        }
 
         // =========================================================
         // OBTENER PRESET PARA SURVIVOR CONOCIDO
@@ -510,151 +428,61 @@ namespace UniversalSurvivorUnlocks
             out SurvivorChallengeJson challenge
         )
         {
-            challenge =
-                null;
+            challenge = null;
 
-
-            // =====================================================
-            // SORA
-            // =====================================================
-
-            if (
-                IsSora(
-                    bodyName,
-                    contentPackIdentifier
-                )
-            )
+            if (IsSora(bodyName, contentPackIdentifier))
             {
-                challenge =
-                    CreateSoraPreset();
-
+                challenge = CreateSoraPreset();
                 return true;
             }
 
-
-            // =====================================================
-            // RALSEI
-            // =====================================================
-
-            if (
-                IsRalsei(
-                    bodyName,
-                    contentPackIdentifier
-                )
-            )
+            if (IsRalsei(bodyName, contentPackIdentifier))
             {
-                challenge =
-                    CreateRalseiPreset();
-
+                challenge = CreateRalseiPreset();
                 return true;
             }
 
-
-            // =====================================================
-            // JHIN
-            // =====================================================
-
-            if (
-                IsJhin(
-                    bodyName,
-                    contentPackIdentifier
-                )
-            )
+            if (IsJhin(bodyName, contentPackIdentifier))
             {
-                challenge =
-                    CreateJhinPreset();
-
+                challenge = CreateJhinPreset();
                 return true;
             }
 
-            // =====================================================
-            // SCOUT
-            // =====================================================
-
-            if (
-                IsScout(
-                    bodyName,
-                    contentPackIdentifier
-                )
-            )
+            if (IsScout(bodyName, contentPackIdentifier))
             {
-                challenge =
-                    CreateScoutPreset();
-
+                challenge = CreateScoutPreset();
                 return true;
             }
 
-            // =====================================================
-            // SPY
-            // =====================================================
-
-            if (
-                IsSpy(
-                    bodyName,
-                    contentPackIdentifier
-                )
-            )
+            if (IsSpy(bodyName, contentPackIdentifier))
             {
-                challenge =
-                    CreateSpyPreset();
-
+                challenge = CreateSpyPreset();
                 return true;
             }
 
-            // =====================================================
-            // ROCKET
-            // =====================================================
-
-            if (
-                IsRocket(
-                    bodyName,
-                    contentPackIdentifier
-                )
-            )
+            if (IsRocket(bodyName, contentPackIdentifier))
             {
-                challenge =
-                    CreateRocketPreset();
-
+                challenge = CreateRocketPreset();
                 return true;
             }
 
-            // =====================================================
-            // HUNK
-            // =====================================================
-
-            if (
-                IsHunk(
-                    bodyName,
-                    contentPackIdentifier
-                )
-            )
+            if (IsHunk(bodyName, contentPackIdentifier))
             {
-                challenge =
-                    CreateHunkPreset();
-
+                challenge = CreateHunkPreset();
                 return true;
             }
 
-            // =====================================================
-            // TINKATON
-            // =====================================================
-
-            if (
-                IsTinkaton(
-                    bodyName,
-                    contentPackIdentifier
-                )
-            )
+            if (IsTinkaton(bodyName, contentPackIdentifier))
             {
-                challenge =
-                    CreateTinkatonPreset();
-
+                challenge = CreateTinkatonPreset();
                 return true;
             }
 
-            // =====================================================
-            // NO EXISTE PRESET ESPECÍFICO
-            // =====================================================
+            if (IsWooper(bodyName, contentPackIdentifier))
+            {
+                challenge = CreateWooperPreset();
+                return true;
+            }
 
             return false;
         }
@@ -671,9 +499,7 @@ namespace UniversalSurvivorUnlocks
             out SurvivorChallengeJson migratedChallenge
         )
         {
-            migratedChallenge =
-                null;
-
+            migratedChallenge = null;
             return false;
         }
     }

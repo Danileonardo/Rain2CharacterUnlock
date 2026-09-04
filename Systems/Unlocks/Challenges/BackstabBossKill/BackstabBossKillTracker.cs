@@ -73,6 +73,12 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            if (!MissionRuntimeActivityPlan.IsTypeActive("BackstabBossKill"))
+            {
+                return;
+            }
+
+
             if (damageReport == null)
             {
                 return;

@@ -10,6 +10,7 @@ namespace UniversalSurvivorUnlocks
     {
         private static ManualLogSource logger;
         private static bool initialized;
+        private static float nextPollTime;
 
 
         /*
@@ -132,6 +133,21 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            if (!MissionRuntimeActivityPlan.IsTypeActive("HoldItemStack"))
+            {
+                return;
+            }
+
+
+            float now = UnityEngine.Time.unscaledTime;
+            if (now < nextPollTime)
+            {
+                return;
+            }
+
+            nextPollTime = now + 0.20f;
+
+
             /*
              * PlayerCharacterMasterController.instances
              * contiene los masters pertenecientes
@@ -202,18 +218,6 @@ namespace UniversalSurvivorUnlocks
                     master
                 ] =
                     currentCount;
-
-
-                string playerName =
-                    controller.GetDisplayName();
-
-
-                logger?.LogInfo(
-                    $"[HoldItemStack] Energy Drink | " +
-                    $"Jugador: {playerName} | " +
-                    $"Cantidad: {currentCount}"
-                );
-
 
                 ItemCountChanged?.Invoke(
                     master,

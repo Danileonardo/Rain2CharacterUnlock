@@ -99,6 +99,68 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
+        // ESTADO LOCAL DE DESBLOQUEO
+        // =========================================================
+        //
+        // Se usa únicamente para decidir si vale la pena mostrar
+        // progreso de una misión en ESTE cliente/host.
+        //
+        // IMPORTANTE:
+        // no desactiva la misión en red. Si el host ya tiene al
+        // personaje pero un cliente remoto todavía no, el runtime
+        // continúa procesando la misión y ese cliente puede recibir
+        // el desbloqueo normalmente.
+        // =========================================================
+
+        public static bool AreAllLocalUsersUnlocked(
+            string bodyName
+        )
+        {
+            if (
+                string.IsNullOrWhiteSpace(bodyName) ||
+                !SurvivorUnlockManager.TryGetCustomUnlockable(
+                    bodyName,
+                    out UnlockableDef unlockable
+                ) ||
+                unlockable == null
+            )
+            {
+                return false;
+            }
+
+
+            bool foundLocalProfile = false;
+
+
+            foreach (
+                LocalUser localUser
+                in LocalUserManager.readOnlyLocalUsersList
+            )
+            {
+                UserProfile profile = localUser?.userProfile;
+
+
+                if (profile == null)
+                {
+                    continue;
+                }
+
+
+                foundLocalProfile = true;
+
+
+                if (!profile.HasUnlockable(unlockable))
+                {
+                    return false;
+                }
+            }
+
+
+            return foundLocalProfile;
+        }
+
+
+        // =========================================================
         // MISIÓN COMPLETADA
         // =========================================================
         //
@@ -154,15 +216,24 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            bool suppressLocalMissionLogs =
+                AreAllLocalUsersUnlocked(
+                    bodyName
+                );
+
+
             CompletedBodiesThisRun.Add(
                 bodyName
             );
 
 
-            logger?.LogInfo(
-                "[SESSION UNLOCK] Misión completada | " +
-                $"Body: {bodyName}"
-            );
+            if (!suppressLocalMissionLogs)
+            {
+                logger?.LogInfo(
+                    "[SESSION UNLOCK] Misión completada | " +
+                    $"Body: {bodyName}"
+                );
+            }
 
 
             // -----------------------------------------------------
@@ -304,12 +375,19 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
-                logger?.LogInfo(
-                    "[SESSION UNLOCK LOCAL] ANTES | " +
-                    $"Body: {bodyName} | " +
-                    $"Achievement: {achievementBefore} | " +
-                    $"Unlockable: {unlockableBefore}"
-                );
+                bool wasAlreadyUnlocked =
+                    unlockableBefore;
+
+
+                if (!wasAlreadyUnlocked)
+                {
+                    logger?.LogInfo(
+                        "[SESSION UNLOCK LOCAL] ANTES | " +
+                        $"Body: {bodyName} | " +
+                        $"Achievement: {achievementBefore} | " +
+                        $"Unlockable: {unlockableBefore}"
+                    );
+                }
 
 
                 // -------------------------------------------------
@@ -397,14 +475,17 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                logger?.LogInfo(
-                    "[SESSION UNLOCK LOCAL] DESPUÉS | " +
-                    $"Body: {bodyName} | " +
-                    $"Achievement: {achievementAfter} | " +
-                    $"Unlockable: {unlockableAfter} | " +
-                    $"AchievementNuevo: {!achievementBefore && achievementAfter} | " +
-                    $"UnlockableNuevo: {!unlockableBefore && unlockableAfter}"
-                );
+                if (!wasAlreadyUnlocked || changed)
+                {
+                    logger?.LogInfo(
+                        "[SESSION UNLOCK LOCAL] DESPUÉS | " +
+                        $"Body: {bodyName} | " +
+                        $"Achievement: {achievementAfter} | " +
+                        $"Unlockable: {unlockableAfter} | " +
+                        $"AchievementNuevo: {!achievementBefore && achievementAfter} | " +
+                        $"UnlockableNuevo: {!unlockableBefore && unlockableAfter}"
+                    );
+                }
 
 
                 results.Add(
@@ -543,15 +624,25 @@ namespace UniversalSurvivorUnlocks
                     : "<sin NetworkUser>";
 
 
-            logger?.LogInfo(
-                "[SESSION UNLOCK HOST] Resultado recibido | " +
-                $"Fuente: {source} | " +
-                $"Jugador: {playerName} | " +
-                $"Body: {bodyName} | " +
-                $"Achievement: {achievementBefore}->{achievementAfter} | " +
-                $"Unlockable: {unlockableBefore}->{unlockableAfter} | " +
-                $"Success: {success}"
-            );
+            bool wasAlreadyComplete =
+                achievementBefore &&
+                unlockableBefore &&
+                achievementAfter &&
+                unlockableAfter;
+
+
+            if (!wasAlreadyComplete)
+            {
+                logger?.LogInfo(
+                    "[SESSION UNLOCK HOST] Resultado recibido | " +
+                    $"Fuente: {source} | " +
+                    $"Jugador: {playerName} | " +
+                    $"Body: {bodyName} | " +
+                    $"Achievement: {achievementBefore}->{achievementAfter} | " +
+                    $"Unlockable: {unlockableBefore}->{unlockableAfter} | " +
+                    $"Success: {success}"
+                );
+            }
 
 
             if (!success)

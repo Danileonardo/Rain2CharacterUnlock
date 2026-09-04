@@ -134,6 +134,23 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            /*
+             * Este tracker pertenece al Schema v1.
+             *
+             * Cuando sólo existen objetivos v2 de tipo "Kill",
+             * no debe contar ni escribir un log por cada baja.
+             */
+            if (
+                !MissionRuntimeActivityPlan
+                    .IsTypeActive(
+                        "KillEnemies"
+                    )
+            )
+            {
+                return;
+            }
+
+
             if (damageReport == null)
             {
                 return;
@@ -239,12 +256,20 @@ namespace UniversalSurvivorUnlocks
                 currentCount;
 
 
-            logger?.LogInfo(
-                "[KillEnemies] BAJA | " +
-                $"Jugador: {GetPlayerName(playerMaster)} | " +
-                $"Víctima: {victimBody.name} | " +
-                $"Contador: {currentCount}"
-            );
+            if (
+                MissionLogLimiter.ShouldLogMilestone(
+                    "legacy-kills:" + playerMaster.GetInstanceID(),
+                    currentCount,
+                    10d
+                )
+            )
+            {
+                logger?.LogInfo(
+                    "[KillEnemies] PROGRESO | " +
+                    $"Jugador: {GetPlayerName(playerMaster)} | " +
+                    $"Contador: {currentCount}"
+                );
+            }
 
 
             KillCountChanged?.Invoke(

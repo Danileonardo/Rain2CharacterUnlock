@@ -32,7 +32,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public const string PluginVersion =
-            "0.1.10";
+            "0.2.0";
 
 
         public static List<SurvivorInfo> Survivors
@@ -187,6 +187,14 @@ namespace UniversalSurvivorUnlocks
                 Logger
             );
 
+            MissionRuntimeCatalog.Initialize(
+                Logger
+            );
+
+            MissionPresetLibraryService.LogSummary(
+                Logger
+            );
+
             MissionRuntimeBudget.Initialize(
                 Logger
             );
@@ -200,6 +208,10 @@ namespace UniversalSurvivorUnlocks
             );
 
             MissionStageRuntimeTracker.Initialize(
+                Logger
+            );
+
+            GenericMissionDispatcher.Initialize(
                 Logger
             );
 

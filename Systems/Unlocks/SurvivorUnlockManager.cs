@@ -408,11 +408,36 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            // La construcción de ContentPacks puede volver a visitar
+            // el mismo SurvivorDef varias veces durante el arranque.
+            // Si nuestro unlock ya está aplicado, la operación es
+            // idempotente: no reasignamos ni repetimos el mismo log.
+            if (
+                ReferenceEquals(
+                    current,
+                    customUnlock
+                ) ||
+                (
+                    current != null &&
+                    !string.IsNullOrWhiteSpace(current.cachedName) &&
+                    !string.IsNullOrWhiteSpace(customUnlock.cachedName) &&
+                    string.Equals(
+                        current.cachedName,
+                        customUnlock.cachedName,
+                        StringComparison.Ordinal
+                    )
+                )
+            )
+            {
+                return;
+            }
+
+
             survivorDef.unlockableDef =
                 customUnlock;
 
 
-            logger.LogInfo(
+            logger?.LogInfo(
                 $"Unlock temprano asignado | " +
                 $"Survivor: {survivorDef.cachedName} | " +
                 $"Unlock: {customUnlock.cachedName}"
@@ -461,12 +486,31 @@ namespace UniversalSurvivorUnlocks
                 $"UniversalSurvivorUnlocks.{bodyName}.Achievement";
 
 
-            string tokenPrefix =
+            // Registra una sola vez las traducciones integradas de USU.
+            // R2API.Language resolverá después el valor según el idioma
+            // actual de cada cliente.
+            SurvivorLocalization.EnsureRegistered();
+
+
+            bool usesBuiltInLocalization =
+                SurvivorLocalization.UsesBuiltInLocalization(
+                    bodyName,
+                    entry.Challenge
+                );
+
+
+            string bodyTokenPrefix =
                 $"USU_{MakeToken(bodyName)}";
 
 
+            string tokenPrefix =
+                usesBuiltInLocalization
+                    ? SurvivorLocalization.GetOfficialTokenPrefix(bodyName)
+                    : SurvivorLocalization.GetCustomTokenPrefix(bodyName);
+
+
             string unlockableNameToken =
-                $"{tokenPrefix}_UNLOCKABLE_NAME";
+                $"{bodyTokenPrefix}_UNLOCKABLE_NAME";
 
 
             string achievementNameToken =
@@ -499,16 +543,25 @@ namespace UniversalSurvivorUnlocks
             );
 
 
-            LanguageAPI.Add(
-                achievementNameToken,
-                challengeName
-            );
+            // Los presets oficiales ya fueron registrados por
+            // SurvivorLocalization en en / es-419 / es-ES.
+            //
+            // Las misiones personalizadas conservan el comportamiento
+            // anterior: el texto escrito por el usuario se registra como
+            // fallback literal y NO se traduce automáticamente.
+            if (!usesBuiltInLocalization)
+            {
+                LanguageAPI.Add(
+                    achievementNameToken,
+                    challengeName
+                );
 
 
-            LanguageAPI.Add(
-                achievementDescriptionToken,
-                challengeDescription
-            );
+                LanguageAPI.Add(
+                    achievementDescriptionToken,
+                    challengeDescription
+                );
+            }
 
 
             // =====================================================
@@ -546,23 +599,16 @@ namespace UniversalSurvivorUnlocks
             unlockable.getHowToUnlockString =
                 () =>
                 {
-                    SurvivorJsonEntry current =
-                        GetEntry(
-                            bodyName
-                        )
-                        ?? entry;
-
-
                     return Language.GetStringFormatted(
                         "UNLOCK_VIA_ACHIEVEMENT_FORMAT",
                         new object[]
                         {
-                            GetChallengeName(
-                                current
+                            Language.GetString(
+                                achievementNameToken
                             ),
 
-                            BuildChallengeDescription(
-                                current
+                            Language.GetString(
+                                achievementDescriptionToken
                             )
                         }
                     );
@@ -572,23 +618,16 @@ namespace UniversalSurvivorUnlocks
             unlockable.getUnlockedString =
                 () =>
                 {
-                    SurvivorJsonEntry current =
-                        GetEntry(
-                            bodyName
-                        )
-                        ?? entry;
-
-
                     return Language.GetStringFormatted(
                         "UNLOCKED_FORMAT",
                         new object[]
                         {
-                            GetChallengeName(
-                                current
+                            Language.GetString(
+                                achievementNameToken
                             ),
 
-                            BuildChallengeDescription(
-                                current
+                            Language.GetString(
+                                achievementDescriptionToken
                             )
                         }
                     );
@@ -619,6 +658,15 @@ namespace UniversalSurvivorUnlocks
 
                     achievedIcon =
                         unlockable.achievementIcon,
+
+                    // RoR2 usa este campo para:
+                    // 1) mostrar la Moneda lunar +N en la UI vanilla;
+                    // 2) conceder la recompensa cuando el achievement
+                    //    se obtiene por primera vez mediante AddAchievement().
+                    lunarCoinReward =
+                        GetLunarCoinReward(
+                            entry
+                        ),
 
                     type =
                         ChallengeManager
@@ -686,6 +734,7 @@ namespace UniversalSurvivorUnlocks
                 $"Survivor: {bodyName} | " +
                 $"Unlockable: {identifier} | " +
                 $"Achievement: {achievementIdentifier} | " +
+                $"MonedasLunares: {achievementDef.lunarCoinReward} | " +
                 $"Ruta: " +
                 $"{(addThroughContentAddition ? "R2API" : "DynamicContentPack")}"
             );
@@ -1349,6 +1398,42 @@ namespace UniversalSurvivorUnlocks
                 .GetEntryAnywhere(
                     bodyName
                 );
+        }
+
+
+        // =========================================================
+        // RECOMPENSA DE MONEDAS LUNARES
+        // =========================================================
+        //
+        // El valor se almacena en Survivors.json para que la recompensa
+        // forme parte de la definición del challenge. Se limita a 0..10
+        // para mantener una escala similar a la utilizada por RoR2.
+        //
+        // IMPORTANTE: USU NO suma monedas manualmente.
+        // AchievementDef.lunarCoinReward + UserProfile.AddAchievement()
+        // dejan la entrega en manos del flujo vanilla y evitan duplicados.
+        // =========================================================
+
+        private static uint GetLunarCoinReward(
+            SurvivorJsonEntry entry
+        )
+        {
+            int configured =
+                entry?.Challenge?.LunarCoinReward
+                ?? 0;
+
+
+            configured =
+                Math.Max(
+                    0,
+                    Math.Min(
+                        10,
+                        configured
+                    )
+                );
+
+
+            return (uint)configured;
         }
 
 

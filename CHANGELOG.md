@@ -4,6 +4,145 @@ All notable changes to Universal Survivor Unlocks will be documented in this fil
 
 The format is based on a simple versioned changelog intended for Thunderstore and GitHub releases.
 
+## 0.2.0 — Creator Challenges Update
+
+### Release focus
+
+- This release is focused on public testing and balance feedback for the current **9 creator-made survivor unlock challenges**.
+- The in-game preset library, preset reassignment UI, editable copies, and full mission editor are **not included yet**.
+- Internal preset/library architecture is included so future releases can build on the same stable mission definitions without reverting the current challenge work.
+
+### Added
+
+- Added/finished the current official Mission System v2 presets for:
+  - Sora — **Elegido de la Llave Espada**
+  - Ralsei — **El poder de la bondad**
+  - Jhin — **El Cuarto Acto**
+  - Spy — **Sin que me veas venir**
+  - Scout — **Sed Termonuclear**
+  - Rocket — **La gravedad es opcional**
+  - HUNK — **La Parca No Falla**
+  - Tinkaton — **Forjada en Chatarra**
+  - Wooper — **De vuelta al agua**
+- Added localized official challenge names/descriptions for English and Spanish (`es-419` / `es-ES`), with English fallback.
+- Added Lunar Coin rewards to the official generated achievements:
+  - Sora: `+4`
+  - Ralsei: `+3`
+  - Jhin: `+4`
+  - Spy: `+3`
+  - Scout: `+2`
+  - Rocket: `+4`
+  - HUNK: `+5`
+  - Tinkaton: `+5`
+  - Wooper: `+2`
+- Added `MissionConfig` / preset-origin metadata so official missions can retain a stable source preset identity for the upcoming library/editor workflow.
+- Added the read-only `MissionPresetLibraryService` layer over the built-in preset catalog.
+- Added internal library access for assignable missions, official missions, legacy missions, Objective templates, and Condition templates.
+- Added/expanded reusable Mission v2 runtime handlers for current official mission compositions, including:
+  - `Kill`
+  - `HoldItemStack`
+  - `PickupItem` / no-item-pickup tracking
+  - `CompleteTeleporter`
+  - `ScrapItems`
+  - `BombingRun`
+  - `CarryEquipment`
+  - `CompleteEnding`
+  - `RecruitMinions`
+  - `DefeatUmbraWaves`
+  - `LeaveStage`
+- Added reusable tracking/evaluation support for skill history and pre-damage target status so conditions can validate actions such as Wooper's poisoned Ravenous Bite requirement.
+- Added global Mission v2 progress logging with milestone-based output to reduce log spam while retaining useful progress diagnostics.
+
+### Current official challenge changes
+
+- **Sora — Elegido de la Llave Espada**
+  - Replaced the old 100-status-effect challenge with a Bulwark's Ambry / Artifact of Vengeance mission.
+  - Requires Mercenary to be represented in the party, the Vengeance Umbra encounter to be completed, and the Ambry to be exited successfully.
+  - Uses Shared mission progress.
+- **Ralsei — El poder de la bondad**
+  - Replaced the old 10,000-healing challenge with a Devotion-focused mission.
+  - Requires Captain or Seeker, recruiting 3 Lemurian allies, and completing the teleporter route.
+- **Jhin — El Cuarto Acto**
+  - Preserves the lethal boss critical-hit concept at **44,444+ damage**.
+  - Added a dedicated `JhinOfficial` preset identity so Jhin is consistent with the other official creator presets.
+- **Spy — Sin que me veas venir**
+  - Requires Bandit, Serrated Dagger, a valid boss backstab, and a fatal finishing hit.
+  - Removed the older Smoke Bomb prerequisite.
+- **Scout — Sed Termonuclear**
+  - Reworked into two alternative routes:
+    - Hold 8 Energy Drinks, **OR**
+    - Complete the first-stage teleporter within 4 minutes without picking up items.
+- **Rocket — La gravedad es opcional**
+  - Reworked into 3 successful bombing runs.
+  - Each bombing run requires 5 qualifying explosion kills before landing, with landing required between successful runs.
+- **HUNK — La Parca No Falla**
+  - Replaced the old 24-hit / 24-kill execution streak challenge.
+  - Requires continuously protecting the Fuel Array and either escaping the Moon or obliterating at the Obelisk.
+  - Losing the required equipment or dying invalidates the route.
+- **Tinkaton — Forjada en Chatarra**
+  - Reworked into a three-objective Mission v2 composition:
+    - Scrap 6 items.
+    - Hold Shattering Justice.
+    - Defeat a valid mechanical Eye boss target.
+  - Removed the old mandatory MUL-T + Blast Canister finishing-hit requirement.
+- **Wooper — De vuelta al agua**
+  - Reworked to require Acrid in Wetland Aspect.
+  - Requires 20 kills with Ravenous Bite against enemies that were already poisoned before the qualifying bite.
+  - Removed the old Bison Steak and stage-completion requirements.
+
+### Multiplayer
+
+- Continued the host-authoritative session mission model.
+- Mission snapshots are frozen/synchronized for the active multiplayer session instead of replacing each client's personal configuration.
+- Shared and PerPlayer mission scopes are represented explicitly in Mission v2.
+- Improved multiplayer completion routing and session unlock delivery.
+- Preserved independent personal progress for PerPlayer mission routes.
+
+### Performance and diagnostics
+
+- Added runtime activity planning so inactive legacy/runtime trackers can avoid unnecessary work.
+- Added runtime budgets/throttling for periodic mission scans.
+- Reduced repetitive progress/status/healing/kill logging.
+- Added milestone-based progress output based on objective size.
+- Prevented completed mission routes from continuing to emit unnecessary progress logs.
+- Suppressed normal local progress/reward logging when all local profiles already own the survivor unlock, while preserving required network/session processing.
+- Prevented repeated `Unlock temprano asignado` messages when the same generated unlock is revisited during ContentPack construction.
+- Hardened Ralsei's Devotion recruitment detection: `LemurianHarness` is resolved through the item catalog when available and falls back to `DevotedLemurianController` when the static marker asset is unavailable.
+
+### Preset catalog cleanup
+
+- Normalized the internal built-in preset catalog before exposing it to players.
+- The current library reports:
+  - **9 assignable official missions**
+  - **12 hidden legacy mission recipes**
+  - **26 Objective templates**
+  - **35 Condition templates**
+- Legacy mission recipes remain available internally for compatibility/history but are no longer treated as new assignable missions.
+- Official missions are returned as fresh copies from catalog factories so source presets are not mutated.
+
+### Changed
+
+- Bumped the public release version to `0.2.0`.
+- Updated README documentation to match the actual current nine official mission designs.
+- Updated README multiplayer examples/scopes to match the Mission v2 definitions.
+- Updated HUNK attribution to the current `rob-HUNK` package and added Wooper to survivor credits.
+- Clarified that Risk Of Options and the in-game mission editor are **not dependencies/features of 0.2.0**.
+- Clarified that current official presets are still source-synchronized and that permanent editable copies are a future feature.
+
+### Known validation focus
+
+- Public testing is especially useful for balance/theme feedback across all nine official challenges.
+- HUNK, Tinkaton, Sora, and Ralsei benefit from additional end-to-end testing across different mod profiles/multiplayer sessions.
+- Devotion/Lemurian content can produce asset-assignment warnings in some profiles; reports should include `LogOutput.log` so compatibility issues can be separated from unrelated third-party warnings.
+
+### Planned after 0.2.0
+
+- Preset assignment service for assigning an official mission to another compatible detected survivor.
+- In-game preset library entry point/configuration.
+- Safe editable copies of official presets.
+- Full Mission System v2 editor.
+- User-created/shareable presets.
+
 ## 0.1.9
 
 ### Added

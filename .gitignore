@@ -124,3 +124,9 @@ BepInEx/LogOutput.log
 
 secrets.json
 *.secrets.json
+# ------------------------------------------------------------
+# Thunderstore release staging
+# ------------------------------------------------------------
+
+UniversalSurvivorUnlocks_Thunderstore/BepInEx/plugins/UniversalSurvivorUnlocks/*.dll
+UniversalSurvivorUnlocks_Thunderstore/*.zip

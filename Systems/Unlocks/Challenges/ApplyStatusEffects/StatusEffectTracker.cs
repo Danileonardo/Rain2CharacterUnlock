@@ -26,8 +26,16 @@ namespace UniversalSurvivorUnlocks
          *
          * Por ahora lo dejamos en true.
          */
-        private const bool DetailedDiagnostics =
-            true;
+        private static readonly bool DetailedDiagnostics =
+            false;
+
+
+        // El desafío antiguo necesita saber el total simultáneo, pero no
+        // necesita escanear el campo 50 veces por segundo.
+        private const float ScanIntervalSeconds =
+            0.10f;
+
+        private static float nextScanTime;
 
 
         /*
@@ -140,6 +148,26 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            // Si ninguna misión efectiva usa el tracker legacy, salimos
+            // antes de recorrer cuerpos, buffs o DoT. Las misiones v2 que
+            // sólo consultan StatusPresent NO necesitan este escaneo global.
+            if (
+                Run.instance != null &&
+                !MissionRuntimeActivityPlan.IsTypeActive("ApplyStatusEffects")
+            )
+            {
+                if (CurrentTotalCount != 0)
+                {
+                    CurrentNegativeCount = 0;
+                    CurrentPositiveCount = 0;
+                    CurrentTotalCount = 0;
+                    lastDiagnosticSignature = "";
+                }
+
+                return;
+            }
+
+
             /*
              * Si no existe una Run:
              *
@@ -147,15 +175,19 @@ namespace UniversalSurvivorUnlocks
              */
             if (Run.instance == null)
             {
-                SetCounts(
-                    0,
-                    0,
-                    new List<string>(),
-                    new List<string>()
-                );
-
+                SetCounts(0, 0, null, null);
+                nextScanTime = 0f;
                 return;
             }
+
+
+            float now = UnityEngine.Time.unscaledTime;
+            if (now < nextScanTime)
+            {
+                return;
+            }
+
+            nextScanTime = now + ScanIntervalSeconds;
 
 
             int negativeCount =
@@ -171,11 +203,15 @@ namespace UniversalSurvivorUnlocks
              * por el verificador.
              */
             List<string> negativeDetails =
-                new List<string>();
+                DetailedDiagnostics
+                    ? new List<string>()
+                    : null;
 
 
             List<string> positiveDetails =
-                new List<string>();
+                DetailedDiagnostics
+                    ? new List<string>()
+                    : null;
 
 
             /*
@@ -295,14 +331,11 @@ namespace UniversalSurvivorUnlocks
              * Ordenamos para que el orden de las entidades
              * no provoque falsos cambios de diagnóstico.
              */
-            negativeDetails.Sort(
-                StringComparer.Ordinal
-            );
-
-
-            positiveDetails.Sort(
-                StringComparer.Ordinal
-            );
+            if (DetailedDiagnostics)
+            {
+                negativeDetails?.Sort(StringComparer.Ordinal);
+                positiveDetails?.Sort(StringComparer.Ordinal);
+            }
 
 
             SetCounts(
@@ -855,10 +888,9 @@ namespace UniversalSurvivorUnlocks
              * actualmente presentes.
              */
             string diagnosticSignature =
-                BuildDiagnosticSignature(
-                    negativeDetails,
-                    positiveDetails
-                );
+                DetailedDiagnostics
+                    ? BuildDiagnosticSignature(negativeDetails, positiveDetails)
+                    : "";
 
 
             bool countsChanged =
@@ -886,8 +918,8 @@ namespace UniversalSurvivorUnlocks
              * nos muestre ese cambio.
              */
             bool compositionChanged =
-                diagnosticSignature !=
-                lastDiagnosticSignature;
+                DetailedDiagnostics &&
+                diagnosticSignature != lastDiagnosticSignature;
 
 
             /*
@@ -923,12 +955,21 @@ namespace UniversalSurvivorUnlocks
             // RESUMEN GENERAL
             // =====================================================
 
-            logger?.LogInfo(
-                $"ESTADOS ACTIVOS | " +
-                $"Negativos en enemigos: {CurrentNegativeCount} | " +
-                $"Positivos en aliados: {CurrentPositiveCount} | " +
-                $"TOTAL: {CurrentTotalCount}"
-            );
+            if (
+                MissionLogLimiter.ShouldLogMilestone(
+                    "legacy-status-effects",
+                    CurrentTotalCount,
+                    10d
+                )
+            )
+            {
+                logger?.LogInfo(
+                    $"ESTADOS ACTIVOS | " +
+                    $"Negativos: {CurrentNegativeCount} | " +
+                    $"Positivos: {CurrentPositiveCount} | " +
+                    $"TOTAL: {CurrentTotalCount}"
+                );
+            }
 
 
             // =====================================================

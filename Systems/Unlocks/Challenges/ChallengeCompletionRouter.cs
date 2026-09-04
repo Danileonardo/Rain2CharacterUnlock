@@ -750,6 +750,24 @@ namespace UniversalSurvivorUnlocks
                     pair.Value;
 
 
+                /*
+                 * Mission Schema v2 tiene su propio catálogo,
+                 * progreso compuesto y dispatcher.
+                 *
+                 * Aunque el campo legacy "type" permanezca en el
+                 * JSON por compatibilidad, una misión v2 nunca debe
+                 * ser evaluada también por este router antiguo.
+                 */
+                if (
+                    entry?.Challenge?.Mission != null &&
+                    entry.Challenge.Mission.Routes != null &&
+                    entry.Challenge.Mission.Routes.Count > 0
+                )
+                {
+                    continue;
+                }
+
+
                 if (
                     !SurvivorUnlockManager
                         .RequiresCustomUnlock(

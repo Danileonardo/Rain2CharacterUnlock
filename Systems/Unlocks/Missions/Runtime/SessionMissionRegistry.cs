@@ -162,18 +162,18 @@ namespace UniversalSurvivorUnlocks
             );
 
 
-            new SessionMissionSyncMessage(
-                json,
-                isRunSnapshot: false
-            )
-            .Send(
-                NetworkDestination.Clients
-            );
+            int fragmentCount =
+                SessionMissionChunkTransport
+                    .SendSnapshotToClients(
+                        json,
+                        isRunSnapshot: false
+                    );
 
 
             logger?.LogInfo(
-                $"[MISSION LOBBY] Snapshot enviado a clientes | " +
-                $"Misiones: {snapshot.Missions.Count}"
+                $"[MISSION LOBBY] Snapshot fragmentado despachado | " +
+                $"Misiones: {snapshot.Missions.Count} | " +
+                $"Fragmentos: {fragmentCount}"
             );
         }
 
@@ -232,18 +232,18 @@ namespace UniversalSurvivorUnlocks
             );
 
 
-            new SessionMissionSyncMessage(
-                json,
-                isRunSnapshot: true
-            )
-            .Send(
-                NetworkDestination.Clients
-            );
+            int fragmentCount =
+                SessionMissionChunkTransport
+                    .SendSnapshotToClients(
+                        json,
+                        isRunSnapshot: true
+                    );
 
 
             logger?.LogInfo(
-                $"[MISSION RUN] Snapshot congelado enviado a clientes | " +
-                $"Misiones: {frozen.Missions.Count}"
+                $"[MISSION RUN] Snapshot congelado fragmentado despachado | " +
+                $"Misiones: {frozen.Missions.Count} | " +
+                $"Fragmentos: {fragmentCount}"
             );
         }
 

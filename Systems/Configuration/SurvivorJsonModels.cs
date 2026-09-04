@@ -107,6 +107,8 @@ namespace UniversalSurvivorUnlocks
                 "enabled = true permite utilizar la misión configurada.",
                 "name indica el nombre visible de la misión.",
                 "description indica la descripción visible de la misión.",
+                "localizationKey es interna: los presets oficiales la usan para seguir el idioma del juego; déjala vacía en misiones personalizadas.",
+                "lunarCoinReward indica cuántas Monedas lunares entrega el logro (0 a 10).",
                 "type indica el tipo de misión.",
                 "parameters contiene las condiciones específicas de esa misión.",
                 "Los tipos de misión disponibles se implementarán progresivamente durante el desarrollo del mod.",
@@ -129,6 +131,9 @@ namespace UniversalSurvivorUnlocks
 
                 Description =
                     "",
+
+                LunarCoinReward =
+                    1,
 
                 Type =
                     "KillEnemies",
@@ -260,11 +265,53 @@ namespace UniversalSurvivorUnlocks
             set;
         } = "";
 
+
+        // =====================================================
+        // LOCALIZACIÓN
+        // =====================================================
+        //
+        // Los presets oficiales de USU guardan una clave estable.
+        // Mientras esta clave exista, nombre y descripción se resuelven
+        // mediante los tokens del idioma actual de Risk of Rain 2.
+        //
+        // Las misiones personalizadas deben dejarla vacía para que
+        // Name y Description se muestren literalmente desde el JSON.
+        // =====================================================
+
+        [JsonProperty("localizationKey", Order = 4)]
+        public string LocalizationKey
+        {
+            get;
+            set;
+        } = "";
+
+
+        // =====================================================
+        // RECOMPENSA VANILLA
+        // =====================================================
+        //
+        // RoR2 muestra automáticamente el icono de Moneda lunar
+        // y el texto +N cuando AchievementDef.lunarCoinReward > 0.
+        // El propio sistema de achievements del juego concede la
+        // recompensa al registrar el logro por primera vez.
+        //
+        // 0 = sin recompensa.
+        // 1..10 = recompensa recomendada para misiones USU.
+        // =====================================================
+
+        [JsonProperty("lunarCoinReward", Order = 5)]
+        public int LunarCoinReward
+        {
+            get;
+            set;
+        } = 0;
+
+
         // =====================================================
         // LEGACY / SCHEMA V1
         // =====================================================
 
-        [JsonProperty("type", Order = 4)]
+        [JsonProperty("type", Order = 6)]
         public string Type
         {
             get;
@@ -273,13 +320,35 @@ namespace UniversalSurvivorUnlocks
             "Original";
 
 
-        [JsonProperty("parameters", Order = 5)]
+        [JsonProperty("parameters", Order = 7)]
         public JObject Parameters
         {
             get;
             set;
         } =
             new JObject();
+
+        // =========================================================
+        // ORIGEN DE LA MISIÓN
+        // =========================================================
+        //
+        // null:
+        //     Configuración antigua / legacy.
+        //
+        // Source = "Preset":
+        //     BasePresetId identifica el preset de biblioteca.
+        //
+        // Source = "Custom":
+        //     CustomMission contiene una copia editable.
+        //
+        // =========================================================
+
+        [JsonProperty("missionConfig", Order = 8)]
+        public MissionConfiguration MissionConfig
+        {
+            get;
+            set;
+        }
 
         // =========================================================
         // MISSION SCHEMA V2

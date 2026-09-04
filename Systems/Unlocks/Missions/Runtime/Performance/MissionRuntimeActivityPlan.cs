@@ -253,8 +253,22 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
+                /*
+                 * Si existe una Mission v2 utilizable, el campo
+                 * challenge.type queda sólo como compatibilidad y
+                 * no debe mantener activo un tracker legacy.
+                 *
+                 * Si Mission está vacía o incompleta, conservamos
+                 * el comportamiento Schema v1.
+                 */
+                JToken activityRoot =
+                    GetEffectiveActivityRoot(
+                        challenge
+                    );
+
+
                 CollectTypesRecursive(
-                    challenge,
+                    activityRoot,
                     bodyTypes
                 );
 
@@ -405,6 +419,43 @@ namespace UniversalSurvivorUnlocks
         // =========================================================
         // TYPE DISCOVERY
         // =========================================================
+
+        private static JToken GetEffectiveActivityRoot(
+            JObject challenge
+        )
+        {
+            if (challenge == null)
+            {
+                return null;
+            }
+
+
+            JObject mission =
+                GetObjectCaseInsensitive(
+                    challenge,
+                    "mission"
+                );
+
+
+            JArray routes =
+                GetTokenCaseInsensitive(
+                    mission,
+                    "routes"
+                ) as JArray;
+
+
+            if (
+                mission != null &&
+                routes != null &&
+                routes.Count > 0
+            )
+            {
+                return mission;
+            }
+
+
+            return challenge;
+        }
 
         /*
          * El Mission System actual usa challenge.type.

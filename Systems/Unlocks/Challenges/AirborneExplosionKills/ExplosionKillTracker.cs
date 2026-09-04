@@ -56,6 +56,44 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
+        // CONTEXTO DE BLAST ACTIVO PARA MISSION SCHEMA V2
+        // =========================================================
+        //
+        // Permite que el runtime genérico clasifique una baja como
+        // explosiva SIN duplicar la detección de BlastAttack.
+        //
+        // La pila sólo contiene un BlastAttack mientras Fire() está
+        // procesando su daño. Si onCharacterDeathGlobal se dispara
+        // dentro de esa llamada, la muerte fue causada directamente
+        // por ese blast.
+        // =========================================================
+
+        public static bool TryGetActiveBlast(
+            out BlastAttack blastAttack
+        )
+        {
+            blastAttack =
+                null;
+
+
+            if (
+                !NetworkServer.active ||
+                ActiveBlasts.Count <= 0
+            )
+            {
+                return false;
+            }
+
+
+            blastAttack =
+                ActiveBlasts.Peek();
+
+
+            return blastAttack != null;
+        }
+
+
+        // =========================================================
         // INICIALIZAR
         // =========================================================
 
@@ -372,20 +410,10 @@ namespace UniversalSurvivorUnlocks
                     .crit;
 
 
-            logger?.LogInfo(
-                "[ExplosionKill] BLAST MORTAL DETECTADO | " +
-                $"Jugador dueño: {playerName} | " +
-                $"Personaje jugador: {ownerBodyName} | " +
-                $"SourceBody: {sourceBodyName} | " +
-                $"Atacante: {attackerName} | " +
-                $"Inflictor: {inflictorName} | " +
-                $"Víctima: {victimName} | " +
-                $"Daño mortal: {lethalDamage:0.##} | " +
-                $"Crítico: {wasCritical} | " +
-                $"Radio: {activeBlast.radius:0.##} | " +
-                $"DamageSource: {activeBlast.damageType.damageSource} | " +
-                $"Categoría: {damageSourceName}"
-            );
+            // El detalle de cada Blast mortal generaba una línea por baja.
+            // BombingRun/AirborneExplosionKills ya reportan progreso por
+            // hitos, por lo que aquí no escribimos diagnóstico de release.
+
 
 
             // =====================================================

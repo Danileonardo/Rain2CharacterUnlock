@@ -4,9 +4,9 @@
 
 USU automatically detects compatible modded survivors, respects characters that already provide their own unlock requirement, and can give progression challenges to survivors that would otherwise be available immediately.
 
-**Current release:** `0.1.9`
+**Current release:** `0.2.0`
 
-[GitHub / Source Code](https://github.com/Danileonardo/Rain2CharacterUnlock) · [Support development / Donate](https://github.com/sponsors/Danileonardo) · Discord: `@shleiderick`
+[Thunderstore](https://thunderstore.io/c/riskofrain2/p/Shleidericks/UniversalSurvivorUnlocks/) · [GitHub / Source Code](https://github.com/Danileonardo/Rain2CharacterUnlock) · [Support development / Donate](https://github.com/sponsors/Danileonardo) · Discord: `@shleiderick`
 
 > **Support / Apoyo**
 >
@@ -14,9 +14,9 @@ USU automatically detects compatible modded survivors, respects characters that 
 >
 > Los donativos ayudan a mantener el proyecto actualizado y a continuar desarrollando nuevos presets, correcciones de compatibilidad, mejoras multijugador y el sistema universal de misiones.
 >
-> Questions, bug reports, survivor requests, preset ideas, and suggestions are welcome on Discord.
+> Questions, bug reports, survivor requests, preset ideas, balance feedback, and suggestions are welcome on Discord.
 >
-> Preguntas, reportes de errores, solicitudes de personajes, ideas de presets y sugerencias son bienvenidas en Discord.
+> Preguntas, reportes de errores, solicitudes de personajes, ideas de presets, comentarios de balance y sugerencias son bienvenidas en Discord.
 
 ---
 
@@ -48,7 +48,24 @@ Main goals:
 - Support host-authoritative multiplayer.
 - Support both shared-progress and per-player challenge designs.
 - Keep vanilla and official DLC progression untouched.
-- Evolve toward a reusable mission framework instead of requiring one hardcoded script for every character.
+- Use a reusable Mission System v2 instead of requiring a unique hardcoded tracker for every future challenge.
+- Localize the official challenge names/descriptions according to the game's active language.
+- Reward official USU challenges with configurable Lunar Coin rewards.
+
+## 0.2.0 feedback focus
+
+Version `0.2.0` is intentionally focused on the **nine current creator-made survivor challenges**.
+
+The in-game preset library, preset reassignment UI, editable copies, and full mission editor are **not included yet**. The internal architecture for those systems is already being prepared, but this release is meant to gather feedback about the current characters and their missions before the editor becomes public.
+
+Useful feedback includes:
+
+- Does the challenge fit the character thematically?
+- Is the objective understandable without reading the source code?
+- Is it too easy, too difficult, too long, or too short?
+- Did the challenge behave correctly in multiplayer?
+- Does the Lunar Coin reward feel appropriate?
+- Would you change any objective, route, number, or requirement?
 
 ---
 
@@ -78,11 +95,13 @@ USU is moving toward a preset-based mission system with a clear ownership rule.
 
 A built-in preset created for USU is the **official source preset**.
 
-Creator presets are intended to remain unchanged so updates can improve or rebalance them without destroying the original definition.
+Version `0.2.0` includes **9 official creator presets**. These source presets are kept separate from the reusable Objective and Condition templates used internally by Mission System v2.
+
+Creator presets are intended to remain unchanged so future updates can improve or rebalance them without destroying the original definition.
 
 ## Player customization
 
-When a player customizes a creator preset, the intended model is to create/use a **separate custom mission based on that preset** instead of editing the creator preset itself.
+When a player customizes a creator preset in a future version, the intended model is to create/use a **separate custom mission based on that preset** instead of editing the creator preset itself.
 
 This allows USU to keep:
 
@@ -90,7 +109,7 @@ This allows USU to keep:
 - The player's customized version.
 - The technical relationship between the custom mission and the preset it came from.
 
-The public in-game editing workflow is still under development. Existing challenge configuration remains available through `Survivors.json`, while the newer mission/preset architecture is integrated progressively.
+The public in-game preset library/editor is still under development. In `0.2.0`, official built-in presets are still synchronized from the mod's source definitions, so directly editing one of the nine official presets in `Survivors.json` is not a reliable way to create a permanent custom variant.
 
 ---
 
@@ -100,7 +119,7 @@ USU uses a **host-authoritative** model.
 
 ## Host configuration
 
-During a multiplayer session, the **host's effective challenge configuration is the authoritative mission for that lobby**.
+During a multiplayer session, the **host's effective challenge configuration is the authoritative mission for that lobby/run**.
 
 A client may have different local values or a different personal configuration, but the host determines the mission rules used during that session.
 
@@ -108,183 +127,263 @@ The host's session configuration is not intended to permanently overwrite the cl
 
 ## Shared progress
 
-Shared challenges allow multiple players and valid team entities to contribute toward the same session objective.
+A Shared mission can receive valid progress from multiple players/entities according to that mission's rules.
 
-Examples:
+Current example:
 
-- Sora
-- Ralsei
+- Sora — `Elegido de la Llave Espada`
 
 ## Per-player progress
 
-Per-player challenges keep independent counters, streaks, inventories, or route state for each player.
+Per-player challenges keep independent counters, inventories, route state, and other personal requirements for each player.
 
-Examples:
+Current official examples include:
 
+- Ralsei
+- Jhin
+- Spy
+- Scout
+- Rocket
 - HUNK
 - Tinkaton
+- Wooper
 
-Players cannot combine partial individual streaks or personal requirements unless the challenge is explicitly designed as shared progress.
+Players cannot combine partial personal progress unless the mission is explicitly configured as Shared.
 
-## Session-wide completion
+## Session completion and unlock delivery
 
-When a valid route is completed, USU can grant the corresponding survivor unlock to connected players who still need it.
+Mission progress is evaluated using the host-authoritative session snapshot. When an authoritative route completes, USU routes the survivor unlock through its multiplayer-aware session unlock system for eligible connected players.
+
+For multiplayer bugs, logs from both host and client are especially useful.
 
 ---
 
 # Current built-in presets
 
-The following creator-made presets are currently included in USU.
+The following **9 creator-made presets** are included in USU `0.2.0`.
+
+Official challenge names/descriptions are currently localized for English and Spanish (`es-419` / `es-ES`), with English used as fallback.
 
 ## Sora — Elegido de la Llave Espada
 
-Apply **100 valid simultaneous status effects** during a single run.
+> **Abre paso entre mundos en Baluarte de Ambry;**  
+> **vence a sombras y completa Venganza - Mercenary**
 
-Valid effects include:
+Current mission:
 
-- Negative effects on enemies.
-- Positive effects on allies.
-- Stackable effects counted by active stack.
-- Non-stackable effects counted once per affected entity.
-- Effects from multiple valid living entities at the same time.
+1. The party must include **Mercenary**.
+2. Enter **Bulwark's Ambry** (`artifactworld`).
+3. Complete the **Artifact of Vengeance** encounter by defeating the required Umbra waves.
+4. Successfully leave the Ambry after the encounter.
 
-Expired effects, removed effects, and effects on dead entities stop contributing.
+USU currently tracks **3 Vengeance Umbra waves** and then the stage exit.
 
 **Progress:** Shared  
-**Completion:** Session-wide
+**Lunar Coin reward:** `+4`
 
 ---
 
-## Ralsei — Oración de Esperanza
+## Ralsei — El poder de la bondad
 
-Restore a total of **10,000 health** to valid allied entities during a single run.
+> **Usa Devoción y reúne 3 nuevos amigos Lemurianos;**  
+> **completa el portal con ellos - Captain o Seeker**
 
-The challenge can include valid healing received by:
+Current mission:
 
-- Players.
-- Allied drones.
-- Turrets.
-- Other friendly entities.
+1. Play as **Captain** or **Seeker**.
+2. Use **Devotion** to recruit **3 Lemurian allies**.
+3. Complete the teleporter while satisfying the mission route.
 
-Passive regeneration is ignored. Barrier, shields, and overhealing are not treated as restored health.
+**Progress:** Per-player  
+**Lunar Coin reward:** `+3`
 
-**Progress:** Shared  
-**Completion:** Session-wide
+Public feedback for this preset is especially welcome because Devotion/minion behavior can be affected by game-content and mod interactions.
 
 ---
 
 ## Jhin — El Cuarto Acto
 
-Deliver the final blow to a boss with a sufficiently powerful **critical hit**.
+> **Convierte a un jefe en tu gran final;**  
+> **asesta un crítico mortal de 44.444 de daño o más.**
 
-The current preset uses a lethal critical-hit requirement of at least **44,444 damage**.
+Current mission:
+
+- Deliver the **fatal hit** to a boss.
+- The hit must be **critical**.
+- The lethal hit must deal at least **44,444 damage**.
+
+**Progress:** Per-player  
+**Lunar Coin reward:** `+4`
 
 ---
 
 ## Spy — Sin que me veas venir
 
-Kill a boss with a valid **fatal backstab**.
+> **Que el jefe nunca vea venir tu golpe final;**  
+> **remátalo por detrás con Daga serrada - Bandit**
 
-The preset is designed around a lethal backstab route and uses Risk of Rain 2's backstab/damage information to validate the finishing hit.
+Current mission:
+
+1. Play as **Bandit**.
+2. Use **Serrated Dagger / Daga serrada**.
+3. Deliver a valid **backstab** to a boss.
+4. The backstab must be the **fatal hit**.
+
+**Progress:** Per-player  
+**Lunar Coin reward:** `+3`
 
 ---
 
-## Scout — Energía Atómica
+## Scout — Sed Termonuclear
 
-Accumulate **15 Energy Drinks** on a single player during the run.
+> **Sacia tu sed con 8 Bebidas energéticas;**  
+> **o completa el primer sector sin objetos en 4 min.**
 
-Player inventories are tracked independently and are not combined between players.
+Complete **either** route:
+
+### Route A — Drink collection
+
+- Hold **8 Energy Drinks** on the same player during the run.
+
+### Route B — Fast and itemless
+
+- Complete the **first stage teleporter** within **4 minutes**.
+- Do not pick up items before completing that route.
+
+The two routes are alternatives (`OR`), not requirements that must both be completed.
+
+**Progress:** Per-player  
+**Lunar Coin reward:** `+2`
 
 ---
 
-## Rocket / Soldier — La gravedad es opcional
+## Rocket — La gravedad es opcional
 
-Kill **15 enemies** with valid explosions while the owning player remains **airborne**.
+> **Haz llover explosiones desde el cielo;**  
+> **derriba 5 antes de caer; haz la hazaña 3 veces.**
 
-The challenge is designed around explosive Rocket/Soldier-style combat and validates the player ownership of qualifying explosive damage.
+Current mission:
 
-Touching the ground can reset the relevant airborne streak/progress according to the configured challenge rules.
+- Kill **5 enemies with qualifying explosions before landing**.
+- Land after a successful bombing run.
+- Repeat the successful bombing run **3 times**.
+- Progress is personal to the player; owned minions are not used for this preset's bombing-run count.
+- The bombing-run objective uses **stage-scoped progress**.
+
+**Progress:** Per-player  
+**Lunar Coin reward:** `+4`
 
 ---
 
 ## HUNK — La Parca No Falla
 
-Complete **one** of the following individual routes:
+> **Protege la batería y sobrevive a toda costa;**  
+> **escapa de la Luna o sacrifícate en el Obelisco.**
 
-- Land **24 consecutive Railgunner M99 weak-point hits**, **OR**
-- Score **24 consecutive kills with Bandit's Luces fuera / Lights Out**.
+Complete **either** route while protecting the **Fuel Array**:
 
-Important multiplayer rules:
+### Route A — Escape
 
-- Each player's streak is independent.
-- Two players cannot combine partial streaks.
-- Other Bandit abilities do **not** reset the Lights Out streak.
-- A real Lights Out use that fails to kill resets that player's Lights Out streak.
-- If one player completes a valid route, the challenge can complete for the session.
+- Carry the Fuel Array continuously.
+- Reach and complete the **Moon escape** ending.
 
-Example:
+### Route B — Obliterate
 
-```text
-Railgunner A = 12 / 24
-Railgunner B = 12 / 24
+- Carry the Fuel Array continuously.
+- **Obliterate** at the Obelisk.
 
-Result:
-A remains at 12 / 24
-B remains at 12 / 24
+Important rules:
 
-They do NOT become 24 / 24 combined.
-```
+- Losing/swapping the required Fuel Array invalidates the continuous-carry requirement.
+- Death invalidates the route.
+- The two endings are alternatives (`OR`).
 
 **Progress:** Per-player  
-**Completion:** Session-wide
+**Lunar Coin reward:** `+5`
 
 ---
 
 ## Tinkaton — Forjada en Chatarra
 
-> **Recicla 6 objetos; obtén Justicia demoledora y derriba**  
-> **a la Unidad de Aleación con Bote explosivo de MUL-T.**
+> **Haz de 6 chatarras el inicio de tu gran golpe;**  
+> **ten Justicia demoledora y vence un Ojo mecánico.**
 
-Current requirements:
+Current mission uses three objectives in the same route (`AND`):
 
-1. Play as **MUL-T**.
-2. Convert at least **6 items into Scrap** during the same run.
-3. Have **Justicia demoledora / Shattering Justice** in your inventory.
-4. Defeat the **Alloy Worship Unit**.
-5. The final hit must come from **Bote explosivo / Blast Canister** or a valid child bomblet generated by the same skill.
+1. Convert **6 items into Scrap** during the run.
+2. Hold **Shattering Justice / Justicia demoledora**.
+3. Defeat a valid mechanical Eye boss target. The current mission accepts the internal body IDs `SuperRoboBallBossBody` or `RoboBallBossBody`.
 
-Scrap progress belongs to the player who performed the conversions and remains remembered for the run even if the Scrap is later consumed.
-
-Different players cannot combine Tinkaton's personal requirements.
+The old MUL-T + Blast Canister requirement is no longer part of the current official preset.
 
 **Progress:** Per-player  
-**Completion:** Session-wide
+**Lunar Coin reward:** `+5`
+
+---
+
+## Wooper — De vuelta al agua
+
+> **Haz de los Humedales tu hogar; marca territorio;**  
+> **caza y muerde a 20 presas envenenadas - Acrid**
+
+Current mission:
+
+1. Play as **Acrid**.
+2. Be in **Wetland Aspect / Aspecto de los Humedales** (`foggyswamp`).
+3. Poison an enemy **before** the qualifying finishing action.
+4. Kill that poisoned target with **Ravenous Bite / Mordida voraz**.
+5. Repeat until **20** valid poisoned-bite kills are completed in the stage-scoped objective.
+
+A target that was not already poisoned before the qualifying bite does not satisfy the status-before-action requirement.
+
+**Progress:** Per-player  
+**Lunar Coin reward:** `+2`
 
 ---
 
 # Challenge systems currently used by presets
 
-USU already includes multiple reusable gameplay challenge systems:
+The nine official presets now run through **Mission System v2 compositions** instead of being represented as nine independent monolithic challenge scripts.
 
-- `ApplyStatusEffects`
-- `HealHealth`
-- `BossCriticalKill`
-- `BackstabBossKill`
+Current runtime building blocks used by the official missions include objectives such as:
+
+- `Kill`
 - `HoldItemStack`
-- `AirborneExplosionKills`
-- `PrecisionExecutionStreak`
-- `ScrapItemBossFinisher`
-- `KillEnemies`
+- `CompleteTeleporter`
+- `BombingRun`
+- `CarryEquipment`
+- `CompleteEnding`
+- `ScrapItems`
+- `RecruitMinions`
+- `DefeatUmbraWaves`
+- `LeaveStage`
+- Item-pickup / no-item-pickup tracking
 
-These systems are progressively being moved toward a more general mission architecture.
+And conditions/modifiers such as:
+
+- Boss / specific-body targets
+- `CriticalHit`
+- `FatalHit`
+- `MinimumDamage`
+- `Backstab`
+- `RequiredSurvivor`
+- `RequiredSkill`
+- `RequiredStage`
+- `StageSequence`
+- `TimeLimit`
+- `NoItemPickup`
+- `StatusPresent` with before-action timing
+- Party-survivor requirements
+
+Legacy challenge trackers remain in the project where they are still useful for compatibility/event sources, but the current creator missions are defined through the reusable Mission v2 model.
 
 ---
 
 # Mission System v2 foundation
 
-Version `0.1.9` includes development groundwork for the next-generation mission format.
+Version `0.2.0` substantially expands the next-generation mission format introduced in earlier releases.
 
-The new model is designed around:
+The model is built around:
 
 - `MissionDefinition`
 - `MissionRoute`
@@ -293,14 +392,14 @@ The new model is designed around:
 - `MissionRules`
 - `MissionTarget`
 - `MissionPreset`
-- Preset/custom mission source tracking
+- Preset/custom mission source tracking through `MissionConfig`
 - `Shared` and `PerPlayer` progress scopes
-- Session reward scope
+- Host-authoritative session snapshots
 - Multiple alternative routes
 
 ## Route logic
 
-Conditions inside one route are treated as **AND** requirements.
+Objectives/conditions inside one route are treated as **AND** requirements.
 
 Different routes are treated as **OR** alternatives.
 
@@ -309,7 +408,7 @@ Conceptually:
 ```text
 Route A:
 Objective
-AND Condition
+AND Objective
 AND Condition
 
 OR
@@ -319,49 +418,43 @@ Objective
 AND Condition
 ```
 
-This model is useful for challenges such as HUNK, where two completely different gameplay routes can unlock the same survivor.
+This is already used by current presets such as Scout and HUNK.
 
 ## Target system
 
-The mission model is being built to support reusable target categories such as:
+The mission model supports reusable target categories such as:
 
-- Any enemy.
+- Any target.
 - Enemy.
 - Elite.
 - Boss.
 - Specific body.
-- Specific boss.
+- Specific boss/body combinations.
 
-Specific entities use stable internal body IDs instead of localized display names.
+Specific entities use stable internal IDs instead of localized display names.
 
 Examples:
 
 ```text
 BrotherBody
 SuperRoboBallBossBody
-ScavBody
+RoboBallBossBody
 ```
 
-This allows future missions to target bosses by their internal body identity without depending on the language selected by the player.
+This allows mission logic to remain independent from the player's selected language.
 
 ## Current v2 runtime status
 
-The v2 architecture is being integrated progressively.
+At the `0.2.0` release point, the internal preset library is normalized into:
 
-The current foundation includes evaluation for the `Kill` objective and initial conditions/targets, including:
+- **9 assignable official mission presets**.
+- **12 legacy mission recipes kept hidden for compatibility/history**.
+- **26 Objective templates** prepared for reuse.
+- **35 Condition templates** prepared for reuse.
 
-- `Airborne`
-- `Grounded`
-- `RequiredSurvivor`
-- `Enemy`
-- `Boss`
-- `Elite`
-- `SpecificBody`
-- `SpecificBoss`
+The nine official creator presets are already composed from Mission v2 objectives/conditions/routes.
 
-Existing creator presets continue to use the established gameplay trackers while they are migrated to the universal mission format.
-
-This section documents the architecture already present in the project; it does **not** mean every planned objective or editor option is already available to players.
+The public **preset reassignment UI**, **editable-copy workflow**, and **full in-game mission editor** are not exposed yet. These are planned follow-up features, not advertised as completed functionality in `0.2.0`.
 
 ---
 
@@ -383,15 +476,15 @@ USU can also maintain backup configuration data so survivor information is not l
 
 Metadata identifying a survivor is maintained by USU. Avoid changing internal survivor IDs unless you know exactly what the game/mod uses.
 
-Because the mission system is evolving, making a backup before manually editing complex challenge data is recommended.
+Because the mission format contains nested routes/objectives/conditions, making a backup before manually editing complex challenge data is recommended.
 
-## Built-in preset synchronization in 0.1.9
+## Built-in preset synchronization in 0.2.0
 
-Built-in creator presets are still treated as source definitions by the current authoring/synchronization layer.
+The nine current creator presets are still treated as source definitions by the current synchronization layer.
 
 This means direct edits to a known built-in preset inside `Survivors.json` may be replaced by the creator preset when USU synchronizes configuration.
 
-This is intentional while the separate custom-copy workflow is being integrated: the creator preset remains preserved, and future player customization is intended to live in a separate custom mission instead of modifying the source preset itself.
+This is intentional for this release. The upcoming custom-copy workflow is designed so players can modify a separate personal copy while the creator preset remains intact.
 
 ---
 
@@ -402,6 +495,8 @@ USU stores its progression/configuration separately from the survivor mod itself
 This allows the project to remember information about a modded survivor when that character mod is temporarily removed and later installed again.
 
 USU reconciles its detected survivor catalog with the stored configuration during startup.
+
+Mission session progress is run/session state and is not intended to replace persistent unlock/profile progression.
 
 ---
 
@@ -414,7 +509,8 @@ The intended presentation includes:
 - Darkened/locked survivor portrait.
 - Vanilla-like locked framing.
 - Challenge information on hover.
-- Unlock notification when the requirement is completed.
+- Vanilla-style unlock notification.
+- Chat unlock announcement.
 - Normal full-color presentation after unlocking.
 
 Official survivors and survivors controlled by another mod's own unlock system are not given USU's generated lock presentation.
@@ -439,13 +535,19 @@ Manual installation is intended for users already familiar with BepInEx.
 
 Place the USU plugin in the appropriate BepInEx plugin directory and install every dependency listed in the package `manifest.json`.
 
+Recommended plugin path:
+
+```text
+BepInEx/plugins/UniversalSurvivorUnlocks/UniversalSurvivorUnlocks.dll
+```
+
 Using a mod manager is recommended.
 
 ---
 
 # Dependencies
 
-The Thunderstore package currently declares:
+The Thunderstore package for `0.2.0` declares:
 
 - `bbepis-BepInExPack-5.4.2121`
 - `RiskofThunder-R2API_Core-5.3.0`
@@ -453,6 +555,8 @@ The Thunderstore package currently declares:
 - `RiskofThunder-R2API_Language-1.1.0`
 - `RiskofThunder-R2API_Unlockable-1.0.2`
 - `RiskofThunder-R2API_Networking-1.0.4`
+
+**Risk Of Options is not a dependency of version `0.2.0`.** The planned in-game configuration entry/library has not been released yet.
 
 Always treat the `manifest.json` included with the current release as the authoritative dependency list.
 
@@ -467,10 +571,11 @@ USU is designed to coexist with:
 - Modded survivors with native unlock systems.
 - Modded survivors without native unlock systems.
 - Multiplayer sessions using compatible mod profiles.
+- RealerCheatUnlocks/manual re-locking workflows used during testing.
 
-Risk of Rain 2 mods can modify skills, networking, damage behavior, content loading, unlockables, and UI in many different ways, so compatibility with every third-party mod cannot be guaranteed.
+Risk of Rain 2 mods can modify skills, networking, damage behavior, content loading, unlockables, inventory state, and UI in many different ways, so compatibility with every third-party mod cannot be guaranteed.
 
-If another mod changes a skill or mechanic used by a USU preset, that challenge may require a compatibility adjustment.
+If another mod changes a skill, boss body, item, stage, artifact mechanic, or damage rule used by a USU preset, that challenge may require a compatibility adjustment.
 
 ---
 
@@ -481,14 +586,17 @@ The most useful bug report includes:
 - Universal Survivor Unlocks version.
 - Risk of Rain 2 version.
 - Whether the problem happened as **host** or **client**.
-- Survivor used.
+- Survivor being unlocked.
+- Survivor used to attempt the challenge.
 - Challenge/preset being attempted.
-- Relevant mod list.
+- Relevant mod list/profile code when possible.
 - What happened.
 - What you expected to happen.
 - `LogOutput.log` from the affected session.
 
 For multiplayer issues, logs from both host and client are especially useful.
+
+For `0.2.0`, balance/theme feedback on the nine creator challenges is also especially valuable.
 
 You can use:
 
@@ -501,6 +609,7 @@ You can contact me on Discord for:
 - Questions.
 - Survivor requests.
 - Challenge/preset ideas.
+- Balance feedback.
 - Suggestions.
 - Compatibility reports.
 - General project discussion.
@@ -521,6 +630,8 @@ Donations help support continued work on:
 - Multiplayer validation.
 - Compatibility fixes.
 - Mission System v2.
+- The future preset library.
+- The future in-game mission editor.
 - Configuration tools.
 - Documentation.
 - Localization.
@@ -540,29 +651,32 @@ Those characters, assets, survivor implementations, and original mod projects be
 
 Built-in USU presets currently reference/test against projects including:
 
-- **Sora** — mod by **Dragonyck**  
+- **Sora** — package by **Dragonyck**  
   https://thunderstore.io/c/riskofrain2/p/Dragonyck/Sora/
 
 - **RalseiSurvivor** — package by **GodRayProductions** and its credited contributors  
   https://thunderstore.io/c/riskofrain2/p/GodRayProductions/RalseiSurvivor/
 
-- **Jhin** — mod by **SeroRonin**  
+- **Jhin** — package by **SeroRonin**  
   https://thunderstore.io/c/riskofrain2/p/SeroRonin/Jhin/
 
-- **Spy** — mod by **tsuyoikenko**  
+- **Spy** — package by **tsuyoikenko**  
   https://thunderstore.io/c/riskofrain2/p/tsuyoikenko/Spy/
 
-- **Scout** — mod by **tsuyoikenko**  
+- **Scout** — package by **tsuyoikenko**  
   https://thunderstore.io/c/riskofrain2/p/tsuyoikenko/Scout/
 
-- **Rocket** — mod by **EnforcerGang**  
+- **Rocket** — package by **EnforcerGang**  
   https://thunderstore.io/c/riskofrain2/p/EnforcerGang/Rocket/
 
-- **HUNK** — mod by **public_ParticleSystem**  
-  https://thunderstore.io/c/riskofrain2/p/public_ParticleSystem/HUNK/
+- **HUNK** — package by **rob** and its credited contributors  
+  https://thunderstore.io/c/riskofrain2/p/rob/HUNK/
 
 - **Tinkaton** — package by **DragonycksModdingComms**  
   https://thunderstore.io/c/riskofrain2/p/DragonycksModdingComms/Tinkaton/
+
+- **Wooper** — package by **DragonycksModdingComms**  
+  https://thunderstore.io/c/riskofrain2/p/DragonycksModdingComms/Wooper/
 
 These survivor packages are referenced for compatibility/preset design and are **not automatically dependencies** of USU.
 
@@ -613,22 +727,26 @@ See the included `LICENSE` file for the complete license terms.
 
 USU is evolving from a collection of individual unlock scripts into a general-purpose configurable progression framework for modded survivors.
 
-Long-term goals include:
+Current next-step goals include:
 
-- A reusable creator-preset library.
+- Assigning any compatible official preset to another detected survivor.
+- A reusable creator-preset library exposed in-game.
 - Safe player-created copies/custom missions.
 - An in-game mission editor.
 - Reusable objectives and conditions.
-- Configurable enemy, elite, boss, and specific-body targets.
+- Configurable enemy, elite, boss, item, skill, stage, status, and specific-body targets.
 - Multi-route challenges.
 - Preset sharing/importing.
-- Better localization.
+- Additional localization.
 - Strong multiplayer synchronization.
 - Persistent configuration without overwriting each player's personal setup.
 
 ---
 
 # Links
+
+**Thunderstore**  
+https://thunderstore.io/c/riskofrain2/p/Shleidericks/UniversalSurvivorUnlocks/
 
 **Source / Issues**  
 https://github.com/Danileonardo/Rain2CharacterUnlock
