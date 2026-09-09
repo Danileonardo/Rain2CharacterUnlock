@@ -17,14 +17,14 @@ namespace UniversalSurvivorUnlocks
         //
         // Se dispara cuando UN jugador consigue:
         //
-        // - matar a un jefe
+        // - matar a un jefe del teletransportador
         // - con un golpe crítico
         //
         // El daño mínimo se comprobará posteriormente
         // en BossCriticalKillServerAchievement.
         // =========================================================
 
-        public static event Action<float>
+        public static event Action<float, string>
             BossCriticalKillDetected;
 
 
@@ -133,10 +133,15 @@ namespace UniversalSurvivorUnlocks
 
 
             // =====================================================
-            // LA VÍCTIMA DEBE SER UN JEFE
+            // LA VÍCTIMA DEBE SER UN JEFE DEL TELETRANSPORTADOR
             // =====================================================
 
-            if (!damageReport.victimIsBoss)
+            if (
+                !ContentRuntimeContextTracker
+                    .IsTeleporterBoss(
+                        victimBody
+                    )
+            )
             {
                 return;
             }
@@ -193,7 +198,7 @@ namespace UniversalSurvivorUnlocks
 
 
             logger?.LogInfo(
-                $"[BossCriticalKill] CRÍTICO MORTAL CONTRA JEFE | " +
+                $"[BossCriticalKill] CRÍTICO MORTAL CONTRA JEFE DEL TELETRANSPORTADOR | " +
                 $"Atacante: {attackerName} | " +
                 $"Jefe: {victimName} | " +
                 $"Daño: {damage:0.##}"
@@ -204,8 +209,15 @@ namespace UniversalSurvivorUnlocks
             // AVISAR A LOS ACHIEVEMENTS
             // =====================================================
 
+            string attackerBodyName =
+                BodyCatalog.GetBodyName(
+                    attackerBody.bodyIndex
+                );
+
+
             BossCriticalKillDetected?.Invoke(
-                damage
+                damage,
+                attackerBodyName
             );
         }
     }

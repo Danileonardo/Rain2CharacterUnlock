@@ -199,6 +199,28 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
+                // =================================================
+                // PROTEGER ELECCIONES EXPLÍCITAS DEL JUGADOR
+                // =================================================
+                //
+                // AuthoringMode sólo debe mantener actualizados los
+                // fallbacks automáticos del autor. Una vez que el jugador
+                // selecciona Original, USU o Custom manualmente, reiniciar
+                // el juego no puede sobrescribir esa elección.
+                // =================================================
+
+                if (
+                    entry.Challenge?.MissionConfig != null &&
+                    entry.Challenge
+                        .MissionConfig
+                        .EffectiveSelectionMode ==
+                            UnlockSelectionMode.UserSelected
+                )
+                {
+                    continue;
+                }
+
+
                 string bodyName =
                     !string.IsNullOrWhiteSpace(
                         entry.BodyName
@@ -229,6 +251,49 @@ namespace UniversalSurvivorUnlocks
 
 
                 // =================================================
+                // PRESERVAR AUTOMATICFALLBACK -> ORIGINAL
+                // =================================================
+                //
+                // Desde 5G.1D-D, "Restaurar personaje" puede dejar un
+                // survivor en Original + AutomaticFallback mientras mantiene
+                // su preset USU dormido. AuthoringMode puede actualizar el
+                // contenido de ese preset, pero NO debe devolver el provider
+                // a USU por accidente al reiniciar el juego.
+                // =================================================
+
+                MissionConfiguration currentMissionConfig =
+                    entry.Challenge?.MissionConfig;
+
+
+                if (
+                    currentMissionConfig != null &&
+                    currentMissionConfig.EffectiveSelectionMode ==
+                        UnlockSelectionMode.AutomaticFallback &&
+                    currentMissionConfig.EffectiveProvider ==
+                        UnlockProviderKind.Original
+                )
+                {
+                    if (preset.MissionConfig == null)
+                    {
+                        preset.MissionConfig =
+                            new MissionConfiguration();
+                    }
+
+
+                    preset.MissionConfig.Provider =
+                        UnlockProviderKind.Original;
+
+                    preset.MissionConfig.SelectionMode =
+                        UnlockSelectionMode.AutomaticFallback;
+
+                    // RestoreCharacter elimina Custom. AuthoringMode nunca
+                    // debe reintroducir una copia personalizada.
+                    preset.MissionConfig.CustomMission =
+                        null;
+                }
+
+
+                // =================================================
                 // YA ESTÁ ACTUALIZADO
                 // =================================================
 
@@ -255,7 +320,8 @@ namespace UniversalSurvivorUnlocks
                     true;
 
 
-                logger?.LogInfo(
+                UsuLog.Verbose(
+                    logger,
                     $"Preset de autoría actualizado | " +
                     $"Body: {bodyName} | " +
                     $"Pack: {contentPackIdentifier} | " +
@@ -682,7 +748,8 @@ namespace UniversalSurvivorUnlocks
 
             if (hasPreset)
             {
-                logger.LogInfo(
+                UsuLog.Verbose(
+                    logger,
                     $"Preset de desbloqueo aplicado | " +
                     $"Survivor: {displayName} | " +
                     $"Body: {bodyName} | " +
@@ -693,7 +760,8 @@ namespace UniversalSurvivorUnlocks
             }
             else
             {
-                logger.LogInfo(
+                UsuLog.Verbose(
+                    logger,
                     $"Configuración automática creada en memoria | " +
                     $"Survivor: {displayName} | " +
                     $"Body: {bodyName} | " +
@@ -1317,10 +1385,56 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
+        // GUARDAR CONFIGURACIÓN ACTUAL
+        // =========================================================
+        //
+        // Punto público controlado para servicios como
+        // MissionAssignmentService. La lógica real de serialización,
+        // backup y ruta sigue encapsulada en Save(...).
+        // =========================================================
+
+        public static void SaveCurrentConfig(
+            ManualLogSource logger
+        )
+        {
+            TrySaveCurrentConfig(
+                logger
+            );
+        }
+
+
+        // =========================================================
+        // GUARDAR CONFIGURACIÓN ACTUAL Y REPORTAR RESULTADO
+        // =========================================================
+        //
+        // MissionAssignmentService necesita distinguir entre una
+        // asignación válida y una asignación que no pudo persistirse.
+        // El método anterior se conserva por compatibilidad.
+        // =========================================================
+
+        public static bool TrySaveCurrentConfig(
+            ManualLogSource logger
+        )
+        {
+            if (CurrentConfig == null)
+            {
+                CurrentConfig =
+                    new SurvivorJsonFile();
+            }
+
+
+            return Save(
+                CurrentConfig,
+                logger
+            );
+        }
+
+
+        // =========================================================
         // GUARDAR
         // =========================================================
 
-        private static void Save(
+        private static bool Save(
             SurvivorJsonFile file,
             ManualLogSource logger
         )
@@ -1357,39 +1471,49 @@ namespace UniversalSurvivorUnlocks
                 );
 
 
-                logger.LogInfo(
+                UsuLog.Verbose(
+                    logger,
                     "Survivors.json actualizado correctamente."
                 );
 
 
-                logger.LogInfo(
+                UsuLog.Verbose(
+                    logger,
                     $"Disponibles en JSON: " +
                     $"{file.AvailableSurvivors.Count}"
                 );
 
 
-                logger.LogInfo(
+                UsuLog.Verbose(
+                    logger,
                     $"No disponibles en JSON: " +
                     $"{file.UnavailableSurvivors.Count}"
                 );
 
 
-                logger.LogInfo(
+                UsuLog.Verbose(
+                    logger,
                     $"Ruta: {JsonPath}"
                 );
+
+
+                return true;
             }
             catch (
                 Exception exception
             )
             {
-                logger.LogError(
+                logger?.LogError(
                     "No se pudo guardar Survivors.json."
                 );
 
 
-                logger.LogError(
+                logger?.LogError(
                     exception.Message
                 );
+
+
+                return false;
             }
         }
     }

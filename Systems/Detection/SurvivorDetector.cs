@@ -144,9 +144,13 @@ namespace UniversalSurvivorUnlocks
 
 
             /*
-             * Nuestro propio UnlockableDef no debe
-             * contar como un desbloqueo original
-             * perteneciente al autor del survivor.
+             * Nuestro propio UnlockableDef no debe contar como el original.
+             *
+             * 5G.1D-E añade un caso nuevo: el jugador puede tener USU activo
+             * aunque el survivor posea un unlock del creador. En ese caso el
+             * SurvivorDef visible contiene nuestro UnlockableDef, pero el
+             * original sigue recordado por SurvivorUnlockManager y no debe
+             * perderse al sincronizar Survivors.json.
              */
             bool customUnlock =
                 SurvivorUnlockManager.IsCustomUnlock(
@@ -154,20 +158,38 @@ namespace UniversalSurvivorUnlocks
                 );
 
 
+            UnlockableDef originalUnlock =
+                !customUnlock
+                    ? detectedUnlock
+                    : null;
+
+
+            if (
+                customUnlock &&
+                SurvivorUnlockManager.TryGetRememberedOriginalUnlock(
+                    survivor,
+                    out UnlockableDef rememberedOriginal
+                )
+            )
+            {
+                originalUnlock =
+                    rememberedOriginal;
+            }
+
+
             bool hasOriginalUnlock =
-                detectedUnlock != null &&
-                !customUnlock;
+                originalUnlock != null;
 
 
             if (
                 hasOriginalUnlock &&
                 !string.IsNullOrWhiteSpace(
-                    detectedUnlock.cachedName
+                    originalUnlock.cachedName
                 )
             )
             {
                 unlockableName =
-                    detectedUnlock.cachedName;
+                    originalUnlock.cachedName;
             }
 
 
@@ -450,15 +472,6 @@ namespace UniversalSurvivorUnlocks
             int moddedCount = 0;
 
 
-            logger.LogInfo(
-                "==============================================="
-            );
-
-            logger.LogInfo(
-                "========== UNIVERSAL SURVIVOR DETECTOR =========="
-            );
-
-
             foreach (
                 SurvivorInfo survivor
                 in survivors
@@ -490,8 +503,9 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                logger.LogInfo(
-                    $"{survivor.DisplayName} | " +
+                UsuLog.Verbose(
+                    logger,
+                    $"[DETECTOR] {survivor.DisplayName} | " +
                     $"Internal: {survivor.InternalName} | " +
                     $"Body: {survivor.BodyName} | " +
                     $"Estado: {survivor.Status} | " +
@@ -502,41 +516,11 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            logger.LogInfo(
-                "-----------------------------------------------"
-            );
-
-            logger.LogInfo(
-                $"Disponibles: {availableCount}"
-            );
-
-            logger.LogInfo(
-                $"DLC no disponible: {dlcCount}"
-            );
-
-            logger.LogInfo(
-                $"Ocultos: {hiddenCount}"
-            );
-
-            logger.LogInfo(
-                $"No seleccionables: {notSelectableCount}"
-            );
-
-            logger.LogInfo(
-                $"Modded detectados: {moddedCount}"
-            );
-
-
-            // =====================================================
-            // LISTADO ESPECÍFICO DE SURVIVORS MODDED
-            // =====================================================
-
-            logger.LogInfo(
-                "==============================================="
-            );
-
-            logger.LogInfo(
-                "========== SURVIVORS MODDED =========="
+            logger?.LogInfo(
+                $"Survivors detectados | Total: {survivors.Count} | " +
+                $"Disponibles: {availableCount} | DLC no disponible: {dlcCount} | " +
+                $"Ocultos: {hiddenCount} | No seleccionables: {notSelectableCount} | " +
+                $"Modded: {moddedCount}"
             );
 
 
@@ -550,14 +534,15 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
-                logger.LogInfo(
-                    $"{survivor.DisplayName} | " +
+
+                UsuLog.Verbose(
+                    logger,
+                    $"[DETECTOR MODDED] {survivor.DisplayName} | " +
                     $"Internal: {survivor.InternalName} | " +
                     $"Body: {survivor.BodyName} | " +
                     $"Pack: {survivor.ContentPackIdentifier} | " +
                     $"Assembly: {survivor.SourceAssembly} | " +
-                    $"Unlock propio: " +
-                    $"{(survivor.HasOriginalUnlock ? "SI" : "NO")} | " +
+                    $"Unlock propio: {(survivor.HasOriginalUnlock ? "SI" : "NO")} | " +
                     $"Unlock: {survivor.UnlockableName}"
                 );
             }
@@ -565,15 +550,10 @@ namespace UniversalSurvivorUnlocks
 
             if (moddedCount == 0)
             {
-                logger.LogInfo(
+                logger?.LogInfo(
                     "No se detectaron survivors pertenecientes a ContentPacks de mods."
                 );
             }
-
-
-            logger.LogInfo(
-                "==============================================="
-            );
         }
     }
 }

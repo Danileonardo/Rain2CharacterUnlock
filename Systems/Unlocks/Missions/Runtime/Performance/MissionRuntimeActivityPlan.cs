@@ -224,6 +224,36 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
+                SurvivorJsonEntry effectiveEntry =
+                    null;
+
+
+                try
+                {
+                    effectiveEntry =
+                        entryJson.ToObject<
+                            SurvivorJsonEntry
+                        >();
+                }
+                catch
+                {
+                    // Si una entrada externa no puede convertirse, el plan
+                    // conserva el comportamiento anterior basado en JObject.
+                }
+
+
+                if (
+                    effectiveEntry != null &&
+                    !SurvivorUnlockManager
+                        .RequiresCustomUnlock(
+                            effectiveEntry
+                        )
+                )
+                {
+                    continue;
+                }
+
+
                 JObject challenge =
                     GetObjectCaseInsensitive(
                         entryJson,

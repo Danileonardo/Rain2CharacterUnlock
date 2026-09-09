@@ -10,6 +10,9 @@ namespace UniversalSurvivorUnlocks
 {
     public static class ModdedSurvivorRegistry
     {
+        private const string UsuPluginGuid =
+            "com.danileo.UniversalSurvivorUnlocks";
+
         private class ModdedSourceInfo
         {
             public string ContentPackIdentifier =
@@ -64,7 +67,8 @@ namespace UniversalSurvivorUnlocks
             ModdedBodies.Clear();
 
 
-            logger.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "Registro universal de survivors modded reiniciado."
             );
         }
@@ -119,7 +123,7 @@ namespace UniversalSurvivorUnlocks
              */
             if (
                 identifier.StartsWith(
-                    Plugin.PluginGuid,
+                    UsuPluginGuid,
                     StringComparison.Ordinal
                 )
             )
@@ -327,7 +331,8 @@ namespace UniversalSurvivorUnlocks
                     : "Sin Body";
 
 
-            logger.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 $"Survivor MOD detectado por " +
                 $"{detectionMethod} | " +
                 $"{survivor.cachedName} | " +
@@ -409,6 +414,63 @@ namespace UniversalSurvivorUnlocks
             return new List<SurvivorDef>(
                 ModdedSurvivors.Keys
             );
+        }
+
+
+        // =========================================================
+        // BUSCAR SURVIVOR POR BODY
+        // =========================================================
+
+        public static bool TryGetSurvivorByBodyName(
+            string bodyName,
+            out SurvivorDef survivorDef
+        )
+        {
+            survivorDef =
+                null;
+
+
+            if (string.IsNullOrWhiteSpace(bodyName))
+            {
+                return false;
+            }
+
+
+            string normalizedBodyName =
+                bodyName.Trim();
+
+
+            foreach (
+                SurvivorDef candidate
+                in ModdedSurvivors.Keys
+            )
+            {
+                if (
+                    candidate == null ||
+                    candidate.bodyPrefab == null
+                )
+                {
+                    continue;
+                }
+
+
+                if (
+                    string.Equals(
+                        candidate.bodyPrefab.name,
+                        normalizedBodyName,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    survivorDef =
+                        candidate;
+
+                    return true;
+                }
+            }
+
+
+            return false;
         }
 
 

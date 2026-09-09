@@ -66,6 +66,57 @@ namespace UniversalSurvivorUnlocks
             fixedTick = 0;
         }
 
+        public static void ResetMission(
+            string missionId
+        )
+        {
+            if (string.IsNullOrWhiteSpace(missionId))
+            {
+                return;
+            }
+
+
+            string prefix =
+                missionId.Trim() + ":";
+
+
+            List<string> keysToRemove =
+                new List<string>();
+
+
+            foreach (
+                KeyValuePair<string, ObjectiveState> pair
+                in States
+            )
+            {
+                if (
+                    pair.Key.StartsWith(
+                        prefix,
+                        StringComparison.Ordinal
+                    )
+                )
+                {
+                    if (!string.IsNullOrWhiteSpace(pair.Value?.LogKey))
+                    {
+                        MissionLogLimiter.ResetKey(
+                            pair.Value.LogKey
+                        );
+                    }
+
+                    keysToRemove.Add(
+                        pair.Key
+                    );
+                }
+            }
+
+
+            foreach (string key in keysToRemove)
+            {
+                States.Remove(key);
+            }
+        }
+
+
         private static void OnLethalBlast(
             CharacterMaster playerMaster,
             DamageReport report,

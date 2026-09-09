@@ -14,6 +14,7 @@ namespace UniversalSurvivorUnlocks
         // Airborne
         // Grounded
         // RequiredSurvivor
+        // ExcludedSurvivor
         // RequiredSkill
         // RequiredItem
         // RequiredEquipment
@@ -40,6 +41,13 @@ namespace UniversalSurvivorUnlocks
         //
         // {
         //     "body": "CommandoBody"
+        // }
+        //
+        //
+        // ExcludedSurvivor:
+        //
+        // {
+        //     "bodies": [ "RailgunnerBody" ]
         // }
         //
         //

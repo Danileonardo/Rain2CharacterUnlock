@@ -4,7 +4,7 @@
 
 USU automatically detects compatible modded survivors, respects characters that already provide their own unlock requirement, and can give progression challenges to survivors that would otherwise be available immediately.
 
-**Current release:** `0.2.0`
+**Current release:** `0.2.1`
 
 [Thunderstore](https://thunderstore.io/c/riskofrain2/p/Shleidericks/UniversalSurvivorUnlocks/) · [GitHub / Source Code](https://github.com/Danileonardo/Rain2CharacterUnlock) · [Support development / Donate](https://github.com/sponsors/Danileonardo) · Discord: `@shleiderick`
 
@@ -52,20 +52,22 @@ Main goals:
 - Localize the official challenge names/descriptions according to the game's active language.
 - Reward official USU challenges with configurable Lunar Coin rewards.
 
-## 0.2.0 feedback focus
+## 0.2.1 release focus
 
-Version `0.2.0` is intentionally focused on the **nine current creator-made survivor challenges**.
+Version `0.2.1` closes the current **survivor presentation/localization pass** while keeping the nine creator-made unlock challenges on Mission System v2.
 
-The in-game preset library, preset reassignment UI, editable copies, and full mission editor are **not included yet**. The internal architecture for those systems is already being prepared, but this release is meant to gather feedback about the current characters and their missions before the editor becomes public.
+Highlights of this release:
 
-Useful feedback includes:
+- Added a curated `SurvivorDefinition` layer for **15 survivor integrations**: Aurelion Sol, Auriel, Enforcer, Ralsei, Sora, Wooper, Tinkaton, HUNK, Jhin, Miner, Rocket, Scout, Spy, Heretic, and Nemesis Enforcer.
+- Added curated Spanish localization (`es-419` / `es-ES`) and English repairs for visible modded-survivor content when the original mod does not provide the required text.
+- Added survivor content profiles for overview/details, skills, keywords, skins, unlock information, and Logbook-facing lore/Notes.
+- Kept `Notes` tied to the real native Logbook state instead of creating a separate USU discovery flag.
+- Added the in-game Mission Library/provider interface. When **Risk Of Options** is installed, USU embeds its interface there; otherwise a Character Select launcher is used as fallback.
+- Added provider selection/restoration flows for `Original`, `USU`, and stored `Custom` configuration state, while protecting native creator unlock systems from unintended replacement.
+- Added a runtime content catalog used by the survivor browser and future mission-editor work.
+- Added quieter default logging with optional verbose diagnostics through BepInEx config.
 
-- Does the challenge fit the character thematically?
-- Is the objective understandable without reading the source code?
-- Is it too easy, too difficult, too long, or too short?
-- Did the challenge behave correctly in multiplayer?
-- Does the Lunar Coin reward feel appropriate?
-- Would you change any objective, route, number, or requirement?
+The full visual mission editor and general-purpose custom mission authoring workflow are **not part of 0.2.1 yet**. The current release focuses on stable survivor presentation, preset assignment/provider handling, localization, and runtime foundations.
 
 ---
 
@@ -95,7 +97,7 @@ USU is moving toward a preset-based mission system with a clear ownership rule.
 
 A built-in preset created for USU is the **official source preset**.
 
-Version `0.2.0` includes **9 official creator presets**. These source presets are kept separate from the reusable Objective and Condition templates used internally by Mission System v2.
+Version `0.2.1` includes **9 official creator presets**. These source presets are kept separate from the reusable Objective and Condition templates used internally by Mission System v2.
 
 Creator presets are intended to remain unchanged so future updates can improve or rebalance them without destroying the original definition.
 
@@ -109,7 +111,7 @@ This allows USU to keep:
 - The player's customized version.
 - The technical relationship between the custom mission and the preset it came from.
 
-The public in-game preset library/editor is still under development. In `0.2.0`, official built-in presets are still synchronized from the mod's source definitions, so directly editing one of the nine official presets in `Survivors.json` is not a reliable way to create a permanent custom variant.
+Version `0.2.1` exposes the current preset/provider library in-game. Official built-in presets remain source definitions and are refreshed from their stable `BasePresetId`, so editing a preset-backed snapshot directly in `Survivors.json` is not a reliable way to create a permanent custom variant. Stored custom mission data is kept separate from the official preset source. The full visual editor for creating arbitrary custom missions is still planned for a later release.
 
 ---
 
@@ -160,7 +162,7 @@ For multiplayer bugs, logs from both host and client are especially useful.
 
 # Current built-in presets
 
-The following **9 creator-made presets** are included in USU `0.2.0`.
+The following **9 creator-made presets** are included in USU `0.2.1`.
 
 Official challenge names/descriptions are currently localized for English and Spanish (`es-419` / `es-ES`), with English used as fallback.
 
@@ -204,13 +206,13 @@ Public feedback for this preset is especially welcome because Devotion/minion be
 ## Jhin — El Cuarto Acto
 
 > **Convierte a un jefe en tu gran final;**  
-> **asesta un crítico mortal de 44.444 de daño o más.**
+> **asesta un crítico mortal de 4.444 de daño o más.**
 
 Current mission:
 
 - Deliver the **fatal hit** to a boss.
 - The hit must be **critical**.
-- The lethal hit must deal at least **44,444 damage**.
+- The lethal hit must deal at least **4,444 damage**.
 
 **Progress:** Per-player  
 **Lunar Coin reward:** `+4`
@@ -381,7 +383,7 @@ Legacy challenge trackers remain in the project where they are still useful for 
 
 # Mission System v2 foundation
 
-Version `0.2.0` substantially expands the next-generation mission format introduced in earlier releases.
+Version `0.2.1` keeps Mission System v2 as the active foundation and extends the surrounding assignment, refresh, content-profile, and UI layers introduced after 0.2.0.
 
 The model is built around:
 
@@ -445,16 +447,13 @@ This allows mission logic to remain independent from the player's selected langu
 
 ## Current v2 runtime status
 
-At the `0.2.0` release point, the internal preset library is normalized into:
+In `0.2.1`, the current creator missions remain represented by **9 assignable official mission presets** built from reusable objectives, conditions, targets, routes, and rules.
 
-- **9 assignable official mission presets**.
-- **12 legacy mission recipes kept hidden for compatibility/history**.
-- **26 Objective templates** prepared for reuse.
-- **35 Condition templates** prepared for reuse.
+The internal catalog also retains hidden legacy recipes and reusable Objective/Condition templates for compatibility and future editing workflows.
 
-The nine official creator presets are already composed from Mission v2 objectives/conditions/routes.
+The public Mission Library can now browse survivor profiles and assign compatible USU presets. Provider handling distinguishes `Original`, `USU`, and stored `Custom` state, and runtime refresh support applies valid assignment changes without requiring USU to overwrite the creator's native unlock system.
 
-The public **preset reassignment UI**, **editable-copy workflow**, and **full in-game mission editor** are not exposed yet. These are planned follow-up features, not advertised as completed functionality in `0.2.0`.
+The full drag-and-drop/general-purpose mission editor and unrestricted custom mission authoring UI are still planned follow-up features.
 
 ---
 
@@ -478,13 +477,13 @@ Metadata identifying a survivor is maintained by USU. Avoid changing internal su
 
 Because the mission format contains nested routes/objectives/conditions, making a backup before manually editing complex challenge data is recommended.
 
-## Built-in preset synchronization in 0.2.0
+## Built-in preset synchronization in 0.2.1
 
-The nine current creator presets are still treated as source definitions by the current synchronization layer.
+Official creator presets remain immutable source definitions. `BasePresetId` is treated as the authority for preset-backed assignments, and USU refreshes the persisted mission snapshot when the corresponding built-in preset changes between releases.
 
-This means direct edits to a known built-in preset inside `Survivors.json` may be replaced by the creator preset when USU synchronizes configuration.
+This means manual edits to the snapshot of a known official preset inside `Survivors.json` can be replaced during synchronization. Player-owned `CustomMission` data is stored separately and is not the same thing as editing the creator preset itself.
 
-This is intentional for this release. The upcoming custom-copy workflow is designed so players can modify a separate personal copy while the creator preset remains intact.
+Using **Restore original** returns the character to its base provider policy and removes the player's stored Custom copy for that character, while never deleting or modifying the creator's native unlock implementation or the built-in USU source preset.
 
 ---
 
@@ -547,7 +546,7 @@ Using a mod manager is recommended.
 
 # Dependencies
 
-The Thunderstore package for `0.2.0` declares:
+The Thunderstore package for `0.2.1` declares:
 
 - `bbepis-BepInExPack-5.4.2121`
 - `RiskofThunder-R2API_Core-5.3.0`
@@ -556,7 +555,7 @@ The Thunderstore package for `0.2.0` declares:
 - `RiskofThunder-R2API_Unlockable-1.0.2`
 - `RiskofThunder-R2API_Networking-1.0.4`
 
-**Risk Of Options is not a dependency of version `0.2.0`.** The planned in-game configuration entry/library has not been released yet.
+**Risk Of Options is an optional soft integration in version `0.2.1`, not a hard Thunderstore dependency.** When it is installed, USU embeds the Mission Library inside Mod Options. Without it, USU uses its Character Select launcher fallback.
 
 Always treat the `manifest.json` included with the current release as the authoritative dependency list.
 
@@ -596,7 +595,7 @@ The most useful bug report includes:
 
 For multiplayer issues, logs from both host and client are especially useful.
 
-For `0.2.0`, balance/theme feedback on the nine creator challenges is also especially valuable.
+For `0.2.1`, reports about survivor presentation/localization, provider switching, the Mission Library, Logbook/Notes behavior, and multiplayer challenge completion are especially valuable.
 
 You can use:
 
@@ -729,17 +728,15 @@ USU is evolving from a collection of individual unlock scripts into a general-pu
 
 Current next-step goals include:
 
-- Assigning any compatible official preset to another detected survivor.
-- A reusable creator-preset library exposed in-game.
-- Safe player-created copies/custom missions.
-- An in-game mission editor.
-- Reusable objectives and conditions.
+- A full visual mission editor for player-created missions.
+- Safer and more discoverable custom-mission creation/editing workflows.
+- Reusable Objective and Condition editing backed by the runtime content catalog.
 - Configurable enemy, elite, boss, item, skill, stage, status, and specific-body targets.
-- Multi-route challenges.
+- Multi-route challenge editing and validation.
 - Preset sharing/importing.
-- Additional localization.
-- Strong multiplayer synchronization.
-- Persistent configuration without overwriting each player's personal setup.
+- Additional curated survivor integrations and localization coverage.
+- Continued multiplayer synchronization and compatibility testing.
+- Cleanup/consolidation of legacy helpers after the 0.2.1 release line is stable.
 
 ---
 

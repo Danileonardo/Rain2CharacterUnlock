@@ -4,6 +4,65 @@ All notable changes to Universal Survivor Unlocks will be documented in this fil
 
 The format is based on a simple versioned changelog intended for Thunderstore and GitHub releases.
 
+## 0.2.1 — Survivor Definitions & Mission Library Update
+
+### Release focus
+
+- Closed the current curated survivor presentation/localization pass for the installed/tested survivor set.
+- Added the first public Mission Library/provider-management interface while keeping the full mission editor for a later release.
+- Kept the nine creator-made unlock missions on the existing Mission System v2 backend; this release does not migrate native/legacy unlock logic into Survivor Definitions.
+
+### Added
+
+- Added the central `SurvivorDefinition` / `SurvivorDefinitionRegistry` system.
+- Added curated Definitions for **15 survivor integrations**:
+  - Aurelion Sol
+  - Auriel
+  - Enforcer
+  - Ralsei
+  - Sora
+  - Wooper
+  - Tinkaton
+  - HUNK
+  - Jhin
+  - Miner
+  - Rocket
+  - Scout
+  - Spy
+  - Heretic
+  - Nemesis Enforcer
+- Added manual curated Spanish localization (`es-419` / `es-ES`) plus English repairs for visible modded-survivor content where needed.
+- Added survivor content profiles covering overview/details, skills, keywords, skins, unlock information, and Logbook-facing lore/Notes.
+- Added runtime content catalog services for survivors, items, equipment, skills, bodies, and stages, including discovery-aware presentation support.
+- Added Mission Library UI with an optional embedded **Risk Of Options** integration.
+- Added a Character Select launcher fallback when Risk Of Options is not installed.
+- Added provider/assignment services for Original/USU/Custom state, preset assignment, restore-original behavior, preset snapshot refresh, and runtime mission refresh.
+- Added centralized `UsuLog` policy with `Logging.VerboseLogging=false` by default.
+- Added runtime context tracking used by mission/content systems.
+
+### Changed
+
+- Updated Jhin's active **El Cuarto Acto** requirement to **4,444+ lethal critical damage** in the current preset/configuration source.
+- Expanded survivor detection/content-profile handling so curated Definitions can activate without hard references to external survivor DLLs.
+- Heretic now uses a special Definition path compatible with Moffein-Heretic exposing the vanilla `HereticBody`/SurvivorDef instead of registering a separate modded SurvivorDef.
+- Updated locked-survivor presentation, browser/profile refresh behavior, and configuration reconciliation for the new profile/Definition layers.
+- Improved runtime refresh and assignment handling so provider changes can be reflected without replacing the player's unrelated personal configuration.
+- Risk Of Options is now a **soft dependency/integration**, not a required package dependency.
+
+### Localization / survivor presentation
+
+- Curated visible-content coverage now includes character overview/details, skills, keyword panels, skins, achievements/requirements, and lore where available for the registered Definitions.
+- `Notes` continues to represent Logbook lore only and follows the real native Logbook discovery state instead of a separate USU-known flag.
+- Removed the runtime automatic-translation direction from the current release path; 0.2.1 uses curated manual localization.
+
+### Compatibility and release metadata
+
+- Bumped plugin, assembly project metadata, source manifest, and Thunderstore staging manifest to `0.2.1`.
+- Updated README documentation for the current Mission Library, optional Risk Of Options integration, Definitions, and provider behavior.
+- Preserved native survivor unlock providers when they exist; Definitions do not replace creator-owned unlock logic.
+- Full visual mission authoring/editing remains planned for a later release.
+
+
 ## 0.2.0 — Creator Challenges Update
 
 ### Release focus

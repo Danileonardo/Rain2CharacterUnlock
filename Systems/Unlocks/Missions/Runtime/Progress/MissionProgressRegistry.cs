@@ -592,6 +592,76 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
+        // RESET COMPLETO DE UNA MISIÓN
+        // =========================================================
+
+        /// <summary>
+        /// Elimina el progreso Shared y PerPlayer asociado a un MissionId.
+        /// 5G.1D-E lo usa cuando el host cambia la misión activa durante una
+        /// run para impedir que el progreso de la definición anterior pase a
+        /// la nueva misión.
+        /// </summary>
+        public static int ResetMission(
+            string missionId
+        )
+        {
+            if (
+                !CanWrite() ||
+                string.IsNullOrWhiteSpace(missionId)
+            )
+            {
+                return 0;
+            }
+
+
+            int removed =
+                0;
+
+
+            if (
+                SharedProgressByMission.Remove(
+                    missionId
+                )
+            )
+            {
+                removed++;
+            }
+
+
+            foreach (
+                MissionPlayerProgress player
+                in PlayerProgressByKey.Values
+            )
+            {
+                if (
+                    player != null &&
+                    player.Missions != null &&
+                    player.Missions.Remove(
+                        missionId
+                    )
+                )
+                {
+                    removed++;
+                }
+            }
+
+
+            if (removed > 0)
+            {
+                UsuLog.Verbose(
+                    logger,
+                    $"[MISSION PROGRESS] Runtime reset | " +
+                    $"Mission: {missionId} | " +
+                    $"Entradas eliminadas: {removed}"
+                );
+            }
+
+
+            return removed;
+        }
+
+
+        // =========================================================
         // IDENTIDAD / RECONEXIÓN
         // =========================================================
 

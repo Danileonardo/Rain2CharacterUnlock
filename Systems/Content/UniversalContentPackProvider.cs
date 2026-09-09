@@ -10,6 +10,9 @@ namespace UniversalSurvivorUnlocks
     public sealed class UniversalContentPackProvider :
         IContentPackProvider
     {
+        private const string UsuPluginGuid =
+            "com.danileo.UniversalSurvivorUnlocks";
+
         private static ManualLogSource _logger;
 
         private static bool _initialized;
@@ -50,7 +53,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public string identifier =>
-            Plugin.PluginGuid +
+            UsuPluginGuid +
             ".DynamicUnlocks";
 
 
@@ -96,6 +99,11 @@ namespace UniversalSurvivorUnlocks
             );
 
 
+            ContentSourceRegistry.Reset(
+                logger
+            );
+
+
             /*
              * Aquí YA NO analizamos survivors.
              *
@@ -106,7 +114,8 @@ namespace UniversalSurvivorUnlocks
                 CollectContentPackProviders;
 
 
-            logger.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "UniversalContentPackProvider registrado."
             );
         }
@@ -130,7 +139,8 @@ namespace UniversalSurvivorUnlocks
             );
 
 
-            _logger.LogInfo(
+            UsuLog.Verbose(
+                _logger,
                 "UniversalContentPackProvider añadido " +
                 "al pipeline de ContentManager."
             );
@@ -180,6 +190,13 @@ namespace UniversalSurvivorUnlocks
                 in args.peerLoadInfos
             )
             {
+                ContentSourceRegistry
+                    .RegisterContentPack(
+                        peer.previousContentPack,
+                        _logger
+                    );
+
+
                 ModdedSurvivorRegistry
                     .RegisterContentPack(
                         peer.previousContentPack,
@@ -253,52 +270,24 @@ namespace UniversalSurvivorUnlocks
                     survivor.unlockableDef;
 
 
-                // =================================================
-                // EL AUTOR TIENE SU PROPIO UNLOCK
-                // =================================================
-
+                /*
+                 * Recordamos SIEMPRE el estado original antes de decidir qué
+                 * provider queda activo. Un provider USU seleccionado por el
+                 * usuario puede reemplazar temporalmente un unlock del autor,
+                 * pero nunca debe destruirlo.
+                 */
                 if (
-                    currentUnlock != null &&
-                    !SurvivorUnlockManager
-                        .IsCustomUnlock(
-                            currentUnlock
-                        )
+                    currentUnlock == null ||
+                    !SurvivorUnlockManager.IsCustomUnlock(
+                        currentUnlock
+                    )
                 )
                 {
-                    /*
-                     * IMPORTANTE:
-                     *
-                     * Puede ocurrir que en una pasada
-                     * anterior todavía fuese null y
-                     * el autor lo asigne después.
-                     *
-                     * RememberOriginalUnlock debe poder
-                     * actualizar null -> unlock real.
-                     */
                     SurvivorUnlockManager
                         .RememberOriginalUnlock(
                             survivor,
                             currentUnlock
                         );
-
-
-                    if (
-                        _loggedOriginalUnlocks.Add(
-                            bodyName
-                        )
-                    )
-                    {
-                        _logger.LogInfo(
-                            $"UNLOCK ORIGINAL RESPETADO | " +
-                            $"Body: {bodyName} | " +
-                            $"Pack: {packIdentifier} | " +
-                            $"Unlock: " +
-                            $"{currentUnlock.cachedName}"
-                        );
-                    }
-
-
-                    continue;
                 }
 
 
@@ -313,10 +302,6 @@ namespace UniversalSurvivorUnlocks
                         );
 
 
-                /*
-                 * Primera vez que este survivor
-                 * aparece en el equipo.
-                 */
                 if (entry == null)
                 {
                     entry =
@@ -337,33 +322,12 @@ namespace UniversalSurvivorUnlocks
 
 
                 // =================================================
-                // CONFIGURACIÓN DESACTIVADA
+                // PREPARAR UNLOCK USU DORMIDO
                 // =================================================
-
-                if (
-                    !SurvivorUnlockManager
-                        .RequiresCustomUnlock(
-                            entry
-                        )
-                )
-                {
-                    /*
-                     * Si durante una pasada previa
-                     * habíamos asignado nuestro unlock,
-                     * restauramos el original.
-                     */
-                    SurvivorUnlockManager
-                        .RestoreOriginalUnlock(
-                            survivor
-                        );
-
-
-                    continue;
-                }
-
-
-                // =================================================
-                // BUSCAR / CREAR CUSTOM UNLOCK
+                //
+                // Aunque Original esté activo, el UnlockableDef de USU debe
+                // existir antes de que RoR2 cierre sus catálogos. Así un cambio
+                // Original -> USU puede aplicarse sin reiniciar.
                 // =================================================
 
                 UnlockableDef customUnlock;
@@ -389,9 +353,8 @@ namespace UniversalSurvivorUnlocks
                     if (customUnlock == null)
                     {
                         _logger.LogError(
-                            $"No fue posible crear " +
-                            $"el unlock dinámico de " +
-                            $"{bodyName}."
+                            $"No fue posible preparar " +
+                            $"el unlock USU de {bodyName}."
                         );
 
 
@@ -399,13 +362,6 @@ namespace UniversalSurvivorUnlocks
                     }
 
 
-                    /*
-                     * Este UnlockableDef nació después
-                     * de que R2API construyera sus packs.
-                     *
-                     * Por eso lo añadimos al ContentPack
-                     * perteneciente a nuestro propio provider.
-                     */
                     if (
                         _dynamicUnlockBodies.Add(
                             bodyName
@@ -422,8 +378,9 @@ namespace UniversalSurvivorUnlocks
                             );
 
 
-                        _logger.LogInfo(
-                            $"UnlockableDef añadido al " +
+                        UsuLog.Verbose(
+                            _logger,
+                            $"UnlockableDef USU preparado en " +
                             $"Dynamic ContentPack | " +
                             $"{customUnlock.cachedName}"
                         );
@@ -431,20 +388,60 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                // =================================================
-                // RECORDAR ORIGINAL
-                // =================================================
-
-                SurvivorUnlockManager
-                    .RememberOriginalUnlock(
-                        survivor,
-                        null
-                    );
+                bool originalAvailable =
+                    SurvivorUnlockManager
+                        .HasOriginalUnlockAvailable(
+                            survivor,
+                            entry
+                        );
 
 
-                // =================================================
-                // ASIGNAR CUSTOM UNLOCK
-                // =================================================
+                bool useCustomUnlock =
+                    SurvivorUnlockManager
+                        .RequiresCustomUnlock(
+                            entry,
+                            originalAvailable
+                        );
+
+
+                if (!useCustomUnlock)
+                {
+                    SurvivorUnlockManager
+                        .RestoreOriginalUnlock(
+                            survivor
+                        );
+
+
+                    if (
+                        originalAvailable &&
+                        _loggedOriginalUnlocks.Add(
+                            bodyName
+                        )
+                    )
+                    {
+                        UnlockableDef originalUnlock;
+
+                        SurvivorUnlockManager
+                            .TryGetRememberedOriginalUnlock(
+                                survivor,
+                                out originalUnlock
+                            );
+
+
+                        UsuLog.Verbose(
+                            _logger,
+                            $"UNLOCK ORIGINAL ACTIVO | " +
+                            $"Body: {bodyName} | " +
+                            $"Pack: {packIdentifier} | " +
+                            $"Unlock: " +
+                            $"{originalUnlock?.cachedName ?? "<free>"}"
+                        );
+                    }
+
+
+                    continue;
+                }
+
 
                 SurvivorUnlockManager
                     .AssignEarlyCustomUnlock(
@@ -460,8 +457,9 @@ namespace UniversalSurvivorUnlocks
                     )
                 )
                 {
-                    _logger.LogInfo(
-                        $"AUTOLOCK ACTIVADO | " +
+                    UsuLog.Verbose(
+                        _logger,
+                        $"PROVIDER USU ACTIVO | " +
                         $"Body: {bodyName} | " +
                         $"Pack: {packIdentifier}"
                     );

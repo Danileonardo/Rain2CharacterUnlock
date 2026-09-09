@@ -215,7 +215,8 @@ namespace UniversalSurvivorUnlocks
         // =========================================================
 
         private static void OnBossCriticalKillDetected(
-            float damage
+            float damage,
+            string attackerBodyName
         )
         {
             foreach (
@@ -240,6 +241,20 @@ namespace UniversalSurvivorUnlocks
 
 
                 if (damage < minimumDamage)
+                {
+                    continue;
+                }
+
+
+                if (
+                    IsBodyExcluded(
+                        pair
+                            .Value
+                            .Challenge
+                            .Parameters,
+                        attackerBodyName
+                    )
+                )
                 {
                     continue;
                 }
@@ -1021,6 +1036,46 @@ namespace UniversalSurvivorUnlocks
             {
                 return fallback;
             }
+        }
+
+
+        private static bool IsBodyExcluded(
+            JObject parameters,
+            string bodyName
+        )
+        {
+            if (
+                parameters == null ||
+                string.IsNullOrWhiteSpace(bodyName)
+            )
+            {
+                return false;
+            }
+
+
+            JToken token =
+                parameters["excludedBodies"];
+
+
+            if (token is JArray array)
+            {
+                foreach (JToken item in array)
+                {
+                    if (
+                        string.Equals(
+                            item?.ToString(),
+                            bodyName,
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    {
+                        return true;
+                    }
+                }
+            }
+
+
+            return false;
         }
 
 

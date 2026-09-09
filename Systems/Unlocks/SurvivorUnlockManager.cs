@@ -57,40 +57,163 @@ namespace UniversalSurvivorUnlocks
         // ¿LA CONFIGURACIÓN REQUIERE UNLOCK?
         // =========================================================
 
+        /// <summary>
+        /// Indica si USU debe controlar actualmente el unlock según la
+        /// configuración persistida. Esta versión también respeta el metadata
+        /// de OriginalUnlock guardado en Survivors.json.
+        /// </summary>
         public static bool RequiresCustomUnlock(
             SurvivorJsonEntry entry
         )
         {
+            return RequiresCustomUnlock(
+                entry,
+                HasStoredOriginalUnlock(entry)
+            );
+        }
+
+
+        /// <summary>
+        /// Variante usada durante la detección temprana. originalUnlockAvailable
+        /// permite respetar un unlock del autor incluso antes de que Sync() lo
+        /// haya escrito en Survivors.json.
+        ///
+        /// Regla central 5G.1D-E:
+        /// - Original => nunca USU.
+        /// - AutomaticFallback + Original disponible => Original.
+        /// - UserSelected USU/Community/Custom => la elección del jugador manda.
+        /// </summary>
+        public static bool RequiresCustomUnlock(
+            SurvivorJsonEntry entry,
+            bool originalUnlockAvailable
+        )
+        {
             if (
                 entry == null ||
-                entry.Challenge == null
+                entry.Challenge == null ||
+                !entry.Challenge.Enabled
             )
             {
                 return false;
             }
 
 
-            if (!entry.Challenge.Enabled)
+            MissionConfiguration missionConfig =
+                entry.Challenge.MissionConfig;
+
+
+            if (missionConfig != null)
             {
-                return false;
-            }
-
-
-            if (
-                string.IsNullOrWhiteSpace(
-                    entry.Challenge.Type
+                if (
+                    missionConfig.EffectiveProvider ==
+                    UnlockProviderKind.Original
                 )
+                {
+                    return false;
+                }
+
+
+                if (
+                    missionConfig.EffectiveSelectionMode ==
+                        UnlockSelectionMode.AutomaticFallback &&
+                    (
+                        originalUnlockAvailable ||
+                        HasStoredOriginalUnlock(entry)
+                    )
+                )
+                {
+                    return false;
+                }
+            }
+            else if (
+                originalUnlockAvailable ||
+                HasStoredOriginalUnlock(entry)
             )
+            {
+                // Compatibilidad con Survivors.json anteriores a providers:
+                // el comportamiento histórico era respetar el original.
+                return false;
+            }
+
+
+            bool hasLegacyType =
+                !string.IsNullOrWhiteSpace(
+                    entry.Challenge.Type
+                ) &&
+                !string.Equals(
+                    entry.Challenge.Type,
+                    "Original",
+                    StringComparison.OrdinalIgnoreCase
+                );
+
+
+            bool hasMissionV2 =
+                entry.Challenge.Mission != null &&
+                entry.Challenge.Mission.Routes != null &&
+                entry.Challenge.Mission.Routes.Count > 0;
+
+
+            return
+                hasLegacyType ||
+                hasMissionV2;
+        }
+
+
+        /// <summary>
+        /// Determina si Survivors.json conserva evidencia de un unlock original
+        /// real perteneciente al creador del survivor.
+        /// </summary>
+        public static bool HasStoredOriginalUnlock(
+            SurvivorJsonEntry entry
+        )
+        {
+            if (entry == null)
             {
                 return false;
             }
 
 
-            return !string.Equals(
-                entry.Challenge.Type,
-                "Original",
-                StringComparison.OrdinalIgnoreCase
-            );
+            string value =
+                entry.OriginalUnlock?.Trim() ?? "";
+
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+
+            return
+                !string.Equals(
+                    value,
+                    "Ninguno",
+                    StringComparison.OrdinalIgnoreCase
+                ) &&
+                !string.Equals(
+                    value,
+                    "None",
+                    StringComparison.OrdinalIgnoreCase
+                ) &&
+                !string.Equals(
+                    value,
+                    "Null",
+                    StringComparison.OrdinalIgnoreCase
+                );
+        }
+
+
+        /// <summary>
+        /// Un UnlockableDef de USU se prepara en startup aunque esté dormido.
+        /// Esto hace posible Original -> USU sin intentar registrar contenido
+        /// después de que RoR2 haya cerrado sus catálogos.
+        /// </summary>
+        private static bool CanPrepareCustomUnlock(
+            SurvivorJsonEntry entry
+        )
+        {
+            return
+                entry != null &&
+                entry.Challenge != null;
         }
 
 
@@ -161,7 +284,7 @@ namespace UniversalSurvivorUnlocks
                     pair.Value;
 
 
-                if (!RequiresCustomUnlock(entry))
+                if (!CanPrepareCustomUnlock(entry))
                 {
                     continue;
                 }
@@ -255,6 +378,68 @@ namespace UniversalSurvivorUnlocks
                 out achievementDef
             );
         }
+
+        // =========================================================
+        // CONSULTAR UNLOCK ORIGINAL RECORDADO
+        // =========================================================
+
+        public static bool TryGetRememberedOriginalUnlock(
+            SurvivorDef survivorDef,
+            out UnlockableDef originalUnlock
+        )
+        {
+            originalUnlock = null;
+
+
+            if (survivorDef == null)
+            {
+                return false;
+            }
+
+
+            return OriginalUnlockables.TryGetValue(
+                survivorDef,
+                out originalUnlock
+            );
+        }
+
+
+        public static bool HasOriginalUnlockAvailable(
+            SurvivorDef survivorDef,
+            SurvivorJsonEntry entry = null
+        )
+        {
+            if (survivorDef != null)
+            {
+                UnlockableDef current =
+                    survivorDef.unlockableDef;
+
+
+                if (
+                    current != null &&
+                    !IsCustomUnlock(current)
+                )
+                {
+                    return true;
+                }
+
+
+                if (
+                    OriginalUnlockables.TryGetValue(
+                        survivorDef,
+                        out UnlockableDef remembered
+                    ) &&
+                    remembered != null
+                )
+                {
+                    return true;
+                }
+            }
+
+
+            return HasStoredOriginalUnlock(entry);
+        }
+
 
         // =========================================================
         // RECORDAR UNLOCK ORIGINAL
@@ -437,7 +622,8 @@ namespace UniversalSurvivorUnlocks
                 customUnlock;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 $"Unlock temprano asignado | " +
                 $"Survivor: {survivorDef.cachedName} | " +
                 $"Unlock: {customUnlock.cachedName}"
@@ -599,19 +785,44 @@ namespace UniversalSurvivorUnlocks
             unlockable.getHowToUnlockString =
                 () =>
                 {
-                    return Language.GetStringFormatted(
-                        "UNLOCK_VIA_ACHIEVEMENT_FORMAT",
-                        new object[]
-                        {
-                            Language.GetString(
-                                achievementNameToken
-                            ),
+                    string baseText =
+                        Language.GetStringFormatted(
+                            "UNLOCK_VIA_ACHIEVEMENT_FORMAT",
+                            new object[]
+                            {
+                                Language.GetString(
+                                    achievementNameToken
+                                ),
 
-                            Language.GetString(
-                                achievementDescriptionToken
-                            )
-                        }
-                    );
+                                Language.GetString(
+                                    achievementDescriptionToken
+                                )
+                            }
+                        );
+
+
+                    string restrictionNotice =
+                        BuildRestrictionNotice(
+                            entry
+                        );
+
+
+                    if (
+                        string.IsNullOrWhiteSpace(
+                            restrictionNotice
+                        )
+                    )
+                    {
+                        return baseText;
+                    }
+
+
+                    // El aviso NO forma parte de la descripción temática.
+                    // Se añade como metadata visual independiente debajo.
+                    return
+                        baseText +
+                        "\n\n" +
+                        restrictionNotice;
                 };
 
 
@@ -729,7 +940,8 @@ namespace UniversalSurvivorUnlocks
                 unlockable;
 
 
-            logger.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 $"Unlock registrado correctamente | " +
                 $"Survivor: {bodyName} | " +
                 $"Unlockable: {identifier} | " +
@@ -753,6 +965,12 @@ namespace UniversalSurvivorUnlocks
             ManualLogSource logger
         )
         {
+            if (survivors == null)
+            {
+                return;
+            }
+
+
             foreach (
                 SurvivorInfo survivorInfo
                 in survivors
@@ -760,25 +978,9 @@ namespace UniversalSurvivorUnlocks
             {
                 if (
                     survivorInfo == null ||
-                    survivorInfo.SurvivorDef == null
-                )
-                {
-                    continue;
-                }
-
-
-                /*
-                 * Oficial = intocable.
-                 */
-                if (!survivorInfo.IsModded)
-                {
-                    continue;
-                }
-
-
-                if (
-                    survivorInfo.Status !=
-                    SurvivorStatus.Available
+                    survivorInfo.SurvivorDef == null ||
+                    !survivorInfo.IsModded ||
+                    survivorInfo.Status != SurvivorStatus.Available
                 )
                 {
                     continue;
@@ -788,67 +990,8 @@ namespace UniversalSurvivorUnlocks
                 SurvivorDef survivorDef =
                     survivorInfo.SurvivorDef;
 
-
                 string bodyName =
                     survivorInfo.BodyName;
-
-
-                if (
-                    !OriginalUnlockables.ContainsKey(
-                        survivorDef
-                    )
-                )
-                {
-                    OriginalUnlockables[
-                        survivorDef
-                    ] =
-                        IsCustomUnlock(
-                            survivorDef.unlockableDef
-                        )
-                            ? null
-                            : survivorDef.unlockableDef;
-                }
-
-
-                /*
-                 * Si el autor del survivor tiene
-                 * su propio unlock, nunca lo sustituimos.
-                 */
-                if (survivorInfo.HasOriginalUnlock)
-                {
-                    /*
-                     * Si en este momento vemos directamente
-                     * el unlock del autor, lo consideramos
-                     * la fuente definitiva.
-                     */
-                    if (
-                        survivorDef.unlockableDef != null &&
-                        !IsCustomUnlock(
-                            survivorDef.unlockableDef
-                        )
-                    )
-                    {
-                        OriginalUnlockables[
-                            survivorDef
-                        ] =
-                            survivorDef.unlockableDef;
-                    }
-
-
-                    RestoreOriginalUnlock(
-                        survivorDef
-                    );
-
-
-                    logger.LogInfo(
-                        $"Unlock original respetado: " +
-                        $"{survivorInfo.DisplayName}"
-                    );
-
-
-                    continue;
-                }
-
 
                 SurvivorJsonEntry entry =
                     GetEntry(
@@ -856,17 +999,47 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
-                /*
-                 * enabled=false:
-                 *
-                 * el usuario decidió dejar al
-                 * personaje libre.
-                 */
-                if (!RequiresCustomUnlock(entry))
+                UnlockableDef currentUnlock =
+                    survivorDef.unlockableDef;
+
+
+                if (
+                    currentUnlock == null ||
+                    !IsCustomUnlock(currentUnlock)
+                )
+                {
+                    RememberOriginalUnlock(
+                        survivorDef,
+                        currentUnlock
+                    );
+                }
+
+
+                bool originalAvailable =
+                    HasOriginalUnlockAvailable(
+                        survivorDef,
+                        entry
+                    );
+
+
+                if (
+                    !RequiresCustomUnlock(
+                        entry,
+                        originalAvailable
+                    )
+                )
                 {
                     RestoreOriginalUnlock(
                         survivorDef
                     );
+
+
+                    UsuLog.Verbose(
+                        logger,
+                        $"Provider runtime: Original | " +
+                        $"{survivorInfo.DisplayName}"
+                    );
+
 
                     continue;
                 }
@@ -876,12 +1049,14 @@ namespace UniversalSurvivorUnlocks
                     !CustomUnlockables.TryGetValue(
                         bodyName,
                         out UnlockableDef customUnlock
-                    )
+                    ) ||
+                    customUnlock == null
                 )
                 {
-                    logger.LogWarning(
-                        $"No existe UnlockableDef registrado " +
-                        $"para {bodyName}."
+                    logger?.LogWarning(
+                        $"No existe UnlockableDef USU preparado para " +
+                        $"{bodyName}. El cambio de provider requerirá " +
+                        $"reiniciar el juego."
                     );
 
 
@@ -889,8 +1064,11 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                survivorDef.unlockableDef =
-                    customUnlock;
+                AssignEarlyCustomUnlock(
+                    survivorDef,
+                    customUnlock,
+                    logger
+                );
 
 
                 ApplySurvivorAchievementIcon(
@@ -900,12 +1078,54 @@ namespace UniversalSurvivorUnlocks
                 );
 
 
-                logger.LogInfo(
-                    $"Unlock personalizado asignado: " +
+                UsuLog.Verbose(
+                    logger,
+                    $"Provider runtime: " +
+                    $"{entry?.Challenge?.MissionConfig?.EffectiveProvider.ToString() ?? "USU"} | " +
                     $"{survivorInfo.DisplayName} | " +
                     $"{customUnlock.cachedName}"
                 );
             }
+        }
+
+
+        public static void ApplyCustomAchievementIconForSurvivor(
+            SurvivorDef survivorDef,
+            string bodyName,
+            ManualLogSource logger
+        )
+        {
+            if (
+                survivorDef == null ||
+                string.IsNullOrWhiteSpace(bodyName) ||
+                !CustomUnlockables.TryGetValue(
+                    bodyName,
+                    out UnlockableDef unlockable
+                ) ||
+                unlockable == null
+            )
+            {
+                return;
+            }
+
+
+            SurvivorInfo info =
+                new SurvivorInfo
+                {
+                    SurvivorDef = survivorDef,
+                    BodyName = bodyName,
+                    DisplayName =
+                        !string.IsNullOrWhiteSpace(survivorDef.cachedName)
+                            ? survivorDef.cachedName
+                            : bodyName
+                };
+
+
+            ApplySurvivorAchievementIcon(
+                info,
+                unlockable,
+                logger
+            );
         }
 
 
@@ -1004,7 +1224,8 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            logger.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 $"Icono de achievement con marco actualizado: " +
                 $"{survivorInfo.DisplayName}"
             );
@@ -1602,6 +1823,418 @@ namespace UniversalSurvivorUnlocks
                             $"\"{entry.Challenge.Type}\".";
                     }
             }
+        }
+
+
+        // =========================================================
+        // AVISOS DE RESTRICCIONES
+        // =========================================================
+        //
+        // La descripción de la misión se mantiene temática. Las
+        // restricciones estructurales se muestran debajo como metadata.
+        //
+        // Para ExcludedSurvivor sólo mostramos cuerpos excluidos en TODAS
+        // las rutas de la misión. Así evitamos afirmar que un survivor no
+        // es válido cuando otra ruta OR sí permitiría completarla.
+        // =========================================================
+
+        private static string BuildRestrictionNotice(
+            SurvivorJsonEntry entry
+        )
+        {
+            List<string> excludedBodies =
+                GetMissionWideExcludedBodies(
+                    entry
+                );
+
+
+            if (excludedBodies.Count == 0)
+            {
+                return "";
+            }
+
+
+            List<string> displayNames =
+                new List<string>();
+
+
+            for (int i = 0; i < excludedBodies.Count; i++)
+            {
+                string displayName =
+                    ResolveSurvivorDisplayName(
+                        excludedBodies[i]
+                    );
+
+
+                if (
+                    !string.IsNullOrWhiteSpace(
+                        displayName
+                    )
+                )
+                {
+                    displayNames.Add(
+                        displayName
+                    );
+                }
+            }
+
+
+            if (displayNames.Count == 0)
+            {
+                return "";
+            }
+
+
+            string joinedNames =
+                string.Join(
+                    " / ",
+                    displayNames.ToArray()
+                );
+
+
+            return Language.GetStringFormatted(
+                SurvivorLocalization.ExcludedSurvivorsNoticeToken,
+                new object[]
+                {
+                    joinedNames
+                }
+            );
+        }
+
+
+        private static List<string> GetMissionWideExcludedBodies(
+            SurvivorJsonEntry entry
+        )
+        {
+            MissionDefinition mission =
+                entry?.Challenge?.Mission;
+
+
+            if (
+                mission != null &&
+                mission.Routes != null &&
+                mission.Routes.Count > 0
+            )
+            {
+                HashSet<string> missionWide =
+                    null;
+
+
+                for (int i = 0; i < mission.Routes.Count; i++)
+                {
+                    MissionRoute route =
+                        mission.Routes[i];
+
+
+                    HashSet<string> routeExcluded =
+                        new HashSet<string>(
+                            StringComparer.OrdinalIgnoreCase
+                        );
+
+
+                    if (route != null)
+                    {
+                        AddExcludedBodiesFromConditions(
+                            route.Conditions,
+                            routeExcluded
+                        );
+
+
+                        IReadOnlyList<MissionObjective> objectives =
+                            route.GetEffectiveObjectives();
+
+
+                        if (objectives != null)
+                        {
+                            for (
+                                int objectiveIndex = 0;
+                                objectiveIndex < objectives.Count;
+                                objectiveIndex++
+                            )
+                            {
+                                MissionObjective objective =
+                                    objectives[objectiveIndex];
+
+
+                                AddExcludedBodiesFromConditions(
+                                    objective?.Conditions,
+                                    routeExcluded
+                                );
+                            }
+                        }
+                    }
+
+
+                    if (missionWide == null)
+                    {
+                        missionWide =
+                            new HashSet<string>(
+                                routeExcluded,
+                                StringComparer.OrdinalIgnoreCase
+                            );
+                    }
+                    else
+                    {
+                        missionWide.IntersectWith(
+                            routeExcluded
+                        );
+                    }
+                }
+
+
+                if (
+                    missionWide != null &&
+                    missionWide.Count > 0
+                )
+                {
+                    List<string> result =
+                        new List<string>(
+                            missionWide
+                        );
+
+                    result.Sort(
+                        StringComparer.OrdinalIgnoreCase
+                    );
+
+                    return result;
+                }
+
+
+                // Hay una misión V2 válida y ninguna exclusión global.
+                // No mezclamos aquí el fallback legacy porque podría
+                // contradecir rutas OR más nuevas.
+                return new List<string>();
+            }
+
+
+            // Compatibilidad con presets legacy todavía sin Mission V2.
+            HashSet<string> legacyExcluded =
+                new HashSet<string>(
+                    StringComparer.OrdinalIgnoreCase
+                );
+
+
+            JToken legacyToken =
+                entry?.Challenge?.Parameters?[
+                    "excludedBodies"
+                ];
+
+
+            AddExcludedBodiesFromToken(
+                legacyToken,
+                legacyExcluded
+            );
+
+
+            List<string> legacyResult =
+                new List<string>(
+                    legacyExcluded
+                );
+
+            legacyResult.Sort(
+                StringComparer.OrdinalIgnoreCase
+            );
+
+            return legacyResult;
+        }
+
+
+        private static void AddExcludedBodiesFromConditions(
+            IList<MissionCondition> conditions,
+            HashSet<string> destination
+        )
+        {
+            if (
+                conditions == null ||
+                destination == null
+            )
+            {
+                return;
+            }
+
+
+            for (int i = 0; i < conditions.Count; i++)
+            {
+                MissionCondition condition =
+                    conditions[i];
+
+
+                if (
+                    condition == null ||
+                    !string.Equals(
+                        condition.Type,
+                        "ExcludedSurvivor",
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    continue;
+                }
+
+
+                JToken bodiesToken =
+                    condition.Parameters?[
+                        "bodies"
+                    ];
+
+
+                AddExcludedBodiesFromToken(
+                    bodiesToken,
+                    destination
+                );
+
+
+                // Compatibilidad con una variante singular futura/manual.
+                JToken bodyToken =
+                    condition.Parameters?[
+                        "body"
+                    ];
+
+
+                AddExcludedBodiesFromToken(
+                    bodyToken,
+                    destination
+                );
+            }
+        }
+
+
+        private static void AddExcludedBodiesFromToken(
+            JToken token,
+            HashSet<string> destination
+        )
+        {
+            if (
+                token == null ||
+                destination == null
+            )
+            {
+                return;
+            }
+
+
+            if (token.Type == JTokenType.Array)
+            {
+                foreach (JToken child in token.Children())
+                {
+                    AddExcludedBodiesFromToken(
+                        child,
+                        destination
+                    );
+                }
+
+                return;
+            }
+
+
+            if (token.Type != JTokenType.String)
+            {
+                return;
+            }
+
+
+            string bodyName =
+                token.Value<string>()?.Trim() ?? "";
+
+
+            if (!string.IsNullOrWhiteSpace(bodyName))
+            {
+                destination.Add(
+                    bodyName
+                );
+            }
+        }
+
+
+        private static string ResolveSurvivorDisplayName(
+            string bodyName
+        )
+        {
+            if (string.IsNullOrWhiteSpace(bodyName))
+            {
+                return "";
+            }
+
+
+            SurvivorDef[] survivors =
+                SurvivorCatalog.survivorDefs;
+
+
+            if (survivors != null)
+            {
+                for (int i = 0; i < survivors.Length; i++)
+                {
+                    SurvivorDef survivor =
+                        survivors[i];
+
+
+                    if (
+                        survivor == null ||
+                        survivor.bodyPrefab == null ||
+                        !string.Equals(
+                            survivor.bodyPrefab.name,
+                            bodyName,
+                            StringComparison.OrdinalIgnoreCase
+                        )
+                    )
+                    {
+                        continue;
+                    }
+
+
+                    if (
+                        !string.IsNullOrWhiteSpace(
+                            survivor.displayNameToken
+                        )
+                    )
+                    {
+                        string localizedName =
+                            Language.GetString(
+                                survivor.displayNameToken
+                            );
+
+
+                        if (
+                            !string.IsNullOrWhiteSpace(
+                                localizedName
+                            ) &&
+                            !string.Equals(
+                                localizedName,
+                                survivor.displayNameToken,
+                                StringComparison.Ordinal
+                            )
+                        )
+                        {
+                            return localizedName;
+                        }
+                    }
+
+
+                    break;
+                }
+            }
+
+
+            const string bodySuffix =
+                "Body";
+
+
+            if (
+                bodyName.EndsWith(
+                    bodySuffix,
+                    StringComparison.OrdinalIgnoreCase
+                ) &&
+                bodyName.Length > bodySuffix.Length
+            )
+            {
+                return bodyName.Substring(
+                    0,
+                    bodyName.Length - bodySuffix.Length
+                );
+            }
+
+
+            return bodyName;
         }
 
 

@@ -1335,7 +1335,7 @@ namespace UniversalSurvivorUnlocks
             MissionObjective kill =
                 CreateKillObjective(
                     "jhin_boss_kill",
-                    "Boss",
+                    "TeleporterBoss",
                     "",
                     1d
                 );
@@ -1353,13 +1353,17 @@ namespace UniversalSurvivorUnlocks
                     "MinimumDamage",
                     new JObject
                     {
-                        ["damage"] = 44444d
+                        ["damage"] = 4444d
                     }
                 ),
 
                 CreateCondition(
                     "FatalHit",
                     new JObject()
+                ),
+
+                CreateExcludedSurvivorCondition(
+                    "RailgunnerBody"
                 )
             );
 
@@ -1369,7 +1373,7 @@ namespace UniversalSurvivorUnlocks
                 MissionPresetCategories.CharacterRecipe,
                 "JhinBody",
                 "El Cuarto Acto",
-                "Convierte a un jefe en tu gran final;\nasesta un crítico mortal de 44.444 de daño o más.",
+                "Convierte a un jefe en tu gran final;\nasesta un crítico mortal de 4.444 de daño o más.",
                 true,
                 false,
                 "PerPlayer",
@@ -1834,12 +1838,15 @@ namespace UniversalSurvivorUnlocks
                     "MinimumDamage",
                     new JObject
                     {
-                        ["damage"] = 44444d
+                        ["damage"] = 4444d
                     }
                 ),
                 CreateCondition(
                     "FatalHit",
                     new JObject()
+                ),
+                CreateExcludedSurvivorCondition(
+                    "RailgunnerBody"
                 )
             );
 
@@ -1848,8 +1855,8 @@ namespace UniversalSurvivorUnlocks
                 MissionPresetIds.BossCritical44444,
                 MissionPresetCategories.Legacy,
                 "JhinBody",
-                "Crítico mortal de 44444",
-                "Mata a un jefe con un crítico de al menos 44444 de daño.",
+                "Crítico mortal de 4444",
+                "Mata a un jefe con un crítico de al menos 4444 de daño.",
                 true,
                 true,
                 "PerPlayer",
@@ -2522,6 +2529,46 @@ namespace UniversalSurvivorUnlocks
 
             return CreateCondition(
                 "RequiredSurvivor",
+                new JObject
+                {
+                    ["bodies"] = bodyArray
+                }
+            );
+        }
+
+
+        private static MissionCondition CreateExcludedSurvivorCondition(
+            params string[] bodies
+        )
+        {
+            JArray bodyArray =
+                new JArray();
+
+
+            if (bodies != null)
+            {
+                for (
+                    int i = 0;
+                    i < bodies.Length;
+                    i++
+                )
+                {
+                    if (
+                        !string.IsNullOrWhiteSpace(
+                            bodies[i]
+                        )
+                    )
+                    {
+                        bodyArray.Add(
+                            bodies[i]
+                        );
+                    }
+                }
+            }
+
+
+            return CreateCondition(
+                "ExcludedSurvivor",
                 new JObject
                 {
                     ["bodies"] = bodyArray

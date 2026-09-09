@@ -121,7 +121,10 @@ namespace UniversalSurvivorUnlocks
         //
         // Sólo se utiliza cuando Source == "Custom".
         //
-        // Cuando Source == "Preset", debe permanecer null.
+        // Cuando Source == "Preset" puede conservar una copia dormida.
+        // Cambiar de proveedor no debe borrar la misión personalizada.
+        // RestoreCharacter es la operación que elimina esa copia al ejecutar
+        // "Restaurar original" para el personaje completo.
         // =========================================================
 
         [JsonProperty("customMission", Order = 5)]

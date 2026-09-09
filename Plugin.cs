@@ -20,6 +20,11 @@ namespace UniversalSurvivorUnlocks
     NetworkingAPI.PluginGUID
     )]
 
+    [BepInDependency(
+        "com.rune580.riskofoptions",
+        BepInDependency.DependencyFlags.SoftDependency
+    )]
+
     public class Plugin :
         BaseUnityPlugin
     {
@@ -32,7 +37,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public const string PluginVersion =
-            "0.2.0";
+            "0.2.1";
 
 
         public static List<SurvivorInfo> Survivors
@@ -44,6 +49,13 @@ namespace UniversalSurvivorUnlocks
 
         private void Awake()
         {
+            // Logging.VerboseLogging=false por defecto:
+            // mantiene la consola limpia sin perder warnings/errores.
+            UsuLog.Initialize(
+                Config
+            );
+
+
             NetworkingAPI
                 .RegisterMessageType<
                     HunkBanditShotResultMessage
@@ -135,6 +147,16 @@ namespace UniversalSurvivorUnlocks
                 "Risk of Rain 2 terminó de cargar."
             );
 
+            /*
+             * 5G.2D-B
+             *
+             * Contextos runtime reutilizables para misiones:
+             * TeleporterBoss / Elite / Umbra / Summon.
+             */
+            ContentRuntimeContextTracker.Initialize(
+                Logger
+            );
+
             StatusEffectTracker.Initialize(
                 Logger
             );
@@ -223,6 +245,14 @@ namespace UniversalSurvivorUnlocks
                 Logger
             );
 
+            MissionRuntimeRefreshService.Initialize(
+                Logger
+            );
+
+            MissionLibraryUIManager.Initialize(
+                Logger
+            );
+
             /*
              * NO hacemos Rebuild.
                          *
@@ -246,12 +276,85 @@ namespace UniversalSurvivorUnlocks
 
 
             /*
+             * Registro NUEVO de definiciones curadas.
+             *
+             * Fase 1: completamente pasivo. Sólo reconoce definitions cuyo
+             * mod/body ya fue detectado por USU. No modifica localización,
+             * providers, unlocks, misiones, JSON ni multiplayer.
+             */
+            SurvivorDefinitionRegistry
+                .Initialize(
+                    Survivors,
+                    Logger
+                );
+
+
+            /*
+             * Localización manual/curada de mods instalados.
+             *
+             * Los mods creadores ya ejecutaron Awake antes de este onLoad.
+             * R2API conserva una traducción específica que ya exista, por lo
+             * que Creator es-419/es-ES mantiene prioridad y USU sólo completa
+             * los idiomas que el mod no registró.
+             *
+             * Se hace antes de construir Content Profiles para que la ficha de
+             * USU capture desde el principio el mismo texto localizado que ve
+             * la UI nativa del juego.
+             */
+            ModdedSurvivorLocalization
+                .RegisterInstalledTranslations(
+                    Survivors,
+                    Logger
+                );
+
+
+            /*
+             * 5G.2D-A
+             *
+             * Catálogo universal de contenido instalado. Esta capa es de
+             * sólo lectura: no cambia providers, unlocks ni progreso.
+             * Alimentará el navegador visual y el editor de misiones.
+             */
+            ContentCatalogService
+                .Initialize(
+                    Logger
+                );
+
+
+            /*
              * Persistimos en JSON las entradas
              * que fueron creadas en memoria.
              */
             SurvivorJsonManager
                 .Sync(
                     Survivors,
+                    Logger
+                );
+
+
+            /*
+             * 5G.1D-F
+             *
+             * BasePresetId es la autoridad de cualquier misión cuya
+             * Source sea Preset. Si un preset oficial cambió desde la
+             * última ejecución, actualizamos su snapshot persistido antes
+             * de aplicar providers/runtime.
+             */
+            MissionAssignmentService
+                .RefreshAssignedPresetSnapshots(
+                    Logger
+                );
+
+
+            /*
+             * Limpieza única de la asignación temporal utilizada durante
+             * las pruebas Original <-> USU con Aurelion.
+             *
+             * No afecta futuras asignaciones voluntarias porque guarda un
+             * marcador de migración en Survivors.json.
+             */
+            AurelionJhinTestCleanupMigration
+                .Apply(
                     Logger
                 );
 
@@ -264,6 +367,33 @@ namespace UniversalSurvivorUnlocks
                     Survivors,
                     Logger
                 );
+
+
+            /*
+             * 5G.2D-C
+             *
+             * Construye la ficha contextual de cada survivor DESPUÉS de
+             * aplicar el provider final. De este modo el navegador futuro
+             * conoce el unlock runtime real y, a partir del personaje,
+             * relaciona únicamente sus skills, skins, lore y requisitos.
+             */
+            SurvivorContentProfileService
+                .Initialize(
+                    Survivors,
+                    Logger
+                );
+
+
+            /*
+             * Auditoría TEMPORAL de cobertura de localización.
+             * Se ejecuta después de construir los profiles para capturar
+             * exactamente los textos/tokens visibles de cada survivor modded.
+             * No registra traducciones ni modifica contenido.
+             */
+            LocalizationCoverageDiagnostics.Log(
+                SurvivorContentProfileService.GetAll(),
+                Logger
+            );
 
 
             RoR2Application.onLoad -=

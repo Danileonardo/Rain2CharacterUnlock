@@ -148,13 +148,17 @@ namespace UniversalSurvivorUnlocks
                 LocalizationKey = SurvivorLocalizationKeys.Jhin,
                 Description =
                     "Convierte a un jefe en tu gran final;\n" +
-                    "asesta un crítico mortal de 44.444 de daño o más.",
+                    "asesta un crítico mortal de 4.444 de daño o más.",
                 LunarCoinReward = 4,
                 Type = "BossCriticalKill", // fallback legacy
                 Parameters = new JObject
                 {
-                    ["minimumDamage"] = 44444,
-                    ["singleRun"] = true
+                    ["minimumDamage"] = 4444,
+                    ["singleRun"] = true,
+                    ["excludedBodies"] = new JArray
+                    {
+                        "RailgunnerBody"
+                    }
                 },
                 MissionConfig =
                     CreatePresetMissionConfiguration(

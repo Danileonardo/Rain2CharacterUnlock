@@ -120,6 +120,26 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
+        // RESET DE BODY EN RUNTIME
+        // =========================================================
+
+        public static void ResetBody(
+            string bodyName
+        )
+        {
+            if (string.IsNullOrWhiteSpace(bodyName))
+            {
+                return;
+            }
+
+
+            CompletedBodiesThisRun.Remove(
+                bodyName.Trim()
+            );
+        }
+
+
+        // =========================================================
         // RESULTADO
         // =========================================================
 

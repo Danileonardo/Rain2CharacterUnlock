@@ -178,6 +178,77 @@ namespace UniversalSurvivorUnlocks
         }
 
 
+        /// <summary>
+        /// Reconstruye el snapshot congelado de la run desde la configuración
+        /// local del HOST y lo redistribuye a los clientes. Se usa únicamente
+        /// cuando el host cambia de provider/misión explícitamente durante una
+        /// run mediante 5G.1D-E.
+        /// </summary>
+        public static void RefreshRunSnapshotAndBroadcast(
+            string reason = ""
+        )
+        {
+            if (
+                !NetworkServer.active ||
+                Run.instance == null
+            )
+            {
+                return;
+            }
+
+
+            SessionMissionSnapshot snapshot =
+                BuildSnapshotFromLocalConfig();
+
+
+            /*
+             * Actualizamos también LobbySnapshot con la misma configuración.
+             * Así, al terminar la run no reaparece temporalmente la selección
+             * anterior mientras se construye el siguiente lobby.
+             */
+            ApplyLobbySnapshot(
+                snapshot,
+                cameFromHost: true
+            );
+
+
+            ApplyRunSnapshot(
+                snapshot,
+                cameFromHost: true
+            );
+
+
+            string json =
+                SerializeSnapshot(
+                    snapshot
+                );
+
+
+            int lobbyFragments =
+                SessionMissionChunkTransport
+                    .SendSnapshotToClients(
+                        json,
+                        isRunSnapshot: false
+                    );
+
+
+            int runFragments =
+                SessionMissionChunkTransport
+                    .SendSnapshotToClients(
+                        json,
+                        isRunSnapshot: true
+                    );
+
+
+            logger?.LogInfo(
+                $"[MISSION RUN] Snapshot actualizado en runtime | " +
+                $"Misiones: {snapshot.Missions.Count} | " +
+                $"Fragmentos Lobby/Run: {lobbyFragments}/{runFragments}" +
+                FormatReason(reason)
+            );
+        }
+
+
         private static void OnRunStartGlobal(
             Run run
         )

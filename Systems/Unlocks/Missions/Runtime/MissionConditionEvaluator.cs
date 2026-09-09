@@ -125,6 +125,20 @@ namespace UniversalSurvivorUnlocks
 
 
                 // =================================================
+                // EXCLUDED SURVIVOR
+                // =================================================
+                // Devuelve false cuando el survivor actual aparece
+                // en body/bodies. Sirve para presets que admiten
+                // cualquier survivor salvo excepciones concretas.
+                // =================================================
+                case "excludedsurvivor":
+                    return !IsRequiredSurvivor(
+                        condition.Parameters,
+                        context?.PlayerBody
+                    );
+
+
+                // =================================================
                 // REQUIRED STAGE
                 // =================================================
                 //

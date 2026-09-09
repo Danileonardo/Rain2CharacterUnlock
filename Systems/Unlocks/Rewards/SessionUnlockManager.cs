@@ -437,7 +437,8 @@ namespace UniversalSurvivorUnlocks
                     !unlockableAfterAdd
                 )
                 {
-                    logger?.LogWarning(
+                    UsuLog.Verbose(
+                        logger,
                         "[SESSION UNLOCK LOCAL] Achievement concedido " +
                         "pero Unlockable ausente; reparando | " +
                         $"Body: {bodyName}"
@@ -460,6 +461,18 @@ namespace UniversalSurvivorUnlocks
                     profile.HasUnlockable(
                         unlockable
                     );
+
+
+                if (
+                    achievementAfter &&
+                    !unlockableAfter
+                )
+                {
+                    logger?.LogError(
+                        "[SESSION UNLOCK LOCAL] Reparación de Unlockable fallida | " +
+                        $"Body: {bodyName}"
+                    );
+                }
 
 
                 bool changed =

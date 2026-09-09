@@ -234,6 +234,17 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
+                if (
+                    !SurvivorUnlockManager
+                        .RequiresCustomUnlock(
+                            entry
+                        )
+                )
+                {
+                    continue;
+                }
+
+
                 MissionDefinition mission =
                     entry.Challenge.Mission;
 

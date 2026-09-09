@@ -189,6 +189,45 @@ namespace UniversalSurvivorUnlocks
             }
         }
 
+        public static void ResetMission(
+            string missionId
+        )
+        {
+            if (string.IsNullOrWhiteSpace(missionId))
+            {
+                return;
+            }
+
+
+            string prefix =
+                missionId.Trim() + ":";
+
+
+            List<string> keysToRemove =
+                new List<string>();
+
+
+            foreach (string key in StateByObjective.Keys)
+            {
+                if (
+                    key.StartsWith(
+                        prefix,
+                        StringComparison.Ordinal
+                    )
+                )
+                {
+                    keysToRemove.Add(key);
+                }
+            }
+
+
+            foreach (string key in keysToRemove)
+            {
+                StateByObjective.Remove(key);
+            }
+        }
+
+
         private static void SetProgress(
             MissionObjectiveRuntimeBinding binding,
             CharacterMaster master,

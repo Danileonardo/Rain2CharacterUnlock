@@ -1,7 +1,6 @@
 using System;
 using RoR2;
 
-
 namespace UniversalSurvivorUnlocks
 {
     public static class KillObjectiveEvaluator
@@ -19,7 +18,6 @@ namespace UniversalSurvivorUnlocks
                 return false;
             }
 
-
             if (
                 !string.Equals(
                     objective.Type,
@@ -31,14 +29,11 @@ namespace UniversalSurvivorUnlocks
                 return false;
             }
 
-
             CharacterBody attackerBody =
                 context.PlayerBody;
 
-
             CharacterBody victimBody =
                 context.TargetBody;
-
 
             if (
                 attackerBody == null ||
@@ -48,16 +43,13 @@ namespace UniversalSurvivorUnlocks
                 return false;
             }
 
-
             MissionTarget target =
                 objective.Target;
-
 
             if (target == null)
             {
                 return false;
             }
-
 
             string category =
                 target.Category?
@@ -65,29 +57,17 @@ namespace UniversalSurvivorUnlocks
                     .ToLowerInvariant()
                 ?? "any";
 
-
             switch (category)
             {
                 // =================================================
-                // CUALQUIER ENEMIGO
+                // CUALQUIER OBJETIVO
                 // =================================================
-
-                // En un objetivo de tipo Kill, "Any" conserva la
-                // semántica segura esperada: cualquier ENEMIGO.
-                // No deben contar muertes de aliados, drones o el
-                // propio jugador.
-
                 case "any":
-                    return IsEnemy(
-                        attackerBody,
-                        victimBody
-                    );
-
+                    return true;
 
                 // =================================================
                 // ENEMIGO
                 // =================================================
-
                 case "enemy":
                 case "anyenemy":
                     return IsEnemy(
@@ -95,11 +75,13 @@ namespace UniversalSurvivorUnlocks
                         victimBody
                     );
 
-
                 // =================================================
-                // JEFE
+                // JEFE / BOSS GENÉRICO
                 // =================================================
-
+                // Se conserva por compatibilidad con presets que quieran
+                // comprobar el estado Boss que expone CharacterBody.
+                // No significa necesariamente "jefe del portal".
+                // =================================================
                 case "boss":
                     return
                         IsEnemy(
@@ -108,11 +90,28 @@ namespace UniversalSurvivorUnlocks
                         ) &&
                         victimBody.isBoss;
 
+                // =================================================
+                // JEFE DEL TELETRANSPORTADOR
+                // =================================================
+                // Usa el contexto runtime capturado desde BossGroup del
+                // TeleporterInteraction. Por tanto, no depende de que la
+                // especie sea Champion ni de un nombre hardcodeado.
+                // Un boss Elite del portal sigue contando.
+                // =================================================
+                case "teleporterboss":
+                    return
+                        IsEnemy(
+                            attackerBody,
+                            victimBody
+                        ) &&
+                        ContentRuntimeContextTracker
+                            .IsTeleporterBoss(
+                                victimBody
+                            );
 
                 // =================================================
                 // ÉLITE
                 // =================================================
-
                 case "elite":
                     return
                         IsEnemy(
@@ -121,11 +120,9 @@ namespace UniversalSurvivorUnlocks
                         ) &&
                         victimBody.isElite;
 
-
                 // =================================================
                 // BODY ESPECÍFICO
                 // =================================================
-
                 case "specificbody":
                     return
                         IsEnemy(
@@ -140,20 +137,6 @@ namespace UniversalSurvivorUnlocks
                 // =================================================
                 // JEFE ESPECÍFICO
                 // =================================================
-                //
-                // Ejemplos:
-                //
-                // BrotherBody
-                // SuperRoboBallBossBody
-                // ScavBody
-                //
-                // Requiere:
-                // - que sea enemigo;
-                // - que el Body coincida;
-                // - que el juego lo considere Boss.
-                //
-                // =================================================
-
                 case "specificboss":
                     return
                         IsEnemy(
@@ -166,12 +149,33 @@ namespace UniversalSurvivorUnlocks
                             target.Id
                         );
 
+                // =================================================
+                // JEFE ESPECÍFICO DEL TELETRANSPORTADOR
+                // =================================================
+                // Preparado para el editor visual futuro.
+                // Ejemplo:
+                // Category = "SpecificTeleporterBoss"
+                // Id       = "ImpBossBody"
+                // =================================================
+                case "specificteleporterboss":
+                    return
+                        IsEnemy(
+                            attackerBody,
+                            victimBody
+                        ) &&
+                        ContentRuntimeContextTracker
+                            .IsTeleporterBoss(
+                                victimBody
+                            ) &&
+                        MatchesBody(
+                            victimBody,
+                            target.Id
+                        );
 
                 default:
                     return false;
             }
         }
-
 
         private static bool IsEnemy(
             CharacterBody attacker,
@@ -186,26 +190,21 @@ namespace UniversalSurvivorUnlocks
                 return false;
             }
 
-
             TeamIndex attackerTeam =
                 attacker.teamComponent.teamIndex;
 
-
             TeamIndex victimTeam =
                 victim.teamComponent.teamIndex;
-
 
             TeamMask enemyTeams =
                 TeamMask.GetEnemyTeams(
                     attackerTeam
                 );
 
-
             return enemyTeams.HasTeam(
                 victimTeam
             );
         }
-
 
         private static bool MatchesBody(
             CharacterBody body,
@@ -222,40 +221,16 @@ namespace UniversalSurvivorUnlocks
                 return false;
             }
 
-
             string currentBody =
                 BodyCatalog.GetBodyName(
                     body.bodyIndex
                 );
 
-
-            string[] acceptedBodies =
-                requiredBody.Split(
-                    new[] { '|', ',', ';' },
-                    StringSplitOptions.RemoveEmptyEntries
-                );
-
-
-            for (int i = 0; i < acceptedBodies.Length; i++)
-            {
-                string candidate = acceptedBodies[i]?.Trim();
-
-
-                if (
-                    !string.IsNullOrWhiteSpace(candidate) &&
-                    string.Equals(
-                        currentBody,
-                        candidate,
-                        StringComparison.OrdinalIgnoreCase
-                    )
-                )
-                {
-                    return true;
-                }
-            }
-
-
-            return false;
+            return string.Equals(
+                currentBody,
+                requiredBody,
+                StringComparison.OrdinalIgnoreCase
+            );
         }
     }
 }
