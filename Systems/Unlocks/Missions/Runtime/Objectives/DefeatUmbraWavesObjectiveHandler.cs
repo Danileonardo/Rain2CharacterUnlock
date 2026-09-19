@@ -28,12 +28,24 @@ namespace UniversalSurvivorUnlocks
             initialized = true;
             logger = log;
 
-            GlobalEventManager.onCharacterDeathGlobal += OnCharacterDeath;
+            GameplayEventHub.CharacterDeath += OnCharacterDeath;
             MissionStageRuntimeTracker.StageStarted += OnStageStarted;
-            Run.onRunStartGlobal += run => KillsInWave.Clear();
-            Run.onRunDestroyGlobal += run => KillsInWave.Clear();
+            MissionRunLifecycle.RunStarted += OnRunStarted;
+            MissionRunLifecycle.RunDestroyed += OnRunDestroyed;
 
-            logger?.LogInfo("[MISSION V2] DefeatUmbraWaves handler inicializado.");
+            UsuLog.Verbose(
+                logger,
+                "[MISSION V2] DefeatUmbraWaves handler inicializado.");
+        }
+
+        private static void OnRunStarted(Run run)
+        {
+            KillsInWave.Clear();
+        }
+
+        private static void OnRunDestroyed(Run run)
+        {
+            KillsInWave.Clear();
         }
 
         private static void OnStageStarted(MissionStageEventContext context)
@@ -164,7 +176,7 @@ namespace UniversalSurvivorUnlocks
                         binding.ObjectiveIndex,
                         context,
                         1d
-                    );
+            );
 
                 GenericMissionDispatcher.HandleProgressResult(
                     binding,

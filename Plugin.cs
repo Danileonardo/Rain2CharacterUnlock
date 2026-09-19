@@ -37,7 +37,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public const string PluginVersion =
-            "0.2.1";
+            "0.2.2";
 
 
         public static List<SurvivorInfo> Survivors
@@ -148,104 +148,12 @@ namespace UniversalSurvivorUnlocks
             );
 
             /*
-             * 5G.2D-B
+             * Runtime gameplay centralizado.
              *
-             * Contextos runtime reutilizables para misiones:
-             * TeleporterBoss / Elite / Umbra / Summon.
+             * Conserva el orden histórico de trackers Legacy, Mission v2,
+             * autoridad de sesión y refresh sin exponer cada hook en Plugin.cs.
              */
-            ContentRuntimeContextTracker.Initialize(
-                Logger
-            );
-
-            StatusEffectTracker.Initialize(
-                Logger
-            );
-
-            HealHealthTracker.Initialize(
-                Logger
-            );
-
-            BossCriticalKillTracker.Initialize(
-                Logger
-            );
-
-            HoldItemStackTracker.Initialize(
-                Logger
-            );
-
-            BackstabBossKillTracker.Initialize(
-                Logger
-            );
-
-            ExplosionKillTracker.Initialize(
-                Logger
-            );
-
-            AirborneExplosionKillTracker.Initialize(
-                Logger
-            );
-
-            PrecisionExecutionStreakTracker.Initialize(
-                Logger
-            );
-
-            ScrapItemBossFinisherTracker.Initialize(
-                Logger
-            );
-
-            KillEnemiesTracker.Initialize(
-                Logger
-            );
-
-            SessionUnlockManager.Initialize(
-                Logger
-            );
-
-            SessionMissionRegistry.Initialize(
-                Logger
-            );
-
-            MissionRuntimeActivityPlan.Initialize(
-                Logger
-            );
-
-            MissionRuntimeCatalog.Initialize(
-                Logger
-            );
-
-            MissionPresetLibraryService.LogSummary(
-                Logger
-            );
-
-            MissionRuntimeBudget.Initialize(
-                Logger
-            );
-
-            MissionLogLimiter.Initialize(
-                Logger
-            );
-
-            MissionProgressRegistry.Initialize(
-                Logger
-            );
-
-            MissionStageRuntimeTracker.Initialize(
-                Logger
-            );
-
-            GenericMissionDispatcher.Initialize(
-                Logger
-            );
-
-            SessionMissionLobbySyncManager.Initialize(
-                Logger
-            );
-
-            ChallengeCompletionRouter.Initialize(
-                Logger
-            );
-
-            MissionRuntimeRefreshService.Initialize(
+            GameplayRuntimeBootstrap.Initialize(
                 Logger
             );
 
@@ -347,19 +255,6 @@ namespace UniversalSurvivorUnlocks
 
 
             /*
-             * Limpieza única de la asignación temporal utilizada durante
-             * las pruebas Original <-> USU con Aurelion.
-             *
-             * No afecta futuras asignaciones voluntarias porque guarda un
-             * marcador de migración en Survivors.json.
-             */
-            AurelionJhinTestCleanupMigration
-                .Apply(
-                    Logger
-                );
-
-
-            /*
              * Aplicación final.
              */
             SurvivorUnlockManager
@@ -385,15 +280,20 @@ namespace UniversalSurvivorUnlocks
 
 
             /*
-             * Auditoría TEMPORAL de cobertura de localización.
-             * Se ejecuta después de construir los profiles para capturar
-             * exactamente los textos/tokens visibles de cada survivor modded.
-             * No registra traducciones ni modifica contenido.
+             * Diagnóstico de cobertura de localización.
+             *
+             * Es deliberadamente opt-in porque recorre por reflexión los
+             * perfiles, skills, skins y tokens visibles. Durante desarrollo
+             * puede habilitarse con Logging.VerboseLogging=true; en una
+             * ejecución normal no añade trabajo ni spam al arranque.
              */
-            LocalizationCoverageDiagnostics.Log(
-                SurvivorContentProfileService.GetAll(),
-                Logger
-            );
+            if (UsuLog.VerboseEnabled)
+            {
+                LocalizationCoverageDiagnostics.Log(
+                    SurvivorContentProfileService.GetAll(),
+                    Logger
+                );
+            }
 
 
             RoR2Application.onLoad -=

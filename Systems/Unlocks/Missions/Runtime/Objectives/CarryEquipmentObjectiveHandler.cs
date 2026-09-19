@@ -46,13 +46,15 @@ namespace UniversalSurvivorUnlocks
             initialized = true;
             logger = log;
 
-            On.RoR2.CharacterMaster.OnInventoryChanged += CharacterMaster_OnInventoryChanged;
-            GlobalEventManager.onCharacterDeathGlobal += OnCharacterDeathGlobal;
+            GameplayEventHub.InventoryChanged += CharacterMaster_OnInventoryChanged;
+            GameplayEventHub.CharacterDeath += OnCharacterDeathGlobal;
             MissionStageRuntimeTracker.StageStarted += OnStageStarted;
-            Run.onRunStartGlobal += OnRunStart;
-            Run.onRunDestroyGlobal += OnRunEnd;
+            MissionRunLifecycle.RunStarted += OnRunStart;
+            MissionRunLifecycle.RunDestroyed += OnRunEnd;
 
-            logger?.LogInfo("[MISSION V2] CarryEquipment handler inicializado.");
+            UsuLog.Verbose(
+                logger,
+                "[MISSION V2] CarryEquipment handler inicializado.");
         }
 
         private static void OnRunStart(Run run)
@@ -68,12 +70,9 @@ namespace UniversalSurvivorUnlocks
         }
 
         private static void CharacterMaster_OnInventoryChanged(
-            On.RoR2.CharacterMaster.orig_OnInventoryChanged orig,
             CharacterMaster self
         )
         {
-            orig(self);
-
             if (!NetworkServer.active || Run.instance == null || self == null)
             {
                 return;
@@ -252,7 +251,7 @@ namespace UniversalSurvivorUnlocks
                     binding.ObjectiveIndex,
                     context,
                     value
-                );
+            );
 
             GenericMissionDispatcher.HandleProgressResult(binding, result, details);
         }

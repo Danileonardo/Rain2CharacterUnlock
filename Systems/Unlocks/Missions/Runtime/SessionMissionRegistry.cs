@@ -101,7 +101,8 @@ namespace UniversalSurvivorUnlocks
                 OnRunDestroyGlobal;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[MISSION SESSION] Registro Lobby/Run inicializado."
             );
         }

@@ -44,13 +44,15 @@ namespace UniversalSurvivorUnlocks
             initialized = true;
             logger = log;
 
-            On.RoR2.CharacterMaster.OnInventoryChanged += CharacterMaster_OnInventoryChanged;
-            Run.onRunStartGlobal += OnRunStart;
-            Run.onRunDestroyGlobal += OnRunEnd;
+            GameplayEventHub.InventoryChanged += CharacterMaster_OnInventoryChanged;
+            MissionRunLifecycle.RunStarted += OnRunStart;
+            MissionRunLifecycle.RunDestroyed += OnRunEnd;
 
             MissionStageRuntimeTracker.StageStarted += OnStageStarted;
 
-            logger?.LogInfo("[MISSION V2] PickupItem/NoItemPickup handler inicializado.");
+            UsuLog.Verbose(
+                logger,
+                "[MISSION V2] PickupItem/NoItemPickup handler inicializado.");
         }
 
         private static void OnRunStart(Run run)
@@ -86,12 +88,9 @@ namespace UniversalSurvivorUnlocks
         }
 
         private static void CharacterMaster_OnInventoryChanged(
-            On.RoR2.CharacterMaster.orig_OnInventoryChanged orig,
             CharacterMaster self
         )
         {
-            orig(self);
-
             if (!NetworkServer.active || Run.instance == null || self == null || self.inventory == null)
             {
                 return;
@@ -178,7 +177,7 @@ namespace UniversalSurvivorUnlocks
                         binding.ObjectiveIndex,
                         context,
                         gained
-                    );
+            );
 
                 GenericMissionDispatcher.HandleProgressResult(
                     binding,

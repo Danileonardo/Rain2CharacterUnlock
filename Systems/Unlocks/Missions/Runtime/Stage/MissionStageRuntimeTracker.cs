@@ -118,14 +118,15 @@ namespace UniversalSurvivorUnlocks
                 OnTeleporterFinishGlobal;
 
 
-            Run.onRunStartGlobal +=
+            MissionRunLifecycle.RunStarted +=
                 OnRunStartGlobal;
 
-            Run.onRunDestroyGlobal +=
+            MissionRunLifecycle.RunDestroyed +=
                 OnRunDestroyGlobal;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[MISSION STAGE] Sistema de sectores inicializado."
             );
         }

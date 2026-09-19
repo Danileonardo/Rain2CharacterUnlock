@@ -14,6 +14,7 @@ namespace UniversalSurvivorUnlocks
         public const string Hunk = "official.hunk";
         public const string Tinkaton = "official.tinkaton";
         public const string Wooper = "official.wooper";
+        public const string Miner = "official.miner";
     }
 
 
@@ -130,6 +131,8 @@ namespace UniversalSurvivorUnlocks
             "USU_LIBRARY_PRESET_HINT_ORIGINAL";
         public const string MissionLibraryPresetCustomSoonToken =
             "USU_LIBRARY_PRESET_CUSTOM_SOON";
+        public const string MissionLibraryDirectUsuAlternativeToken =
+            "USU_LIBRARY_DIRECT_USU_ALTERNATIVE";
 
         // 5G.2C - entrada desde Settings / Risk of Options.
         public const string MissionLibrarySettingsOptionNameToken =
@@ -402,6 +405,20 @@ namespace UniversalSurvivorUnlocks
                 EnglishDescription =
                     "Make the Wetlands your home; mark your territory;\n" +
                     "hunt and bite 20 poisoned prey - Acrid"
+            },
+
+            new OfficialText
+            {
+                BodyName = "MinerBody",
+                LocalizationKey = SurvivorLocalizationKeys.Miner,
+                SpanishName = "Excavación",
+                SpanishDescription =
+                    "Desciende a las Profundidades Abisales;\n" +
+                    "vence al jefe del portal y despeja el camino.",
+                EnglishName = "Excavation",
+                EnglishDescription =
+                    "Descend into the Abyssal Depths;\n" +
+                    "defeat the teleporter boss and clear the way."
             }
         };
 
@@ -567,7 +584,7 @@ namespace UniversalSurvivorUnlocks
             RegisterUiText(MissionLibraryProvidersToken, "Provider actions", "Acciones de proveedor");
             RegisterUiText(MissionLibraryUseOriginalToken, "Use Original", "Usar Original");
             RegisterUiText(MissionLibraryRestoreToken, "Restore character", "Restaurar personaje");
-            RegisterUiText(MissionLibraryCustomComingSoonToken, "Custom missions will be exposed in 5H/5I.", "Las misiones Custom se habilitarán en 5H/5I.");
+            RegisterUiText(MissionLibraryCustomComingSoonToken, "Custom missions are not available yet.", "Las misiones Custom aún no están disponibles.");
             RegisterUiText(MissionLibraryHostOnlyToken, "Only the host can change mission providers in multiplayer.", "Sólo el host puede cambiar proveedores de misión en multijugador.");
             RegisterUiText(MissionLibraryPresetsToken, "USU mission presets", "Presets de misión USU");
             RegisterUiText(MissionLibraryPresetHintToken, "Any assignable preset can be applied to any detected survivor.", "Cualquier preset asignable puede aplicarse a cualquier personaje detectado.");
@@ -591,6 +608,7 @@ namespace UniversalSurvivorUnlocks
             RegisterUiText(MissionLibraryCustomDescriptionToken, "A player-created mission controls this character.", "Una misión creada por el jugador controla este personaje.");
             RegisterUiText(MissionLibraryChoosePresetForUsuToken, "Choose a mission below to activate USU for this character.", "Elige una misión de la biblioteca para activar USU en este personaje.");
             RegisterUiText(MissionLibraryChoosePresetActionToken, "Choose a mission below. Using it will switch this character to USU automatically.", "Elige una misión de abajo. Al usarla, este personaje cambiará a USU automáticamente.");
+            RegisterUiText(MissionLibraryDirectUsuAlternativeToken, "This character has an official USU alternative: {0}. You can switch between Original and USU without modifying the creator's unlock.", "Este personaje tiene una alternativa oficial de USU: {0}. Puedes cambiar entre Original y USU sin modificar el desbloqueo del creador.");
             RegisterUiText(MissionLibraryOriginalUnavailableToken, "Original is not available for this character; USU acts as fallback.", "Original no está disponible para este personaje; USU actúa como fallback.");
             RegisterUiText(MissionLibraryActiveMissionToken, "Active unlock", "Desbloqueo activo");
             RegisterUiText(MissionLibraryOriginalMissionTitleToken, "Original system", "Sistema original");
@@ -637,15 +655,15 @@ namespace UniversalSurvivorUnlocks
             RegisterUiText(MissionLibraryEmbeddedSkinsToken, "Skins", "Skins");
             RegisterUiText(MissionLibraryEmbeddedLockedSkinsToken, "Locked skins", "Skins bloqueadas");
             RegisterUiText(MissionLibraryEmbeddedVisualBrowserToken, "Visual survivor browser", "Navegador visual de personajes");
-            RegisterUiText(MissionLibraryEmbeddedNextBrowserToken, "Next: 5G.2E-B", "Siguiente: 5G.2E-B");
+            RegisterUiText(MissionLibraryEmbeddedNextBrowserToken, "Available in the Characters section", "Disponible en la sección Personajes");
 
             RegisterUiText(MissionLibraryEmbeddedAssignablePresetsToken, "Assignable presets", "Presets asignables");
             RegisterUiText(MissionLibraryEmbeddedProvidersToken, "Providers", "Proveedores");
             RegisterUiText(MissionLibraryEmbeddedLibraryToken, "Mission library", "Biblioteca de misiones");
             RegisterUiText(MissionLibraryEmbeddedCustomToken, "Custom missions", "Misiones personalizadas");
             RegisterUiText(MissionLibraryEmbeddedEditorToken, "Mission editor", "Editor de misiones");
-            RegisterUiText(MissionLibraryEmbeddedSoon5HToken, "Coming in 5H", "Próximamente en 5H");
-            RegisterUiText(MissionLibraryEmbeddedSoon5IToken, "Coming in 5I", "Próximamente en 5I");
+            RegisterUiText(MissionLibraryEmbeddedSoon5HToken, "Coming soon", "Próximamente");
+            RegisterUiText(MissionLibraryEmbeddedSoon5IToken, "Coming soon", "Próximamente");
 
             RegisterUiText(MissionLibraryEmbeddedRuntimeCatalogToken, "Runtime catalog", "Catálogo runtime");
             RegisterUiText(MissionLibraryEmbeddedItemsToken, "Items", "Objetos");

@@ -9,12 +9,13 @@ using RoR2;
 namespace UniversalSurvivorUnlocks
 {
     /// <summary>
-    /// Auditoría TEMPORAL y de sólo lectura para preparar los paquetes
-    /// de localización curada posteriores a Aurelion Sol.
+    /// Diagnóstico de sólo lectura para auditar la cobertura de localización
+    /// curada de los survivors instalados.
     ///
     /// No registra tokens, no cambia LanguageAPI, no altera unlocks y no
     /// modifica el Logbook. Sólo imprime exactamente lo que los Content
     /// Profiles ya resolvieron en runtime y los tokens nativos asociados.
+    /// Plugin sólo lo ejecuta cuando Logging.VerboseLogging=true.
     /// </summary>
     internal static class LocalizationCoverageDiagnostics
     {

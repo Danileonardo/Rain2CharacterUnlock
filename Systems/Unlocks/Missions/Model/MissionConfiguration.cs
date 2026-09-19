@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace UniversalSurvivorUnlocks
 {
@@ -133,6 +135,23 @@ namespace UniversalSurvivorUnlocks
             get;
             set;
         }
+
+
+        // =========================================================
+        // CAMPOS DESCONOCIDOS / COMPATIBILIDAD HACIA ADELANTE
+        // =========================================================
+        //
+        // Conserva propiedades de missionConfig que una versión más
+        // nueva pueda haber escrito y esta build todavía no conozca.
+        // =========================================================
+
+        [JsonExtensionData]
+        public IDictionary<string, JToken> ExtraData
+        {
+            get;
+            set;
+        } =
+            new Dictionary<string, JToken>();
 
 
         // =========================================================

@@ -19,7 +19,9 @@ namespace UniversalSurvivorUnlocks
             logger = log;
 
             MissionStageRuntimeTracker.StageCompleted += OnStageCompleted;
-            logger?.LogInfo("[MISSION V2] CompleteTeleporter handler inicializado.");
+            UsuLog.Verbose(
+                logger,
+                "[MISSION V2] CompleteTeleporter handler inicializado.");
         }
 
         private static void OnStageCompleted(MissionStageEventContext stageContext)
@@ -61,7 +63,7 @@ namespace UniversalSurvivorUnlocks
                             binding,
                             result,
                             $"Teleporter: {stageContext?.StageName ?? ""}"
-                        );
+            );
                         break;
                     }
                 }

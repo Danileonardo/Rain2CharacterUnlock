@@ -80,7 +80,8 @@ namespace UniversalSurvivorUnlocks
                 );
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[MISSION LOBBY] Sincronización de lobby inicializada."
             );
         }

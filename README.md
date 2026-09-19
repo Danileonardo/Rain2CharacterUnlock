@@ -2,9 +2,9 @@
 
 **Universal Survivor Unlocks (USU)** is a configurable progression framework for **modded survivors in Risk of Rain 2**.
 
-USU automatically detects compatible modded survivors, respects characters that already provide their own unlock requirement, and can give progression challenges to survivors that would otherwise be available immediately.
+USU automatically detects compatible modded survivors, normally respects characters that already provide their own unlock requirement, and can give progression challenges to survivors that would otherwise be available immediately. Curated compatibility cases can also expose a separate USU-owned alternative without modifying the creator's Original system.
 
-**Current release:** `0.2.1`
+**Current release:** `0.2.2`
 
 [Thunderstore](https://thunderstore.io/c/riskofrain2/p/Shleidericks/UniversalSurvivorUnlocks/) · [GitHub / Source Code](https://github.com/Danileonardo/Rain2CharacterUnlock) · [Support development / Donate](https://github.com/sponsors/Danileonardo) · Discord: `@shleiderick`
 
@@ -52,6 +52,28 @@ Main goals:
 - Localize the official challenge names/descriptions according to the game's active language.
 - Reward official USU challenges with configurable Lunar Coin rewards.
 
+## 0.2.2 release focus
+
+Version `0.2.2` establishes the current **Mission Authority & Persistence Foundation**.
+
+Highlights:
+
+- The canonical library now contains **10 official USU missions** while keeping the **12 historical Legacy recipes** hidden and reusable for compatibility and future CUSTOM/editor/generator work.
+- Survivors now receive a stable USU identity derived from their content source and Body, allowing mission ownership to survive temporary mod removal.
+- `Survivors.json` uses **schema v2** and stores absent survivor missions in `dormantMissions` with `PendingContent` instead of keeping a stale runtime character snapshot.
+- Reinstalling a survivor mod rebuilds its runtime/profile data from the real installed content and rehydrates the persisted mission/provider selection from its stable identity.
+- Explicit player choices such as `UserSelected`, provider selection, official preset relationship, and stored CUSTOM mission data are preserved across the dormant/reinstall flow.
+- Public builds keep development-only preset `AuthoringMode` disabled. Official assigned preset snapshots are refreshed through their stable `BasePresetId` relationship instead.
+
+Miner also receives the official USU preset **Excavación / Excavation**:
+
+- Reach **Abyssal Depths**.
+- Defeat the **teleporter boss** there.
+- The mission is owned and evaluated by USU and can be selected explicitly from the Mission Library.
+- MinerUnearthed's original `Adrenaline Rush` achievement is **not patched, intercepted, rewritten, or deleted**.
+- Miner stays on the creator's Original provider by default; the Original provider remains stored and can always be selected/restored.
+- If MinerUnearthed changes or fixes its native unlock later, USU's Miner preset remains independent.
+
 ## 0.2.1 release focus
 
 Version `0.2.1` closes the current **survivor presentation/localization pass** while keeping the nine creator-made unlock challenges on Mission System v2.
@@ -81,7 +103,9 @@ Characters such as Commando, Huntress, Loader, Railgunner, and other official su
 
 ## Modded survivors with their own unlock system
 
-If a modded survivor already defines its own unlockable/progression requirement, USU respects it and leaves that survivor under the control of the original mod.
+If a modded survivor already defines its own unlockable/progression requirement, USU normally respects it and leaves that survivor under the control of the original mod.
+
+A curated compatibility entry may expose a **separate USU-owned alternative** without changing the creator's achievement. Miner is the first such case in `0.2.2`: **Original remains the default**, while the player may explicitly switch to USU's `Excavación` preset.
 
 ## Modded survivors without an unlock system
 
@@ -97,7 +121,7 @@ USU is moving toward a preset-based mission system with a clear ownership rule.
 
 A built-in preset created for USU is the **official source preset**.
 
-Version `0.2.1` includes **9 official creator presets**. These source presets are kept separate from the reusable Objective and Condition templates used internally by Mission System v2.
+Version `0.2.2` includes **10 official USU presets**. These source presets are kept separate from the reusable Objective and Condition templates used internally by Mission System v2.
 
 Creator presets are intended to remain unchanged so future updates can improve or rebalance them without destroying the original definition.
 
@@ -111,7 +135,7 @@ This allows USU to keep:
 - The player's customized version.
 - The technical relationship between the custom mission and the preset it came from.
 
-Version `0.2.1` exposes the current preset/provider library in-game. Official built-in presets remain source definitions and are refreshed from their stable `BasePresetId`, so editing a preset-backed snapshot directly in `Survivors.json` is not a reliable way to create a permanent custom variant. Stored custom mission data is kept separate from the official preset source. The full visual editor for creating arbitrary custom missions is still planned for a later release.
+Version `0.2.2` exposes the current preset/provider library in-game. Official built-in presets remain source definitions and are refreshed from their stable `BasePresetId`, so editing a preset-backed snapshot directly in `Survivors.json` is not a reliable way to create a permanent custom variant. Stored custom mission data is kept separate from the official preset source. The full visual editor for creating arbitrary custom missions is still planned for a later release.
 
 ---
 
@@ -149,6 +173,7 @@ Current official examples include:
 - HUNK
 - Tinkaton
 - Wooper
+- Miner
 
 Players cannot combine partial personal progress unless the mission is explicitly configured as Shared.
 
@@ -162,13 +187,13 @@ For multiplayer bugs, logs from both host and client are especially useful.
 
 # Current built-in presets
 
-The following **9 creator-made presets** are included in USU `0.2.1`.
+The following **10 official USU presets** are included in USU `0.2.2`.
 
 Official challenge names/descriptions are currently localized for English and Spanish (`es-419` / `es-ES`), with English used as fallback.
 
 ## Sora — Elegido de la Llave Espada
 
-> **Abre paso entre mundos en Baluarte de Ambry;**  
+> **Abre paso entre mundos en Baluarte de Ambry;**
 > **vence a sombras y completa Venganza - Mercenary**
 
 Current mission:
@@ -180,14 +205,14 @@ Current mission:
 
 USU currently tracks **3 Vengeance Umbra waves** and then the stage exit.
 
-**Progress:** Shared  
+**Progress:** Shared
 **Lunar Coin reward:** `+4`
 
 ---
 
 ## Ralsei — El poder de la bondad
 
-> **Usa Devoción y reúne 3 nuevos amigos Lemurianos;**  
+> **Usa Devoción y reúne 3 nuevos amigos Lemurianos;**
 > **completa el portal con ellos - Captain o Seeker**
 
 Current mission:
@@ -196,7 +221,7 @@ Current mission:
 2. Use **Devotion** to recruit **3 Lemurian allies**.
 3. Complete the teleporter while satisfying the mission route.
 
-**Progress:** Per-player  
+**Progress:** Per-player
 **Lunar Coin reward:** `+3`
 
 Public feedback for this preset is especially welcome because Devotion/minion behavior can be affected by game-content and mod interactions.
@@ -205,7 +230,7 @@ Public feedback for this preset is especially welcome because Devotion/minion be
 
 ## Jhin — El Cuarto Acto
 
-> **Convierte a un jefe en tu gran final;**  
+> **Convierte a un jefe en tu gran final;**
 > **asesta un crítico mortal de 4.444 de daño o más.**
 
 Current mission:
@@ -214,14 +239,14 @@ Current mission:
 - The hit must be **critical**.
 - The lethal hit must deal at least **4,444 damage**.
 
-**Progress:** Per-player  
+**Progress:** Per-player
 **Lunar Coin reward:** `+4`
 
 ---
 
 ## Spy — Sin que me veas venir
 
-> **Que el jefe nunca vea venir tu golpe final;**  
+> **Que el jefe nunca vea venir tu golpe final;**
 > **remátalo por detrás con Daga serrada - Bandit**
 
 Current mission:
@@ -231,14 +256,14 @@ Current mission:
 3. Deliver a valid **backstab** to a boss.
 4. The backstab must be the **fatal hit**.
 
-**Progress:** Per-player  
+**Progress:** Per-player
 **Lunar Coin reward:** `+3`
 
 ---
 
 ## Scout — Sed Termonuclear
 
-> **Sacia tu sed con 8 Bebidas energéticas;**  
+> **Sacia tu sed con 8 Bebidas energéticas;**
 > **o completa el primer sector sin objetos en 4 min.**
 
 Complete **either** route:
@@ -254,14 +279,14 @@ Complete **either** route:
 
 The two routes are alternatives (`OR`), not requirements that must both be completed.
 
-**Progress:** Per-player  
+**Progress:** Per-player
 **Lunar Coin reward:** `+2`
 
 ---
 
 ## Rocket — La gravedad es opcional
 
-> **Haz llover explosiones desde el cielo;**  
+> **Haz llover explosiones desde el cielo;**
 > **derriba 5 antes de caer; haz la hazaña 3 veces.**
 
 Current mission:
@@ -272,14 +297,14 @@ Current mission:
 - Progress is personal to the player; owned minions are not used for this preset's bombing-run count.
 - The bombing-run objective uses **stage-scoped progress**.
 
-**Progress:** Per-player  
+**Progress:** Per-player
 **Lunar Coin reward:** `+4`
 
 ---
 
 ## HUNK — La Parca No Falla
 
-> **Protege la batería y sobrevive a toda costa;**  
+> **Protege la batería y sobrevive a toda costa;**
 > **escapa de la Luna o sacrifícate en el Obelisco.**
 
 Complete **either** route while protecting the **Fuel Array**:
@@ -300,14 +325,14 @@ Important rules:
 - Death invalidates the route.
 - The two endings are alternatives (`OR`).
 
-**Progress:** Per-player  
+**Progress:** Per-player
 **Lunar Coin reward:** `+5`
 
 ---
 
 ## Tinkaton — Forjada en Chatarra
 
-> **Haz de 6 chatarras el inicio de tu gran golpe;**  
+> **Haz de 6 chatarras el inicio de tu gran golpe;**
 > **ten Justicia demoledora y vence un Ojo mecánico.**
 
 Current mission uses three objectives in the same route (`AND`):
@@ -318,14 +343,14 @@ Current mission uses three objectives in the same route (`AND`):
 
 The old MUL-T + Blast Canister requirement is no longer part of the current official preset.
 
-**Progress:** Per-player  
+**Progress:** Per-player
 **Lunar Coin reward:** `+5`
 
 ---
 
 ## Wooper — De vuelta al agua
 
-> **Haz de los Humedales tu hogar; marca territorio;**  
+> **Haz de los Humedales tu hogar; marca territorio;**
 > **caza y muerde a 20 presas envenenadas - Acrid**
 
 Current mission:
@@ -338,14 +363,32 @@ Current mission:
 
 A target that was not already poisoned before the qualifying bite does not satisfy the status-before-action requirement.
 
-**Progress:** Per-player  
+**Progress:** Per-player
 **Lunar Coin reward:** `+2`
+
+---
+
+## Miner — Excavación
+
+> **Desciende a las Profundidades Abisales;**
+> **vence al jefe del portal y despeja el camino.**
+
+Current mission:
+
+1. Reach **Abyssal Depths** (`dampcavesimple`).
+2. Defeat the **real teleporter boss** in that stage with the qualifying final hit.
+3. The route is evaluated by USU Mission System v2 and does not hook MinerUnearthed's `Adrenaline Rush` achievement.
+
+This preset is deliberately **independent** from MinerUnearthed's Original unlock. The creator's Original provider remains available and is still the default until the player explicitly chooses the USU provider/preset.
+
+**Progress:** Per-player
+**Lunar Coin reward:** `+3`
 
 ---
 
 # Challenge systems currently used by presets
 
-The nine official presets now run through **Mission System v2 compositions** instead of being represented as nine independent monolithic challenge scripts.
+The ten official presets now run through **Mission System v2 compositions** instead of being represented as nine independent monolithic challenge scripts.
 
 Current runtime building blocks used by the official missions include objectives such as:
 
@@ -383,7 +426,7 @@ Legacy challenge trackers remain in the project where they are still useful for 
 
 # Mission System v2 foundation
 
-Version `0.2.1` keeps Mission System v2 as the active foundation and extends the surrounding assignment, refresh, content-profile, and UI layers introduced after 0.2.0.
+Version `0.2.2` keeps Mission System v2 as the active foundation and extends it with centralized mission authority, stable survivor identity, and dormant mission-only persistence.
 
 The model is built around:
 
@@ -447,7 +490,7 @@ This allows mission logic to remain independent from the player's selected langu
 
 ## Current v2 runtime status
 
-In `0.2.1`, the current creator missions remain represented by **9 assignable official mission presets** built from reusable objectives, conditions, targets, routes, and rules.
+In `0.2.2`, the current official missions are represented by **10 assignable official Mission v2 presets** built from reusable objectives, conditions, targets, routes, and rules.
 
 The internal catalog also retains hidden legacy recipes and reusable Objective/Condition templates for compatibility and future editing workflows.
 
@@ -477,7 +520,7 @@ Metadata identifying a survivor is maintained by USU. Avoid changing internal su
 
 Because the mission format contains nested routes/objectives/conditions, making a backup before manually editing complex challenge data is recommended.
 
-## Built-in preset synchronization in 0.2.1
+## Built-in preset synchronization in 0.2.2
 
 Official creator presets remain immutable source definitions. `BasePresetId` is treated as the authority for preset-backed assignments, and USU refreshes the persisted mission snapshot when the corresponding built-in preset changes between releases.
 
@@ -491,9 +534,20 @@ Using **Restore original** returns the character to its base provider policy and
 
 USU stores its progression/configuration separately from the survivor mod itself.
 
-This allows the project to remember information about a modded survivor when that character mod is temporarily removed and later installed again.
+Starting with `0.2.2`, each known survivor can carry a stable USU identity based on its content source and Body. `Survivors.json` uses schema v2 and separates physically absent content into the `dormantMissions` collection.
 
-USU reconciles its detected survivor catalog with the stored configuration during startup.
+When a survivor mod is temporarily disabled or uninstalled, USU keeps only the mission-facing data required to restore that configuration later:
+
+- Stable survivor identity.
+- Body and content Source.
+- Mission/challenge configuration.
+- Provider and SelectionMode.
+- `BasePresetId` relationship.
+- Stored CUSTOM mission data when present.
+
+USU does **not** treat old runtime data such as skills, skins, prefabs, lore, stats, Unity objects, or a previous ContentProfile as persistent truth while the mod is absent. The dormant record is marked `PendingContent`.
+
+When the survivor mod returns, USU detects the real current content again, rebuilds the runtime/profile information from that installed mod, rehydrates the persisted mission by stable identity, and removes the redundant dormant record.
 
 Mission session progress is run/session state and is not intended to replace persistent unlock/profile progression.
 
@@ -546,7 +600,7 @@ Using a mod manager is recommended.
 
 # Dependencies
 
-The Thunderstore package for `0.2.1` declares:
+The Thunderstore package for `0.2.2` declares:
 
 - `bbepis-BepInExPack-5.4.2121`
 - `RiskofThunder-R2API_Core-5.3.0`
@@ -555,7 +609,7 @@ The Thunderstore package for `0.2.1` declares:
 - `RiskofThunder-R2API_Unlockable-1.0.2`
 - `RiskofThunder-R2API_Networking-1.0.4`
 
-**Risk Of Options is an optional soft integration in version `0.2.1`, not a hard Thunderstore dependency.** When it is installed, USU embeds the Mission Library inside Mod Options. Without it, USU uses its Character Select launcher fallback.
+**Risk Of Options is an optional soft integration in version `0.2.2`, not a hard Thunderstore dependency.** When it is installed, USU embeds the Mission Library inside Mod Options. Without it, USU uses its Character Select launcher fallback.
 
 Always treat the `manifest.json` included with the current release as the authoritative dependency list.
 
@@ -595,7 +649,7 @@ The most useful bug report includes:
 
 For multiplayer issues, logs from both host and client are especially useful.
 
-For `0.2.1`, reports about survivor presentation/localization, provider switching, the Mission Library, Logbook/Notes behavior, and multiplayer challenge completion are especially valuable.
+For `0.2.2`, reports about provider switching, dormant/reinstalled survivor persistence, the Mission Library, Logbook/Notes behavior, and multiplayer challenge completion are especially valuable.
 
 You can use:
 
@@ -650,31 +704,31 @@ Those characters, assets, survivor implementations, and original mod projects be
 
 Built-in USU presets currently reference/test against projects including:
 
-- **Sora** — package by **Dragonyck**  
+- **Sora** — package by **Dragonyck**
   https://thunderstore.io/c/riskofrain2/p/Dragonyck/Sora/
 
-- **RalseiSurvivor** — package by **GodRayProductions** and its credited contributors  
+- **RalseiSurvivor** — package by **GodRayProductions** and its credited contributors
   https://thunderstore.io/c/riskofrain2/p/GodRayProductions/RalseiSurvivor/
 
-- **Jhin** — package by **SeroRonin**  
+- **Jhin** — package by **SeroRonin**
   https://thunderstore.io/c/riskofrain2/p/SeroRonin/Jhin/
 
-- **Spy** — package by **tsuyoikenko**  
+- **Spy** — package by **tsuyoikenko**
   https://thunderstore.io/c/riskofrain2/p/tsuyoikenko/Spy/
 
-- **Scout** — package by **tsuyoikenko**  
+- **Scout** — package by **tsuyoikenko**
   https://thunderstore.io/c/riskofrain2/p/tsuyoikenko/Scout/
 
-- **Rocket** — package by **EnforcerGang**  
+- **Rocket** — package by **EnforcerGang**
   https://thunderstore.io/c/riskofrain2/p/EnforcerGang/Rocket/
 
-- **HUNK** — package by **rob** and its credited contributors  
+- **HUNK** — package by **rob** and its credited contributors
   https://thunderstore.io/c/riskofrain2/p/rob/HUNK/
 
-- **Tinkaton** — package by **DragonycksModdingComms**  
+- **Tinkaton** — package by **DragonycksModdingComms**
   https://thunderstore.io/c/riskofrain2/p/DragonycksModdingComms/Tinkaton/
 
-- **Wooper** — package by **DragonycksModdingComms**  
+- **Wooper** — package by **DragonycksModdingComms**
   https://thunderstore.io/c/riskofrain2/p/DragonycksModdingComms/Wooper/
 
 These survivor packages are referenced for compatibility/preset design and are **not automatically dependencies** of USU.
@@ -726,33 +780,34 @@ See the included `LICENSE` file for the complete license terms.
 
 USU is evolving from a collection of individual unlock scripts into a general-purpose configurable progression framework for modded survivors.
 
-Current next-step goals include:
+With the stable identity and dormant persistence foundation in `0.2.2`, future development can build on:
 
-- A full visual mission editor for player-created missions.
-- Safer and more discoverable custom-mission creation/editing workflows.
-- Reusable Objective and Condition editing backed by the runtime content catalog.
-- Configurable enemy, elite, boss, item, skill, stage, status, and specific-body targets.
-- Multi-route challenge editing and validation.
-- Preset sharing/importing.
-- Additional curated survivor integrations and localization coverage.
-- Continued multiplayer synchronization and compatibility testing.
-- Cleanup/consolidation of legacy helpers after the 0.2.1 release line is stable.
+- Survivor gameplay/profile analysis for mission compatibility.
+- Local power/complexity assessment and challenge-tier resolution.
+- Compatibility-filtered reusable mission templates.
+- Deterministic generated-mission selection that remains reproducible across restarts/reinstalls.
+- Revalidation when a survivor mod changes, without silently overwriting player-owned CUSTOM missions.
+- A full visual mission editor and safer custom-mission authoring workflow.
+- Preset sharing/importing and additional curated survivor integrations.
+- Continued multiplayer synchronization, localization, and compatibility testing.
+
+Adaptive mission generation is **not** part of `0.2.2`; these are follow-up development goals.
 
 ---
 
 # Links
 
-**Thunderstore**  
+**Thunderstore**
 https://thunderstore.io/c/riskofrain2/p/Shleidericks/UniversalSurvivorUnlocks/
 
-**Source / Issues**  
+**Source / Issues**
 https://github.com/Danileonardo/Rain2CharacterUnlock
 
-**Support development / Donate**  
+**Support development / Donate**
 https://github.com/sponsors/Danileonardo
 
-**Discord / Direct Contact**  
-Current username: `@shleiderick`  
+**Discord / Direct Contact**
+Current username: `@shleiderick`
 Original alias: `Shleider#3336`
 
 > **Thank you for playing and helping test Universal Survivor Unlocks.**

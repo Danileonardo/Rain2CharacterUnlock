@@ -21,7 +21,9 @@ namespace UniversalSurvivorUnlocks
             logger = log;
 
             Run.onServerGameOver += OnServerGameOver;
-            logger?.LogInfo("[MISSION V2] CompleteEnding handler inicializado.");
+            UsuLog.Verbose(
+                logger,
+                "[MISSION V2] CompleteEnding handler inicializado.");
         }
 
         private static void OnServerGameOver(Run run, GameEndingDef gameEndingDef)
@@ -72,7 +74,7 @@ namespace UniversalSurvivorUnlocks
                             binding.RouteIndex,
                             binding.ObjectiveIndex,
                             context
-                        );
+            );
 
                     if (!result.Accepted) continue;
 

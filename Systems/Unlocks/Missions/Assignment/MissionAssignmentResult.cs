@@ -133,6 +133,9 @@ namespace UniversalSurvivorUnlocks
         public const string OriginalProviderProtected =
             "OriginalProviderProtected";
 
+        public const string ProviderNotSelectable =
+            "ProviderNotSelectable";
+
         public const string InvalidMission =
             "InvalidMission";
 

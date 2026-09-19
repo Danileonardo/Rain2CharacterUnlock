@@ -31,18 +31,20 @@ namespace UniversalSurvivorUnlocks
             initialized = true;
             logger = log;
 
-            On.RoR2.CharacterMaster.OnInventoryChanged += CharacterMaster_OnInventoryChanged;
-            Run.onRunStartGlobal += run => RecruitedByOwner.Clear();
-            Run.onRunDestroyGlobal += run => RecruitedByOwner.Clear();
+            GameplayEventHub.InventoryChanged += CharacterMaster_OnInventoryChanged;
+            MissionRunLifecycle.RunStarted += OnRunStarted;
+            MissionRunLifecycle.RunDestroyed += OnRunDestroyed;
 
-            logger?.LogInfo("[MISSION V2] RecruitMinions handler inicializado.");
+            UsuLog.Verbose(
+                logger,
+                "[MISSION V2] RecruitMinions handler inicializado.");
 
             if (TryGetItemIndex("LemurianHarness", out ItemIndex devotionMarker))
             {
                 logger?.LogInfo(
                     "[MISSION V2] RecruitMinions marcador Devoción resuelto | " +
                     $"LemurianHarness: {devotionMarker}"
-                );
+            );
             }
             else
             {
@@ -54,13 +56,20 @@ namespace UniversalSurvivorUnlocks
             }
         }
 
+        private static void OnRunStarted(Run run)
+        {
+            RecruitedByOwner.Clear();
+        }
+
+        private static void OnRunDestroyed(Run run)
+        {
+            RecruitedByOwner.Clear();
+        }
+
         private static void CharacterMaster_OnInventoryChanged(
-            On.RoR2.CharacterMaster.orig_OnInventoryChanged orig,
             CharacterMaster self
         )
         {
-            orig(self);
-
             if (
                 !NetworkServer.active ||
                 Run.instance == null ||

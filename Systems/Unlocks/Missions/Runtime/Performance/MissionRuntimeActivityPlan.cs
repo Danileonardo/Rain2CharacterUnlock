@@ -103,14 +103,15 @@ namespace UniversalSurvivorUnlocks
                 log;
 
 
-            Run.onRunStartGlobal +=
+            MissionRunLifecycle.RunStarted +=
                 OnRunStartGlobal;
 
-            Run.onRunDestroyGlobal +=
+            MissionRunLifecycle.RunDestroyed +=
                 OnRunDestroyGlobal;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[MISSION PERF] ActivityPlan inicializado."
             );
         }

@@ -117,14 +117,15 @@ namespace UniversalSurvivorUnlocks
              * Run que ya usa SessionMissionRegistry y que está
              * validada en el Paso 2.
              */
-            Run.onRunStartGlobal +=
+            MissionRunLifecycle.RunStarted +=
                 OnRunStartGlobal;
 
-            Run.onRunDestroyGlobal +=
+            MissionRunLifecycle.RunDestroyed +=
                 OnRunDestroyGlobal;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[MISSION PROGRESS] Registro de progreso inicializado."
             );
         }

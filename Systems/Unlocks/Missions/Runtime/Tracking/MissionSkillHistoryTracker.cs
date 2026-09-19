@@ -40,10 +40,13 @@ namespace UniversalSurvivorUnlocks
             logger = log;
 
             On.RoR2.CharacterBody.OnSkillActivated += CharacterBody_OnSkillActivated;
-            Run.onRunStartGlobal += OnRunStart;
-            Run.onRunDestroyGlobal += OnRunEnd;
+            MissionRunLifecycle.RunStarted += OnRunStart;
+            MissionRunLifecycle.RunDestroyed += OnRunEnd;
 
-            logger?.LogInfo("[MISSION V2] SkillHistory tracker inicializado.");
+            UsuLog.Verbose(
+                logger,
+                "[MISSION V2] SkillHistory tracker inicializado."
+            );
         }
 
         private static void OnRunStart(Run run)

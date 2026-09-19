@@ -93,14 +93,15 @@ namespace UniversalSurvivorUnlocks
                 log;
 
 
-            Run.onRunStartGlobal +=
+            MissionRunLifecycle.RunStarted +=
                 OnRunStartGlobal;
 
-            Run.onRunDestroyGlobal +=
+            MissionRunLifecycle.RunDestroyed +=
                 OnRunDestroyGlobal;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[MISSION PERF] RuntimeBudget inicializado | " +
                 $"Default: {DefaultMaxItemsPerWindow} items / " +
                 $"{DefaultWindowSeconds:0.00}s."

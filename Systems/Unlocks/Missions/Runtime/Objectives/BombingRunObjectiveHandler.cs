@@ -31,7 +31,6 @@ namespace UniversalSurvivorUnlocks
 
         private static ManualLogSource logger;
         private static bool initialized;
-        private static int fixedTick;
 
         public static void Initialize(ManualLogSource log)
         {
@@ -41,11 +40,13 @@ namespace UniversalSurvivorUnlocks
 
             ExplosionKillTracker.LethalBlastDetected += OnLethalBlast;
             MissionStageRuntimeTracker.StageStarted += OnStageStarted;
-            Run.onRunStartGlobal += OnRunStart;
-            Run.onRunDestroyGlobal += OnRunEnd;
-            RoR2Application.onFixedUpdate += OnFixedUpdate;
+            MissionRunLifecycle.RunStarted += OnRunStart;
+            MissionRunLifecycle.RunDestroyed += OnRunEnd;
+            GameplayEventHub.FixedUpdateTick += OnFixedUpdate;
 
-            logger?.LogInfo("[MISSION V2] BombingRun handler inicializado.");
+            UsuLog.Verbose(
+                logger,
+                "[MISSION V2] BombingRun handler inicializado.");
         }
 
         private static void OnRunStart(Run run) => ClearStates();
@@ -63,7 +64,6 @@ namespace UniversalSurvivorUnlocks
             }
 
             States.Clear();
-            fixedTick = 0;
         }
 
         public static void ResetMission(
@@ -100,7 +100,7 @@ namespace UniversalSurvivorUnlocks
                     {
                         MissionLogLimiter.ResetKey(
                             pair.Value.LogKey
-                        );
+            );
                     }
 
                     keysToRemove.Add(
@@ -240,17 +240,21 @@ namespace UniversalSurvivorUnlocks
                 return;
             }
 
-            // Sólo 1 de cada 5 FixedUpdate y únicamente si existe una ronda
-            // completada esperando aterrizaje.
-            fixedTick++;
-            if (fixedTick % 5 != 0)
-            {
-                return;
-            }
-
+            // Revisamos cada FixedUpdate porque tocar el suelo, incluso de
+            // forma muy breve, debe cortar el bombardeo actual. Con el muestreo
+            // anterior cada 5 ticks era posible aterrizar y volver a saltar
+            // antes de que el handler detectara el contacto con el suelo.
             foreach (ObjectiveState state in States.Values)
             {
-                if (state?.Master == null || !state.WaitingForLanding)
+                if (state?.Master == null)
+                {
+                    continue;
+                }
+
+                if (
+                    !state.WaitingForLanding &&
+                    state.KillsInCurrentRun <= 0
+                )
                 {
                     continue;
                 }
@@ -261,6 +265,10 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
+                // Si la ronda ya estaba completa, este aterrizaje habilita la
+                // siguiente. Si estaba incompleta, borra sólo las bajas de esa
+                // ronda; los bombardeos ya almacenados permanecen intactos en
+                // MissionCompositionProgressEvaluator.
                 state.WaitingForLanding = false;
                 state.KillsInCurrentRun = 0;
                 MissionLogLimiter.ResetKey(state.LogKey);

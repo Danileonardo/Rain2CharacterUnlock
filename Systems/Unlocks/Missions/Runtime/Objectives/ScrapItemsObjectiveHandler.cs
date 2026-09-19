@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 
 using BepInEx.Logging;
@@ -19,17 +18,18 @@ namespace UniversalSurvivorUnlocks
             initialized = true;
             logger = log;
 
-            On.RoR2.ScrapperController.BeginScrapping_UniquePickup += OnBeginScrapping;
-            logger?.LogInfo("[MISSION V2] ScrapItems handler inicializado.");
+            GameplayEventHub.ScrapperProcessed += OnScrapperProcessed;
+            UsuLog.Verbose(
+                logger,
+                "[MISSION V2] ScrapItems handler inicializado.");
         }
 
-        private static void OnBeginScrapping(
-            On.RoR2.ScrapperController.orig_BeginScrapping_UniquePickup orig,
-            ScrapperController self,
-            UniquePickup pickupToTake
+        private static void OnScrapperProcessed(
+            ScrapperTransaction transaction
         )
         {
             if (
+                transaction == null ||
                 !NetworkServer.active ||
                 Run.instance == null ||
                 !MissionProgressRegistry.IsRunActive ||
@@ -37,54 +37,19 @@ namespace UniversalSurvivorUnlocks
                 !MissionRuntimeCatalog.HasObjectiveType(ObjectiveType)
             )
             {
-                orig(self, pickupToTake);
                 return;
             }
 
-            CharacterBody body = null;
-            CharacterMaster master = null;
-            ItemIndex itemIndex = ItemIndex.None;
-            int before = 0;
+            CharacterMaster master = transaction.Master;
+            CharacterBody body = transaction.Body;
+            int converted = transaction.AmountConverted;
 
-            try
-            {
-                PickupDef pickupDef = PickupCatalog.GetPickupDef(pickupToTake.pickupIndex);
-                if (
-                    pickupDef != null &&
-                    pickupDef.itemIndex != ItemIndex.None &&
-                    self != null &&
-                    self.interactor != null
-                )
-                {
-                    body = self.interactor.GetComponent<CharacterBody>();
-                    master = body?.master;
-                    itemIndex = pickupDef.itemIndex;
-
-                    if (
-                        master != null &&
-                        master.inventory != null &&
-                        MissionPlayerIdentity.GetNetworkUser(master) != null
-                    )
-                    {
-                        before = master.inventory.GetItemCountPermanent(itemIndex);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                logger?.LogWarning("[MISSION V2] ScrapItems no pudo leer estado previo | " + ex.Message);
-            }
-
-            orig(self, pickupToTake);
-
-            if (master == null || master.inventory == null || itemIndex == ItemIndex.None || before <= 0)
-            {
-                return;
-            }
-
-            int after = master.inventory.GetItemCountPermanent(itemIndex);
-            int converted = before - after;
-            if (converted <= 0)
+            if (
+                master == null ||
+                master.inventory == null ||
+                converted <= 0 ||
+                MissionPlayerIdentity.GetNetworkUser(master) == null
+            )
             {
                 return;
             }
@@ -97,11 +62,13 @@ namespace UniversalSurvivorUnlocks
                 MissionObjectiveRuntimeBinding binding = bindings[i];
                 if (binding == null) continue;
 
+                CharacterBody effectiveBody = body ?? master.GetBody();
+
                 MissionEventContext context = new MissionEventContext
                 {
                     PlayerMaster = master,
-                    PlayerBody = body ?? master.GetBody(),
-                    ActionBody = body ?? master.GetBody(),
+                    PlayerBody = effectiveBody,
+                    ActionBody = effectiveBody,
                     EventType = ObjectiveType
                 };
 

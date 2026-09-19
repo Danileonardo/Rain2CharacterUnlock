@@ -67,10 +67,10 @@ namespace UniversalSurvivorUnlocks
                 log;
 
 
-            Run.onRunStartGlobal +=
+            MissionRunLifecycle.RunStarted +=
                 OnRunStartGlobal;
 
-            Run.onRunDestroyGlobal +=
+            MissionRunLifecycle.RunDestroyed +=
                 OnRunDestroyGlobal;
 
 
@@ -97,7 +97,8 @@ namespace UniversalSurvivorUnlocks
             RecruitMinionsObjectiveHandler.Initialize(log);
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[MISSION V2] GenericMissionDispatcher inicializado."
             );
         }

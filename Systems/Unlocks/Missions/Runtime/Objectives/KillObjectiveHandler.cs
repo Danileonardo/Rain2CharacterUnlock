@@ -71,12 +71,13 @@ namespace UniversalSurvivorUnlocks
                 log;
 
 
-            GlobalEventManager
-                .onCharacterDeathGlobal +=
+            GameplayEventHub
+                .CharacterDeath +=
                 OnCharacterDeathGlobal;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[MISSION V2] Kill handler inicializado."
             );
         }

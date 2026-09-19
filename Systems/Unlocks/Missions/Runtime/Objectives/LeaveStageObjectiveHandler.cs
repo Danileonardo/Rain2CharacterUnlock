@@ -21,10 +21,22 @@ namespace UniversalSurvivorUnlocks
             logger = log;
 
             MissionStageRuntimeTracker.StageStarted += OnStageStarted;
-            Run.onRunStartGlobal += run => previousStage = "";
-            Run.onRunDestroyGlobal += run => previousStage = "";
+            MissionRunLifecycle.RunStarted += OnRunStarted;
+            MissionRunLifecycle.RunDestroyed += OnRunDestroyed;
 
-            logger?.LogInfo("[MISSION V2] LeaveStage handler inicializado.");
+            UsuLog.Verbose(
+                logger,
+                "[MISSION V2] LeaveStage handler inicializado.");
+        }
+
+        private static void OnRunStarted(Run run)
+        {
+            previousStage = "";
+        }
+
+        private static void OnRunDestroyed(Run run)
+        {
+            previousStage = "";
         }
 
         private static void OnStageStarted(MissionStageEventContext stageContext)
@@ -84,7 +96,7 @@ namespace UniversalSurvivorUnlocks
                             binding.RouteIndex,
                             binding.ObjectiveIndex,
                             context
-                        );
+            );
 
                     if (!result.Accepted) continue;
                     GenericMissionDispatcher.HandleProgressResult(binding, result, "Stage abandonado: " + leftStage);

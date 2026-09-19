@@ -101,8 +101,8 @@ namespace UniversalSurvivorUnlocks
              * Se ejecuta únicamente cuando CharacterMaster informa
              * que su inventario cambió.
              */
-            On.RoR2.CharacterMaster
-                .OnInventoryChanged +=
+            GameplayEventHub
+                .InventoryChanged +=
                 CharacterMaster_OnInventoryChanged;
 
 
@@ -118,14 +118,15 @@ namespace UniversalSurvivorUnlocks
                 OnStageStarted;
 
 
-            Run.onRunStartGlobal +=
+            MissionRunLifecycle.RunStarted +=
                 OnRunStartGlobal;
 
-            Run.onRunDestroyGlobal +=
+            MissionRunLifecycle.RunDestroyed +=
                 OnRunDestroyGlobal;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[MISSION V2] HoldItemStack handler inicializado."
             );
         }
@@ -160,18 +161,9 @@ namespace UniversalSurvivorUnlocks
         // =========================================================
 
         private static void CharacterMaster_OnInventoryChanged(
-            On.RoR2.CharacterMaster.orig_OnInventoryChanged orig,
             CharacterMaster self
         )
         {
-            /*
-             * Siempre respetamos primero el comportamiento vanilla.
-             */
-            orig(
-                self
-            );
-
-
             if (
                 !NetworkServer.active ||
                 Run.instance == null ||

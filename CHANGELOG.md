@@ -1,8 +1,46 @@
 # Changelog
 
-All notable changes to Universal Survivor Unlocks will be documented in this file.
+All notable changes to Universal Survivor Unlocks are documented here for Thunderstore and GitHub releases.
 
-The format is based on a simple versioned changelog intended for Thunderstore and GitHub releases.
+## 0.2.2 — Mission Authority & Persistence Foundation
+
+### Highlights
+
+- Separated the **10 current official Mission System v2 presets** from the **12 hidden Legacy recipes**. Legacy recipes remain preserved for compatibility, future CUSTOM missions, and later editor/generator work.
+- Added Miner's independent USU preset **Excavación / Excavation** while preserving MinerUnearthed's native Original unlock. Miner remains Original by default and can explicitly switch **Original ↔ USU**.
+- Added stable survivor identity using `ContentPack + Body` (`survivor:<source>:<body>`) so persisted mission ownership no longer depends only on a transient runtime entry.
+- Upgraded `Survivors.json` to **schema v2** with `dormantMissions` and the explicit `PendingContent` state for survivor mods that are temporarily absent.
+- Reinstalled survivors now rehydrate the same persisted mission/configuration by stable identity while rebuilding runtime metadata from the currently installed mod.
+
+### Persistence and compatibility
+
+- Absent survivor mods persist only the minimum required data: stable identity, Body/Source, challenge/Mission v2 configuration, provider/selection state, preset relationship, CUSTOM data, and forward-compatible mission metadata.
+- Runtime character snapshots such as skills, skins, prefabs, lore, stats, Unity objects, and ContentProfile data are not stored as dormant truth.
+- Added migration from the previous `MissingContent` persistence model to mission-only dormant records.
+- Official USU missions may remain prepared while their referenced survivor mod is not installed.
+- `Provider`, `SelectionMode`, `BasePresetId`, `CustomMission`, Mission v2 data, and unknown forward-compatible fields are preserved during normalization.
+- Future unsupported `schemaVersion` values put persistence into read-only mode instead of allowing an older build to overwrite newer data.
+- Saves continue to use a temporary file before replacement and keep a previous-version backup.
+
+### Mission authority and provider handling
+
+- Added centralized authority validation for the fixed current set of **10 Official / 12 Legacy** presets, stable IDs, Body/Source bindings, Mission v2 metadata, localization bindings, reward ranges, and Legacy isolation.
+- Centralized provider policy and provider selection so the embedded Risk Of Options UI, fallback UI, persistence, and runtime assignment paths share the same Original/USU/CUSTOM precedence rules.
+- Preserved the global Original-first policy. Explicit `UserSelected` choices are not silently replaced by automatic fallback logic.
+- Miner is the current curated direct Original ↔ USU exception and targets `creator.official.miner.excavation`.
+
+### Runtime and maintenance
+
+- Consolidated gameplay bootstrap, Mission v2 run lifecycle, Legacy run lifecycle, shared gameplay event hooks, polling tiers, and duplicated scrapper handling without intentionally changing mission semantics.
+- Reduced duplicated high-frequency engine subscriptions and retained full-rate polling only where mission behavior requires it.
+- Removed closed development-only migration/dead-code paths and reorganized survivor, persistence, provider, UI, Mission preset, and runtime files by responsibility.
+- Public release builds now keep preset `AuthoringMode` disabled; official assigned snapshots continue to refresh through their stable `BasePresetId` path.
+
+### Release validation
+
+- Mission Authority runtime validation: **10 Official / 12 Legacy / Miner direct Original ↔ USU**.
+- Miner persistence workflow validated through **installed → absent/PendingContent → reinstalled**, preserving the same stable identity, `Excavación`, `Provider=USU`, and `SelectionMode=UserSelected` without leaving a duplicate dormant record.
+- This release does **not** introduce adaptive mission generation, power scoring, ChallengeTier resolution, or random template generation; those remain future work.
 
 ## 0.2.1 — Survivor Definitions & Mission Library Update
 

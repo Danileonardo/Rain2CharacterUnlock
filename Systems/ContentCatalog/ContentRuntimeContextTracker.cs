@@ -58,7 +58,8 @@ namespace UniversalSurvivorUnlocks
             On.RoR2.BossGroup.OnMemberAddedServer +=
                 BossGroup_OnMemberAddedServer;
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[CONTENT CONTEXT] Runtime context tracker inicializado | " +
                 "TeleporterBoss / Elite / Umbra / Summon."
             );

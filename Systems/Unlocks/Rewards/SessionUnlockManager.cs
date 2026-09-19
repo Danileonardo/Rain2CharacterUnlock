@@ -66,15 +66,16 @@ namespace UniversalSurvivorUnlocks
                 pluginLogger;
 
 
-            Run.onRunStartGlobal +=
+            LegacyRunLifecycle.RunStarted +=
                 OnRunStart;
 
 
-            Run.onRunDestroyGlobal +=
+            LegacyRunLifecycle.RunDestroyed +=
                 OnRunEnd;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "SessionUnlockManager inicializado."
             );
         }

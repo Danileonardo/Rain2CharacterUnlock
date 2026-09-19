@@ -58,7 +58,8 @@ namespace UniversalSurvivorUnlocks
                 OnStageCompleted;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[MISSION V2] CompleteStage handler inicializado."
             );
         }
