@@ -767,6 +767,29 @@ namespace UniversalSurvivorUnlocks
 
 
                 /*
+                 * La autoridad real de una sesión vive en
+                 * SessionMissionRegistry. Esto es especialmente importante
+                 * para G8: Survivors.json puede conservar el fallback legacy
+                 * KillEnemies mientras el snapshot efectivo contiene una
+                 * Generated Mission v2 temporal.
+                 *
+                 * Al leer la entrada efectiva evitamos que ambos sistemas
+                 * progresen en paralelo y respetamos también la misión
+                 * congelada del host en multiplayer.
+                 */
+                if (
+                    SessionMissionRegistry.TryGetEffectiveEntry(
+                        pair.Key,
+                        out SurvivorJsonEntry effectiveEntry
+                    ) &&
+                    effectiveEntry != null
+                )
+                {
+                    entry = effectiveEntry;
+                }
+
+
+                /*
                  * Mission Schema v2 tiene su propio catálogo,
                  * progreso compuesto y dispatcher.
                  *
@@ -807,7 +830,14 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                yield return pair;
+                yield return
+                    new KeyValuePair<
+                        string,
+                        SurvivorJsonEntry
+                    >(
+                        pair.Key,
+                        entry
+                    );
             }
         }
 

@@ -89,6 +89,8 @@ namespace UniversalSurvivorUnlocks
             PickupItemObjectiveHandler.Initialize(log);
             ScrapItemsObjectiveHandler.Initialize(log);
             KillObjectiveHandler.Initialize(log);
+            UseSkillObjectiveHandler.Initialize(log);
+            HealingObjectiveHandler.Initialize(log);
             BombingRunObjectiveHandler.Initialize(log);
             CarryEquipmentObjectiveHandler.Initialize(log);
             CompleteEndingObjectiveHandler.Initialize(log);

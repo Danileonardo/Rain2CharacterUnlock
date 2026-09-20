@@ -387,6 +387,18 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
+                /*
+                 * G8 Phase 1:
+                 * Generated se materializa únicamente sobre el snapshot
+                 * temporal. El objeto persistido SurvivorJsonEntry no se
+                 * modifica y Generated jamás se serializa como CUSTOM.
+                 */
+                GeneratedMissionRuntimeMaterializer.TryOverlay(
+                    bodyName,
+                    entryJson
+                );
+
+
                 snapshot.Missions[
                     bodyName
                 ] =
@@ -637,6 +649,75 @@ namespace UniversalSurvivorUnlocks
         }
 
 
+        /// <summary>
+        /// Lectura efectiva LOCAL para superficies de configuración/editor.
+        ///
+        /// No consulta LobbySnapshot ni RunSnapshot: un cliente puede seguir
+        /// viendo y preparando su propia configuración mientras la misión del
+        /// host sólo gobierna Character Select y el runtime de la partida.
+        /// Generated sí se superpone en memoria para que el Browser local no
+        /// vuelva al placeholder histórico KillEnemies 100.
+        /// </summary>
+        public static bool TryGetLocalEffectiveEntry(
+            string bodyName,
+            out SurvivorJsonEntry entry
+        )
+        {
+            entry =
+                null;
+
+
+            if (
+                !TryGetLocalEntry(
+                    bodyName,
+                    out SurvivorJsonEntry localEntry
+                ) ||
+                localEntry == null
+            )
+            {
+                return false;
+            }
+
+
+            JObject entryJson =
+                JObject.FromObject(
+                    localEntry
+                );
+
+
+            GeneratedMissionRuntimeMaterializer.TryOverlay(
+                bodyName,
+                entryJson
+            );
+
+
+            try
+            {
+                entry =
+                    entryJson
+                        .ToObject<SurvivorJsonEntry>();
+
+                return entry != null;
+            }
+            catch (Exception exception)
+            {
+                logger?.LogError(
+                    $"[MISSION SESSION] No se pudo convertir la " +
+                    $"entrada local efectiva para {bodyName}."
+                );
+
+                logger?.LogError(
+                    exception
+                );
+
+                entry =
+                    null;
+
+                return false;
+            }
+        }
+
+
         public static bool TryGetEffectiveEntryJson(
             string bodyName,
             out JObject entryJson
@@ -689,6 +770,16 @@ namespace UniversalSurvivorUnlocks
                     JObject.FromObject(
                         localEntry
                     );
+
+
+                /*
+                 * Fuera de Lobby/Run snapshot conservamos la misma lectura
+                 * efectiva que tendrá el host al congelar la sesión.
+                 */
+                GeneratedMissionRuntimeMaterializer.TryOverlay(
+                    bodyName,
+                    entryJson
+                );
 
                 return true;
             }

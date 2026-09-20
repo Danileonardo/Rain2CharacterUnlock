@@ -1,7 +1,6 @@
 using System;
 using BepInEx.Logging;
 using RoR2;
-using UnityEngine;
 using UnityEngine.Networking;
 
 namespace UniversalSurvivorUnlocks
@@ -23,7 +22,7 @@ namespace UniversalSurvivorUnlocks
             initialized = true;
             logger = pluginLogger;
 
-            On.RoR2.HealthComponent.Heal += HealthComponent_Heal;
+            GameplayEventHub.HealingProcessed += OnHealingProcessed;
 
             LegacyRunLifecycle.RunStarted += OnRunStart;
             LegacyRunLifecycle.RunDestroyed += OnRunEnd;
@@ -56,93 +55,34 @@ namespace UniversalSurvivorUnlocks
             TotalHealing = 0f;
         }
 
-        private static float HealthComponent_Heal(
-            On.RoR2.HealthComponent.orig_Heal orig,
-            HealthComponent self,
-            float amount,
-            ProcChainMask procChainMask,
-            bool nonRegen
+        private static void OnHealingProcessed(
+            GameplayHealingEvent healingEvent
         )
         {
-            if (self == null)
-            {
-                return orig(
-                    self,
-                    amount,
-                    procChainMask,
-                    nonRegen
-                );
-            }
-
-            float healthBefore = self.health;
-
-            float result = orig(
-                self,
-                amount,
-                procChainMask,
-                nonRegen
-            );
-
-            if (!NetworkServer.active)
-                return result;
-
-            if (Run.instance == null)
-                return result;
-
-            if (!MissionRuntimeActivityPlan.IsTypeActive("HealHealth"))
-                return result;
-
-            CharacterBody body = self.body;
-
-            if (body == null)
-                return result;
-
-            if (body.teamComponent == null)
-                return result;
-
             if (
-                body.teamComponent.teamIndex
-                != TeamIndex.Player
+                !NetworkServer.active ||
+                Run.instance == null ||
+                healingEvent == null ||
+                !MissionRuntimeActivityPlan.IsTypeActive("HealHealth")
             )
             {
-                return result;
+                return;
             }
 
+            CharacterBody body = healingEvent.Body;
 
-            // =========================================================
-            // IGNORAR REGENERACIÓN PASIVA
-            // =========================================================
-            //
-            // nonRegen == false
-            // corresponde a curación proveniente de regeneración.
-            //
-            // Para Oración de Esperanza queremos contar
-            // curaciones activas y no la regeneración natural.
-            // =========================================================
-
-            if (!nonRegen)
+            if (
+                body == null ||
+                body.teamComponent == null ||
+                body.teamComponent.teamIndex != TeamIndex.Player ||
+                !healingEvent.NonRegen ||
+                healingEvent.ActualHealing <= 0f
+            )
             {
-                return result;
+                return;
             }
 
-
-            float healthAfter = self.health;
-
-            float actualHealing =
-                Mathf.Max(
-                    0f,
-                    healthAfter - healthBefore
-                );
-
-            if (actualHealing <= 0f)
-                return result;
-
-            TotalHealing += actualHealing;
-
-            string bodyName =
-                body.gameObject != null
-                    ? body.gameObject.name
-                    : body.name;
+            TotalHealing += healingEvent.ActualHealing;
 
             if (
                 MissionLogLimiter.ShouldLogMilestone(
@@ -158,11 +98,9 @@ namespace UniversalSurvivorUnlocks
             }
 
             HealingChanged?.Invoke(
-                actualHealing,
+                healingEvent.ActualHealing,
                 TotalHealing
             );
-
-            return result;
         }
     }
 }

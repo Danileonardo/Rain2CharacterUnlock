@@ -243,6 +243,136 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
+        // PRESENTACIÓN EFECTIVA DE MISIÓN
+        // =========================================================
+        //
+        // Los AchievementDef de USU se registran antes de G7/G8. Estos
+        // helpers permiten que Character Select consulte la misión efectiva
+        // actual sin perder la localización integrada de presets oficiales.
+        // Para Generated/Custom usamos el texto de la entrada efectiva.
+        // =========================================================
+
+        private static string ResolveChallengeDisplayName(
+            string bodyName,
+            SurvivorJsonEntry entry,
+            string fallbackToken
+        )
+        {
+            SurvivorChallengeJson challenge =
+                entry?.Challenge;
+
+
+            if (
+                GeneratedMissionPresentationFormatter.TryResolve(
+                    entry,
+                    out string generatedName,
+                    out string generatedDescription
+                )
+            )
+            {
+                return generatedName;
+            }
+
+
+            if (
+                challenge != null &&
+                SurvivorLocalization.UsesBuiltInLocalization(
+                    bodyName,
+                    challenge
+                ) &&
+                SurvivorLocalization.TryGetOfficialMissionTokens(
+                    bodyName,
+                    out string officialNameToken,
+                    out string officialDescriptionToken
+                )
+            )
+            {
+                return Language.GetString(
+                    officialNameToken
+                );
+            }
+
+
+            string value =
+                GetChallengeName(
+                    entry
+                );
+
+
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+
+
+            return
+                !string.IsNullOrWhiteSpace(fallbackToken)
+                    ? Language.GetString(fallbackToken)
+                    : "Desafío de desbloqueo";
+        }
+
+
+        private static string ResolveChallengeDisplayDescription(
+            string bodyName,
+            SurvivorJsonEntry entry,
+            string fallbackToken
+        )
+        {
+            SurvivorChallengeJson challenge =
+                entry?.Challenge;
+
+
+            if (
+                GeneratedMissionPresentationFormatter.TryResolve(
+                    entry,
+                    out string generatedName,
+                    out string generatedDescription
+                )
+            )
+            {
+                return generatedDescription;
+            }
+
+
+            if (
+                challenge != null &&
+                SurvivorLocalization.UsesBuiltInLocalization(
+                    bodyName,
+                    challenge
+                ) &&
+                SurvivorLocalization.TryGetOfficialMissionTokens(
+                    bodyName,
+                    out string officialNameToken,
+                    out string officialDescriptionToken
+                )
+            )
+            {
+                return Language.GetString(
+                    officialDescriptionToken
+                );
+            }
+
+
+            string value =
+                BuildChallengeDescription(
+                    entry
+                );
+
+
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                return value;
+            }
+
+
+            return
+                !string.IsNullOrWhiteSpace(fallbackToken)
+                    ? Language.GetString(fallbackToken)
+                    : "Completa el desafío para desbloquear este personaje.";
+        }
+
+
+        // =========================================================
         // AVISOS DE RESTRICCIONES
         // =========================================================
         //

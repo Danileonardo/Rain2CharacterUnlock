@@ -38,6 +38,13 @@ namespace UniversalSurvivorUnlocks
         public DamageReport DamageReport { get; set; }
 
 
+        // Habilidad activada cuando el evento proviene de OnSkillActivated.
+        // Permite reutilizar RequiredSkill/AllowedPerformerSkill también en
+        // objetivos que no dependen de un DamageReport (ResourceMastery y
+        // atribución de HealingSupport).
+        public GenericSkill ActivatedSkill { get; set; }
+
+
         // =========================================================
         // METADATOS DEL EVENTO
         // =========================================================

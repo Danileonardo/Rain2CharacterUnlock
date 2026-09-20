@@ -37,7 +37,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public const string PluginVersion =
-            "0.2.2";
+            "0.3.0";
 
 
         public static List<SurvivorInfo> Survivors
@@ -275,6 +275,129 @@ namespace UniversalSurvivorUnlocks
             SurvivorContentProfileService
                 .Initialize(
                     Survivors,
+                    Logger
+                );
+
+
+            /*
+             * G3 Phase 2.3 - Mission Profile Analyzer.
+             *
+             * Construye señales diagnósticas exclusivamente desde los
+             * Content Profiles que existen en el runtime actual, incluida
+             * semántica por habilidad con evidencia/confianza.
+             * No persiste snapshots ni toca dormantMissions.
+             */
+            MissionProfileService
+                .Initialize(
+                    SurvivorContentProfileService.GetAll(),
+                    Logger
+                );
+
+
+            /*
+             * G4 Phase 1.4 - Community Evidence Calibration.
+             *
+             * Conserva el análisis local G4 y añade evidencia comunitaria
+             * curada offline por Stable SurvivorId. Las fuentes se comparan
+             * por grupos independientes, nunca se consultan desde runtime y
+             * siguen siendo una señal secundaria: sin dos fuentes realmente
+             * independientes el resultado permanece Unknown.
+             * No genera ni persiste misiones.
+             */
+            LocalPowerAssessmentService
+                .Initialize(
+                    MissionProfileService.GetAll(),
+                    Logger
+                );
+
+
+            /*
+             * G5 Phase 1.1 - Resolved Power Integration.
+             *
+             * Consume toda la evaluación G4: la potencia local sigue siendo
+             * el ancla principal, GameplayComplexity permanece separada y la
+             * evidencia comunitaria sólo aporta el ajuste ya calibrado por G4.
+             * No usa CommunityPowerTier como decisión principal ni vuelve a
+             * puntuar las fuentes aquí. Sigue siendo runtime-only: no elige
+             * templates, no genera/asigna misiones y no cambia unlock/provider.
+             */
+            ChallengeTierService
+                .Initialize(
+                    LocalPowerAssessmentService.GetAll(),
+                    Logger
+                );
+
+
+            /*
+             * G6 Phase 1 - Mission Template Compatibility.
+             *
+             * Cruza el perfil mecánico G3 con el ChallengeTier G5 para
+             * decidir qué familias de misión encajan con cada survivor. El
+             * kit sigue siendo la señal principal; el tier sólo matiza el
+             * tipo de reto. Para unlocks de survivor el target jamás cuenta
+             * como performer, de modo que un personaje todavía bloqueado no
+             * reciba una misión que exija usarlo.
+             *
+             * Sigue siendo diagnóstico: no genera, no asigna y no persiste
+             * MissionDefinitions.
+             */
+            MissionTemplateCompatibilityService
+                .Initialize(
+                    MissionProfileService.GetAll(),
+                    ChallengeTierService.GetAll(),
+                    Logger
+                );
+
+
+            /*
+             * G7 Phase 1.1 - Deterministic Mission Generator / Authority Bridge.
+             *
+             * Genera únicamente candidatos TEMPORALES en memoria a partir
+             * del ranking de G6. Nunca persiste ni asigna una MissionDefinition
+             * en esta fase. La autoridad se resuelve desde Survivors.json y el registro oficial.
+             * Un preset oficial o una misión CUSTOM creada con USU siempre
+             * tiene prioridad y suprime el fallback generado.
+             *
+             * La selección es reproducible mediante una seed estable basada
+             * en PluginGuid + SurvivorId + GeneratorVersion. El target jamás
+             * puede ser requisito para desbloquearse a sí mismo.
+             */
+            DeterministicMissionGeneratorService
+                .Initialize(
+                    Survivors,
+                    MissionTemplateCompatibilityService.GetAll(),
+                    Logger
+                );
+
+
+            /*
+             * G8 Phase 1 - Generated Mission Runtime Materialization.
+             *
+             * Convierte los blueprints temporales válidos de G7 en una
+             * MissionDefinition runtime-only. No persiste Generated, no la
+             * convierte en CUSTOM y vuelve a comprobar autoridad autorada
+             * cada vez que SessionMissionRegistry construye una entrada
+             * efectiva. Phase 1.4 añade HealingSupport, ResourceMastery,
+             * MeleeCombat y ProjectileCombat al soporte inicial Execution.
+             */
+            GeneratedMissionRuntimeMaterializer
+                .Initialize(
+                    Survivors,
+                    MissionProfileService.GetAll(),
+                    Logger
+                );
+
+
+            /*
+             * G8 Phase 1.3 - Effective Mission Presentation.
+             *
+             * Sincroniza los tokens usados por AchievementDef con la misión
+             * efectiva de cada survivor. Esto corrige los popups que seguían
+             * mostrando KillEnemies 100 tras materializar Generated y permite
+             * que Character Select/Run reflejen temporalmente la misión del host.
+             */
+            SurvivorUnlockManager
+                .InitializeEffectiveMissionPresentation(
                     Logger
                 );
 

@@ -4,7 +4,7 @@
 
 USU automatically detects compatible modded survivors, normally respects characters that already provide their own unlock requirement, and can give progression challenges to survivors that would otherwise be available immediately. Curated compatibility cases can also expose a separate USU-owned alternative without modifying the creator's Original system.
 
-**Current release:** `0.2.2`
+**Current release:** `0.3.0`
 
 [Thunderstore](https://thunderstore.io/c/riskofrain2/p/Shleidericks/UniversalSurvivorUnlocks/) · [GitHub / Source Code](https://github.com/Danileonardo/Rain2CharacterUnlock) · [Support development / Donate](https://github.com/sponsors/Danileonardo) · Discord: `@shleiderick`
 
@@ -51,6 +51,23 @@ Main goals:
 - Use a reusable Mission System v2 instead of requiring a unique hardcoded tracker for every future challenge.
 - Localize the official challenge names/descriptions according to the game's active language.
 - Reward official USU challenges with configurable Lunar Coin rewards.
+
+## 0.3.0 release focus
+
+Version `0.3.0` adds the first public **adaptive Generated mission pipeline** on top of the Mission Authority & Persistence foundation introduced in `0.2.2`.
+
+Highlights:
+
+- Compatible modded survivors with no applicable creator Original, Official USU, or player CUSTOM mission can receive a **temporary Generated mission** at runtime.
+- Generated missions are built from the currently installed survivor/profile context and may differ between players with different local mod rosters. That is intentional: they are temporary fallbacks, not permanent authored presets.
+- Generated content is **not persisted as CUSTOM**. If USU later gains an Official preset for that survivor, or the mod author adds an Original unlock, the authored content takes priority according to the normal provider/authority rules.
+- The current generated runtime supports `Execution`, `HealingSupport`, `ResourceMastery`, `MeleeCombat`, and `ProjectileCombat` families.
+- The historical `KillEnemies 100` challenge remains only as an emergency compatibility fallback; USU does not use it as a reason to replace vanilla/DLC progression or a mod author's Original unlock.
+- Generated missions use the same Mission v2/session architecture as other USU missions, including host-authoritative lobby snapshots.
+- Original provider presentation is explicitly preserved: USU does not rewrite EFFECTIVE achievement text while a creator-owned Original provider is active.
+- Miner remains the curated exception where the player can explicitly choose the creator's Original unlock or USU's independent `Excavación / Excavation` alternative.
+
+Current runtime validation on the development profile reached **7 Generated candidates → 7 materialized**, with no unsupported or invalid Generated materializations. Client/run multiplayer validation continues as part of the public release test cycle.
 
 ## 0.2.2 release focus
 
@@ -111,6 +128,10 @@ A curated compatibility entry may expose a **separate USU-owned alternative** wi
 
 Compatible survivors without their own unlock requirement can receive a USU challenge and start locked until that challenge is completed.
 
+In `0.3.0`, when no applicable Original, Official USU, or player CUSTOM mission owns that survivor, USU can build a **temporary Generated mission** from the locally detected gameplay/profile context. Generated missions are intentionally local and temporary: two players with different installed/unlocked rosters may receive different temporary missions for the same newly installed survivor. During multiplayer, the host's effective mission remains authoritative for the session.
+
+Generated missions do not overwrite creator content and are not saved as player CUSTOM missions. If authored content later becomes available, the normal authority/provider rules take precedence.
+
 ---
 
 # Creator presets and custom missions
@@ -121,7 +142,7 @@ USU is moving toward a preset-based mission system with a clear ownership rule.
 
 A built-in preset created for USU is the **official source preset**.
 
-Version `0.2.2` includes **10 official USU presets**. These source presets are kept separate from the reusable Objective and Condition templates used internally by Mission System v2.
+Version `0.3.0` includes the same **10 official USU presets** and adds temporary Generated missions for otherwise unowned survivor unlock gaps. These source presets are kept separate from the reusable Objective and Condition templates used internally by Mission System v2.
 
 Creator presets are intended to remain unchanged so future updates can improve or rebalance them without destroying the original definition.
 
@@ -135,7 +156,7 @@ This allows USU to keep:
 - The player's customized version.
 - The technical relationship between the custom mission and the preset it came from.
 
-Version `0.2.2` exposes the current preset/provider library in-game. Official built-in presets remain source definitions and are refreshed from their stable `BasePresetId`, so editing a preset-backed snapshot directly in `Survivors.json` is not a reliable way to create a permanent custom variant. Stored custom mission data is kept separate from the official preset source. The full visual editor for creating arbitrary custom missions is still planned for a later release.
+Version `0.3.0` exposes the current preset/provider library in-game and can also show the effective temporary Generated mission for compatible fallback targets. Official built-in presets remain source definitions and are refreshed from their stable `BasePresetId`, so editing a preset-backed snapshot directly in `Survivors.json` is not a reliable way to create a permanent custom variant. Stored custom mission data is kept separate from the official preset source. The full visual editor for creating arbitrary custom missions is still planned for a later release.
 
 ---
 
@@ -187,7 +208,7 @@ For multiplayer bugs, logs from both host and client are especially useful.
 
 # Current built-in presets
 
-The following **10 official USU presets** are included in USU `0.2.2`.
+The following **10 official USU presets** are included in USU `0.3.0`.
 
 Official challenge names/descriptions are currently localized for English and Spanish (`es-419` / `es-ES`), with English used as fallback.
 
@@ -426,7 +447,7 @@ Legacy challenge trackers remain in the project where they are still useful for 
 
 # Mission System v2 foundation
 
-Version `0.2.2` keeps Mission System v2 as the active foundation and extends it with centralized mission authority, stable survivor identity, and dormant mission-only persistence.
+Version `0.3.0` keeps Mission System v2 as the active foundation and extends it with adaptive Generated missions, while retaining centralized mission authority, stable survivor identity, and dormant mission-only persistence.
 
 The model is built around:
 
@@ -490,7 +511,7 @@ This allows mission logic to remain independent from the player's selected langu
 
 ## Current v2 runtime status
 
-In `0.2.2`, the current official missions are represented by **10 assignable official Mission v2 presets** built from reusable objectives, conditions, targets, routes, and rules.
+In `0.3.0`, the authored library still contains **10 assignable official Mission v2 presets**, while compatible unowned survivor unlock gaps can also receive temporary Generated Mission v2 definitions built from reusable objectives, conditions, targets, routes, and rules.
 
 The internal catalog also retains hidden legacy recipes and reusable Objective/Condition templates for compatibility and future editing workflows.
 
@@ -520,7 +541,7 @@ Metadata identifying a survivor is maintained by USU. Avoid changing internal su
 
 Because the mission format contains nested routes/objectives/conditions, making a backup before manually editing complex challenge data is recommended.
 
-## Built-in preset synchronization in 0.2.2
+## Built-in preset synchronization in 0.3.0
 
 Official creator presets remain immutable source definitions. `BasePresetId` is treated as the authority for preset-backed assignments, and USU refreshes the persisted mission snapshot when the corresponding built-in preset changes between releases.
 
@@ -600,7 +621,7 @@ Using a mod manager is recommended.
 
 # Dependencies
 
-The Thunderstore package for `0.2.2` declares:
+The Thunderstore package for `0.3.0` declares:
 
 - `bbepis-BepInExPack-5.4.2121`
 - `RiskofThunder-R2API_Core-5.3.0`
@@ -609,7 +630,7 @@ The Thunderstore package for `0.2.2` declares:
 - `RiskofThunder-R2API_Unlockable-1.0.2`
 - `RiskofThunder-R2API_Networking-1.0.4`
 
-**Risk Of Options is an optional soft integration in version `0.2.2`, not a hard Thunderstore dependency.** When it is installed, USU embeds the Mission Library inside Mod Options. Without it, USU uses its Character Select launcher fallback.
+**Risk Of Options is an optional soft integration in version `0.3.0`, not a hard Thunderstore dependency.** When it is installed, USU embeds the Mission Library inside Mod Options. Without it, USU uses its Character Select launcher fallback.
 
 Always treat the `manifest.json` included with the current release as the authoritative dependency list.
 
@@ -649,7 +670,7 @@ The most useful bug report includes:
 
 For multiplayer issues, logs from both host and client are especially useful.
 
-For `0.2.2`, reports about provider switching, dormant/reinstalled survivor persistence, the Mission Library, Logbook/Notes behavior, and multiplayer challenge completion are especially valuable.
+For `0.3.0`, reports about Generated missions, provider switching, Original preservation, dormant/reinstalled survivor persistence, the Mission Library, Logbook/Notes behavior, and multiplayer challenge completion are especially valuable.
 
 You can use:
 
@@ -780,18 +801,16 @@ See the included `LICENSE` file for the complete license terms.
 
 USU is evolving from a collection of individual unlock scripts into a general-purpose configurable progression framework for modded survivors.
 
-With the stable identity and dormant persistence foundation in `0.2.2`, future development can build on:
+With the adaptive Generated mission foundation in `0.3.0`, future development can build on:
 
-- Survivor gameplay/profile analysis for mission compatibility.
-- Local power/complexity assessment and challenge-tier resolution.
-- Compatibility-filtered reusable mission templates.
-- Deterministic generated-mission selection that remains reproducible across restarts/reinstalls.
-- Revalidation when a survivor mod changes, without silently overwriting player-owned CUSTOM missions.
+- Additional Generated template families and richer objective/condition coverage.
+- Better revalidation when survivor mods change, without silently overwriting player-owned CUSTOM missions.
 - A full visual mission editor and safer custom-mission authoring workflow.
 - Preset sharing/importing and additional curated survivor integrations.
-- Continued multiplayer synchronization, localization, and compatibility testing.
+- More detailed multiplayer client/run validation and compatibility hardening.
+- Continued localization, Mission Library, Logbook/Notes, and presentation improvements.
 
-Adaptive mission generation is **not** part of `0.2.2`; these are follow-up development goals.
+Generated missions remain a fallback layer. Authored Original, Official USU, and player-owned CUSTOM content remain separate concepts and are not silently replaced by the generator.
 
 ---
 

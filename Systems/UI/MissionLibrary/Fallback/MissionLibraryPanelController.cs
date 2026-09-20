@@ -698,6 +698,32 @@ namespace UniversalSurvivorUnlocks
             SurvivorJsonEntry entry
         )
         {
+            /*
+             * G8 Phase 1.3:
+             * provider/editor siguen trabajando sobre la entrada persistida.
+             * El Browser muestra la entrada LOCAL efectiva (incluyendo
+             * Generated), pero no consume Lobby/RunSnapshot del host. La
+             * autoridad visual del host se reserva para Character Select y
+             * para la partida, sin sustituir la configuración local del cliente.
+             */
+            SurvivorJsonEntry displayEntry =
+                entry;
+
+
+            if (
+                !string.IsNullOrWhiteSpace(selectedBodyName) &&
+                SessionMissionRegistry.TryGetLocalEffectiveEntry(
+                    selectedBodyName,
+                    out SurvivorJsonEntry effectiveEntry
+                ) &&
+                effectiveEntry != null
+            )
+            {
+                displayEntry =
+                    effectiveEntry;
+            }
+
+
             GUILayout.BeginVertical(
                 GUI.skin.box
             );
@@ -736,16 +762,16 @@ namespace UniversalSurvivorUnlocks
             }
 
             SurvivorChallengeJson challenge =
-                entry.Challenge;
+                displayEntry?.Challenge;
 
             string missionName =
                 ResolveChallengeName(
-                    entry
+                    displayEntry
                 );
 
             string missionDescription =
                 ResolveChallengeDescription(
-                    entry
+                    displayEntry
                 );
 
             if (
@@ -1389,6 +1415,17 @@ namespace UniversalSurvivorUnlocks
                 entry.Challenge;
 
             if (
+                GeneratedMissionPresentationFormatter.TryResolve(
+                    challenge,
+                    out string generatedName,
+                    out string generatedDescription
+                )
+            )
+            {
+                return generatedName;
+            }
+
+            if (
                 SurvivorLocalization.UsesBuiltInLocalization(
                     selectedBodyName,
                     challenge
@@ -1443,6 +1480,17 @@ namespace UniversalSurvivorUnlocks
 
             SurvivorChallengeJson challenge =
                 entry.Challenge;
+
+            if (
+                GeneratedMissionPresentationFormatter.TryResolve(
+                    challenge,
+                    out string generatedName,
+                    out string generatedDescription
+                )
+            )
+            {
+                return generatedDescription;
+            }
 
             if (
                 SurvivorLocalization.UsesBuiltInLocalization(

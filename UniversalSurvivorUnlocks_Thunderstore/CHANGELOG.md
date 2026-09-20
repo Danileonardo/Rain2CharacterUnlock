@@ -2,6 +2,54 @@
 
 All notable changes to Universal Survivor Unlocks are documented here for Thunderstore and GitHub releases.
 
+## 0.3.0 — Adaptive Generated Missions & Runtime Authority
+
+### Highlights
+
+- Added the first public **adaptive Generated mission pipeline** for modded survivors that do not currently have an applicable Original, Official USU, or player CUSTOM mission.
+- Generated missions are **temporary runtime fallbacks**: they are rebuilt from the currently installed survivor/profile context and are not persisted as player CUSTOM content.
+- Added survivor gameplay/profile analysis, local power assessment, challenge-tier resolution, template compatibility scoring, deterministic candidate generation, and runtime mission materialization.
+- Preserved creator-owned unlock content: vanilla/DLC progression and mod-author Original unlocks remain authoritative when present. USU Generated content does not replace them.
+- Kept the 10 Official Mission v2 presets authoritative over Generated candidates and retained the 12 Legacy recipes as hidden reusable compatibility/editor assets.
+
+### Generated mission system
+
+- Added `MissionProfileAnalyzer` and related profile models to classify survivor bodies, skills, effects, usage patterns, and mission-relevant capabilities.
+- Added local power/complexity assessment plus ChallengeTier resolution used to scale generated mission difficulty without hardcoding individual survivor names.
+- Added compatibility-scored reusable mission template families and a deterministic generator that selects temporary mission candidates from the local installed/unlocked context.
+- Added runtime materialization for the currently supported Generated families:
+  - `Execution`
+  - `HealingSupport`
+  - `ResourceMastery`
+  - `MeleeCombat`
+  - `ProjectileCombat`
+- Generated missions use compatible alternative performers rather than requiring the target survivor itself, and the generated target is never used to unlock itself.
+- Added generated presentation formatting with compact vanilla-style text, including the existing two-line / 50-character-per-line presentation rule. Generic mechanic missions no longer expose internal performer counts such as `+7`; character suffixes are reserved for missions that actually require specific characters.
+- Retained the historical 100-kill challenge only as an emergency compatibility fallback. Its presence is not used as a reason to replace Original creator content.
+
+### Runtime, authority, and presentation
+
+- Added a runtime Generated materialization bridge into `SessionMissionRegistry` so Generated candidates become real Mission v2 definitions without writing them into `Survivors.json`.
+- Added effective mission routing so Mission v2 Generated content is used for challenge evaluation instead of accidentally progressing the historical fallback in parallel.
+- Added `AllowedPerformerSkill` runtime condition support and generalized skill-token/internal-skill matching for generated performer constraints.
+- Added Mission v2 objective support used by the new generated families for healing and compatible skill/resource actions.
+- Added an effective presentation bridge for Character Select / achievement-facing text so Generated and Official USU missions present the mission that is actually active.
+- Original providers now explicitly bypass USU EFFECTIVE token refresh, preserving the creator's own presentation for Artillerist, Shock Trooper, Aurelion Sol, Auriel, Enforcer, Nemesis Enforcer, Miner while Original is selected, and future compatible Original providers.
+- Miner remains the intentional curated exception where the player can explicitly choose between the creator's Original unlock and USU's separate `Excavación / Excavation` preset.
+
+### Multiplayer/session groundwork
+
+- Generated missions participate in the same host-authoritative session snapshot model as other effective missions.
+- Host Character Select snapshots include Generated/Official/selected mission data without persisting host choices into a client's local configuration.
+- Generated progress scopes are materialized as shared session progress where required by the current generated templates.
+- Host-side lobby snapshot construction and fragmented dispatch were validated with the current 23-survivor test profile. Broader client/run validation continues during the public release test cycle.
+
+### Validation
+
+- Current test profile: **7 Generated candidates → 7 materialized**, with `Unsupported families: 0` and `Invalid materializations: 0`.
+- Confirmed that Original provider presentation is preserved while Generated/Official USU presentation continues to refresh normally.
+- Confirmed that generated mission data remains temporary (`Persistencia: no`) and does not become a stored CUSTOM mission.
+
 ## 0.2.2 — Mission Authority & Persistence Foundation
 
 ### Highlights

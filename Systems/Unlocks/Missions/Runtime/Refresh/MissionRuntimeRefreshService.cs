@@ -220,6 +220,15 @@ namespace UniversalSurvivorUnlocks
             );
 
 
+            SurvivorUnlockManager
+                .RefreshEffectiveMissionPresentationToken(
+                    normalizedBodyName,
+                    string.IsNullOrWhiteSpace(reason)
+                        ? "runtime configuration"
+                        : reason
+                );
+
+
             SurvivorLockedPortraitManager.RefreshAll(
                 normalizedBodyName
             );

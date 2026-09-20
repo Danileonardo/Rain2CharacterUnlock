@@ -68,34 +68,61 @@ namespace UniversalSurvivorUnlocks
                 $"USU_{MakeToken(bodyName)}";
 
 
-            string tokenPrefix =
+            string sourceTokenPrefix =
                 usesBuiltInLocalization
                     ? SurvivorLocalization.GetOfficialTokenPrefix(bodyName)
                     : SurvivorLocalization.GetCustomTokenPrefix(bodyName);
+
+
+            string sourceAchievementNameToken =
+                $"{sourceTokenPrefix}_ACHIEVEMENT_NAME";
+
+
+            string sourceAchievementDescriptionToken =
+                $"{sourceTokenPrefix}_ACHIEVEMENT_DESCRIPTION";
 
 
             string unlockableNameToken =
                 $"{bodyTokenPrefix}_UNLOCKABLE_NAME";
 
 
+            /*
+             * G8 Phase 1.3:
+             * AchievementDef usa tokens EFFECTIVE estables. Así un popup
+             * vanilla/right-click puede actualizar su presentación cuando
+             * G7/G8 sustituye el placeholder histórico o cuando el host
+             * aporta otra misión para la sesión.
+             */
             string achievementNameToken =
-                $"{tokenPrefix}_ACHIEVEMENT_NAME";
+                GetEffectiveAchievementNameToken(
+                    bodyName
+                );
 
 
             string achievementDescriptionToken =
-                $"{tokenPrefix}_ACHIEVEMENT_DESCRIPTION";
+                GetEffectiveAchievementDescriptionToken(
+                    bodyName
+                );
 
 
             string challengeName =
-                GetChallengeName(
-                    entry
-                );
+                usesBuiltInLocalization
+                    ? Language.GetString(
+                        sourceAchievementNameToken
+                    )
+                    : GetChallengeName(
+                        entry
+                    );
 
 
             string challengeDescription =
-                BuildChallengeDescription(
-                    entry
-                );
+                usesBuiltInLocalization
+                    ? Language.GetString(
+                        sourceAchievementDescriptionToken
+                    )
+                    : BuildChallengeDescription(
+                        entry
+                    );
 
 
             // =====================================================
@@ -111,22 +138,34 @@ namespace UniversalSurvivorUnlocks
             // Los presets oficiales ya fueron registrados por
             // SurvivorLocalization en en / es-419 / es-ES.
             //
-            // Las misiones personalizadas conservan el comportamiento
-            // anterior: el texto escrito por el usuario se registra como
-            // fallback literal y NO se traduce automáticamente.
+            // Conservamos también los tokens CUSTOM históricos por
+            // compatibilidad con configuraciones/UI previas, pero el
+            // AchievementDef nuevo apunta siempre a EFFECTIVE.
             if (!usesBuiltInLocalization)
             {
                 LanguageAPI.Add(
-                    achievementNameToken,
+                    sourceAchievementNameToken,
                     challengeName
                 );
 
 
                 LanguageAPI.Add(
-                    achievementDescriptionToken,
+                    sourceAchievementDescriptionToken,
                     challengeDescription
                 );
             }
+
+
+            LanguageAPI.Add(
+                achievementNameToken,
+                challengeName
+            );
+
+
+            LanguageAPI.Add(
+                achievementDescriptionToken,
+                challengeDescription
+            );
 
 
             // =====================================================
@@ -164,25 +203,52 @@ namespace UniversalSurvivorUnlocks
             unlockable.getHowToUnlockString =
                 () =>
                 {
+                    /*
+                     * G8 Phase 1.2:
+                     * el UnlockableDef se registra durante Awake, antes de que
+                     * G7/G8 construyan una Generated Mission. Por eso NO
+                     * debemos capturar para siempre el texto persistido del
+                     * fallback histórico (KillEnemies 100).
+                     *
+                     * Resolvemos la entrada efectiva en el momento en que la
+                     * UI pregunta el tooltip. SessionMissionRegistry aplica
+                     * entonces el overlay Generated runtime-only si corresponde.
+                     */
+                    SurvivorJsonEntry displayEntry =
+                        GetEntry(bodyName)
+                        ?? entry;
+
+
+                    string displayName =
+                        ResolveChallengeDisplayName(
+                            bodyName,
+                            displayEntry,
+                            achievementNameToken
+                        );
+
+
+                    string displayDescription =
+                        ResolveChallengeDisplayDescription(
+                            bodyName,
+                            displayEntry,
+                            achievementDescriptionToken
+                        );
+
+
                     string baseText =
                         Language.GetStringFormatted(
                             "UNLOCK_VIA_ACHIEVEMENT_FORMAT",
                             new object[]
                             {
-                                Language.GetString(
-                                    achievementNameToken
-                                ),
-
-                                Language.GetString(
-                                    achievementDescriptionToken
-                                )
+                                displayName,
+                                displayDescription
                             }
                         );
 
 
                     string restrictionNotice =
                         BuildRestrictionNotice(
-                            entry
+                            displayEntry
                         );
 
 
@@ -208,15 +274,24 @@ namespace UniversalSurvivorUnlocks
             unlockable.getUnlockedString =
                 () =>
                 {
+                    SurvivorJsonEntry displayEntry =
+                        GetEntry(bodyName)
+                        ?? entry;
+
+
                     return Language.GetStringFormatted(
                         "UNLOCKED_FORMAT",
                         new object[]
                         {
-                            Language.GetString(
+                            ResolveChallengeDisplayName(
+                                bodyName,
+                                displayEntry,
                                 achievementNameToken
                             ),
 
-                            Language.GetString(
+                            ResolveChallengeDisplayDescription(
+                                bodyName,
+                                displayEntry,
                                 achievementDescriptionToken
                             )
                         }

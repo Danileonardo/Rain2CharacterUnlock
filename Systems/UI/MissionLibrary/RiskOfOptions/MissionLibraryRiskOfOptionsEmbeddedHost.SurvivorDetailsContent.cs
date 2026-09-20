@@ -431,10 +431,21 @@ namespace UniversalSurvivorUnlocks
                 return result;
             }
 
-            SurvivorJsonEntry entry =
-                SurvivorJsonManager.GetEntryAnywhere(
-                    profile.BodyName
-                );
+            SurvivorJsonEntry entry;
+
+            if (
+                !SessionMissionRegistry.TryGetLocalEffectiveEntry(
+                    profile.BodyName,
+                    out entry
+                ) ||
+                entry == null
+            )
+            {
+                entry =
+                    SurvivorJsonManager.GetEntryAnywhere(
+                        profile.BodyName
+                    );
+            }
 
             UnlockProviderKind provider =
                 GetEffectiveProvider(
@@ -780,6 +791,17 @@ namespace UniversalSurvivorUnlocks
             }
 
             if (
+                GeneratedMissionPresentationFormatter.TryResolve(
+                    challenge,
+                    out string generatedName,
+                    out string generatedDescription
+                )
+            )
+            {
+                return generatedName;
+            }
+
+            if (
                 SurvivorLocalization.UsesBuiltInLocalization(
                     bodyName,
                     challenge
@@ -826,6 +848,17 @@ namespace UniversalSurvivorUnlocks
             if (challenge == null)
             {
                 return "";
+            }
+
+            if (
+                GeneratedMissionPresentationFormatter.TryResolve(
+                    challenge,
+                    out string generatedName,
+                    out string generatedDescription
+                )
+            )
+            {
+                return generatedDescription;
             }
 
             if (

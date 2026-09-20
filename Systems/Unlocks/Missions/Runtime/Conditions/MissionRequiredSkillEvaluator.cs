@@ -1,6 +1,7 @@
 using System;
 using Newtonsoft.Json.Linq;
 using RoR2;
+using RoR2.Skills;
 
 namespace UniversalSurvivorUnlocks
 {
@@ -24,8 +25,7 @@ namespace UniversalSurvivorUnlocks
         {
             if (
                 parameters == null ||
-                context == null ||
-                context.DamageReport == null
+                context == null
             )
             {
                 return false;
@@ -34,7 +34,7 @@ namespace UniversalSurvivorUnlocks
 
             CharacterBody actionBody =
                 context.ActionBody ??
-                context.DamageReport.attackerBody ??
+                context.DamageReport?.attackerBody ??
                 context.PlayerBody;
 
 
@@ -56,39 +56,77 @@ namespace UniversalSurvivorUnlocks
                 );
 
 
+            string skillName =
+                parameters.Value<string>(
+                    "skillName"
+                );
+
+
             if (
                 string.IsNullOrWhiteSpace(slot) &&
-                string.IsNullOrWhiteSpace(skillToken)
+                string.IsNullOrWhiteSpace(skillToken) &&
+                string.IsNullOrWhiteSpace(skillName)
             )
             {
                 return false;
             }
 
 
-            GenericSkill genericSkill =
-                ResolveSkill(
-                    actionBody,
-                    slot
-                );
+            GenericSkill genericSkill;
+
+            if (context.ActivatedSkill != null)
+            {
+                genericSkill =
+                    context.ActivatedSkill;
+
+                // Para eventos UseSkill/Heal no existe DamageReport.
+                // La identidad del slot se valida por referencia contra el
+                // GenericSkill que acaba de activarse.
+                if (!string.IsNullOrWhiteSpace(slot))
+                {
+                    GenericSkill expectedSlotSkill =
+                        ResolveSkill(
+                            actionBody,
+                            slot
+                        );
+
+                    if (!ReferenceEquals(expectedSlotSkill, genericSkill))
+                    {
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                if (context.DamageReport == null)
+                {
+                    return false;
+                }
+
+                genericSkill =
+                    ResolveSkill(
+                        actionBody,
+                        slot
+                    );
+
+                // En acciones de daño, el DamageReport debe indicar que el
+                // daño realmente provino del slot configurado.
+                if (
+                    !string.IsNullOrWhiteSpace(slot) &&
+                    !DamageSourceContainsSlot(
+                        context.DamageReport,
+                        slot
+                    )
+                )
+                {
+                    return false;
+                }
+            }
 
 
             if (
                 genericSkill == null ||
                 genericSkill.skillDef == null
-            )
-            {
-                return false;
-            }
-
-
-            // Si se configuró un slot, el DamageReport debe indicar
-            // que el daño realmente provino de ese slot.
-            if (
-                !string.IsNullOrWhiteSpace(slot) &&
-                !DamageSourceContainsSlot(
-                    context.DamageReport,
-                    slot
-                )
             )
             {
                 return false;
@@ -105,6 +143,44 @@ namespace UniversalSurvivorUnlocks
             )
             {
                 return false;
+            }
+
+
+            /*
+             * Algunos mods no publican skillNameToken de forma utilizable,
+             * pero sí conservan SkillDef.skillName. G8 puede transportar
+             * ambas identidades; si ambas están presentes exigimos que las
+             * dos coincidan para no ampliar accidentalmente el requisito.
+             */
+            if (
+                !string.IsNullOrWhiteSpace(skillName)
+            )
+            {
+                string expectedSkillName =
+                    skillName.Trim();
+
+
+                string catalogSkillName =
+                    SkillCatalog.GetSkillName(
+                        genericSkill.skillDef.skillIndex
+                    );
+
+
+                if (
+                    !string.Equals(
+                        genericSkill.skillDef.skillName,
+                        expectedSkillName,
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    !string.Equals(
+                        catalogSkillName,
+                        expectedSkillName,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    return false;
+                }
             }
 
 

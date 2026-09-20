@@ -176,6 +176,21 @@ namespace UniversalSurvivorUnlocks
 
 
                 // =================================================
+                // ALLOWED PERFORMER + SKILL (OR)
+                // =================================================
+                // Una sola condición puede aceptar varios pares
+                // survivor/skill. G8 la usa para que todos los performers
+                // alternativos válidos sumen al MISMO contador Shared.
+                // =================================================
+                case "allowedperformerskill":
+                    return MissionAllowedPerformerSkillEvaluator
+                        .IsSatisfied(
+                            condition.Parameters,
+                            context
+                        );
+
+
+                // =================================================
                 // STATUS PRESENT
                 // =================================================
                 case "statuspresent":
