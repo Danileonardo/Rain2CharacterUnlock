@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using R2API;
 
 namespace UniversalSurvivorUnlocks
@@ -15,6 +15,13 @@ namespace UniversalSurvivorUnlocks
         public const string Tinkaton = "official.tinkaton";
         public const string Wooper = "official.wooper";
         public const string Miner = "official.miner";
+        public const string Gwen = "official.gwen";
+        public const string Kindred = "official.kindred";
+        public const string Seamstress = "official.seamstress";
+        public const string Banshee = "official.banshee";
+        public const string Wanderer = "official.wanderer";
+        public const string Warlock = "official.warlock";
+        public const string AH64 = "official.ah64";
     }
 
 
@@ -91,6 +98,10 @@ namespace UniversalSurvivorUnlocks
             "USU_LIBRARY_PROVIDER_COMMUNITY";
         public const string MissionLibraryProviderCustomToken =
             "USU_LIBRARY_PROVIDER_CUSTOM";
+        public const string MissionLibraryProviderGeneratedToken =
+            "USU_LIBRARY_PROVIDER_GENERATED";
+        public const string MissionLibraryGeneratedRerollToken =
+            "USU_LIBRARY_GENERATED_REROLL";
         public const string MissionLibrarySoonSuffixToken =
             "USU_LIBRARY_SOON_SUFFIX";
         public const string MissionLibraryOriginalDescriptionToken =
@@ -409,6 +420,73 @@ namespace UniversalSurvivorUnlocks
 
             new OfficialText
             {
+                BodyName = "GwenBody",
+                LocalizationKey = SurvivorLocalizationKeys.Gwen,
+                SpanishName = "Entre hilos y agujas",
+                SpanishDescription = "Consigue 2 Dagas ceremoniales;\nvence a un jefe de teletransportador con ellas.",
+                EnglishName = "Between Threads and Needles",
+                EnglishDescription = "Collect 2 Ceremonial Daggers;\ndefeat a teleporter boss while holding them."
+            },
+            new OfficialText
+            {
+                BodyName = "KindredBody",
+                LocalizationKey = SurvivorLocalizationKeys.Kindred,
+                SpanishName = "La marca del destino",
+                SpanishDescription = "Porta una Marca de muerte;\ncaza 4 tipos distintos de jefes en una partida.",
+                EnglishName = "The Mark of Fate",
+                EnglishDescription = "Carry a Death Mark;\nhunt 4 different boss types in one run."
+            },
+            new OfficialText
+            {
+                BodyName = "SeamstressBody",
+                LocalizationKey = SurvivorLocalizationKeys.Seamstress,
+                SpanishName = "Hilo de sangre",
+                SpanishDescription = "Agota un Santuario de sangre con 3 sacrificios;\ndespués vence a un jefe de teletransportador.",
+                EnglishName = "Crimson Thread",
+                EnglishDescription = "Exhaust a Shrine of Blood with all 3 sacrifices;\nthen defeat a teleporter boss."
+            },
+            new OfficialText
+            {
+                BodyName = "BansheeBody",
+                LocalizationKey = SurvivorLocalizationKeys.Banshee,
+                SpanishName = "Presagio desde las alturas",
+                SpanishDescription = "Derriba a 20 enemigos mientras estás en el aire;\ndespués vence en el aire a un jefe de teletransportador.",
+                EnglishName = "Omen from Above",
+                EnglishDescription = "Defeat 20 enemies while airborne;\nthen defeat a teleporter boss while airborne."
+            },
+            new OfficialText
+            {
+                BodyName = "UnforgivenBody",
+                LocalizationKey = SurvivorLocalizationKeys.Wanderer,
+                SpanishName = "Último aliento",
+                SpanishDescription = "Derrota a 3 jefes de teletransportador\nsiendo tú quien aseste el golpe desde el aire.",
+                EnglishName = "Last Breath",
+                EnglishDescription = "Defeat 3 teleporter bosses;\nyou must land each final blow while airborne."
+            },
+            new OfficialText
+            {
+                BodyName = "WarlockBody",
+                LocalizationKey = SurvivorLocalizationKeys.Warlock,
+                SpanishName = "Tributo al trono",
+                SpanishDescription = "Arrebata 10 almas de diablillos;\n" +
+                                     "después vence a un Señor de los diablillos.",
+                EnglishName = "Tribute to the Throne",
+                EnglishDescription = "Claim 10 imp souls;\n" +
+                                     "then defeat an Imp Overlord."
+            },
+            new OfficialText
+            {
+                BodyName = "AH64Body",
+                LocalizationKey = SurvivorLocalizationKeys.AH64,
+                SpanishName = "Protocolo 64: Dominio aéreo",
+                SpanishDescription = "Completa la campaña aérea acumulativa;\n" +
+                                     "después escapa de la Luna en Monzón.",
+                EnglishName = "Absolute Air Supremacy",
+                EnglishDescription = "Complete the cumulative air campaign;\n" +
+                                     "then escape the Moon on Monsoon."
+            },
+            new OfficialText
+            {
                 BodyName = "MinerBody",
                 LocalizationKey = SurvivorLocalizationKeys.Miner,
                 SpanishName = "Excavación",
@@ -446,14 +524,25 @@ namespace UniversalSurvivorUnlocks
             SurvivorChallengeJson challenge
         )
         {
-            if (
-                string.IsNullOrWhiteSpace(bodyName) ||
-                challenge == null ||
-                string.IsNullOrWhiteSpace(challenge.LocalizationKey)
-            )
-            {
+            if (string.IsNullOrWhiteSpace(bodyName) || challenge == null)
                 return false;
-            }
+
+            // AH-64: las partidas antiguas pueden guardar el texto de la
+            // misión de una sola run. Al usar el preset oficial, preferimos
+            // SIEMPRE los tokens vigentes de la campaña persistente.
+            // Ninguna misión Generated ni Custom pasa por esta excepción.
+            if (string.Equals(bodyName, "AH64Body",
+                    StringComparison.OrdinalIgnoreCase) &&
+                challenge.MissionConfig != null &&
+                string.Equals(challenge.MissionConfig.Source, "Preset",
+                    StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(challenge.MissionConfig.BasePresetId,
+                    MissionPresetIds.AH64Official,
+                    StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            if (string.IsNullOrWhiteSpace(challenge.LocalizationKey))
+                return false;
 
             for (int i = 0; i < OfficialTexts.Length; i++)
             {
@@ -601,7 +690,9 @@ namespace UniversalSurvivorUnlocks
             RegisterUiText(MissionLibraryProviderOriginalToken, "Original", "Original");
             RegisterUiText(MissionLibraryProviderUsuToken, "USU", "USU");
             RegisterUiText(MissionLibraryProviderCommunityToken, "Community", "Comunidad");
-            RegisterUiText(MissionLibraryProviderCustomToken, "Custom", "Personalizado");
+            RegisterUiText(MissionLibraryProviderCustomToken, "Custom", "Personalizada");
+            RegisterUiText(MissionLibraryProviderGeneratedToken, "Generated", "Generada");
+            RegisterUiText(MissionLibraryGeneratedRerollToken, "Reroll generated mission", "Rerollear misión generada");
             RegisterUiText(MissionLibrarySoonSuffixToken, "[Soon]", "[Próximamente]");
             RegisterUiText(MissionLibraryOriginalDescriptionToken, "The character creator's original unlock system is in control.", "El sistema de desbloqueo original del creador está en control.");
             RegisterUiText(MissionLibraryUsuDescriptionToken, "Universal Survivor Unlocks controls this character through the selected mission.", "Universal Survivor Unlocks controla este personaje mediante la misión seleccionada.");

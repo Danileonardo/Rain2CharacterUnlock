@@ -14,6 +14,65 @@ namespace UniversalSurvivorUnlocks
         // CREAR UNLOCKABLE + ACHIEVEMENT
         // =========================================================
 
+        /// <summary>
+        /// Nombre nativo del desbloqueable, separado del nombre de misión.
+        /// Registro explícito para en, es-419 y es-ES, más el idioma activo.
+        /// Si la fuente contiene otro token aún no disponible durante Awake,
+        /// usar el nombre del survivor y refrescar al cambiar de idioma.
+        /// </summary>
+        private static void RegisterUnlockableDisplayNameTokens(
+            string bodyName,
+            SurvivorJsonEntry entry
+        )
+        {
+            if (string.IsNullOrWhiteSpace(bodyName))
+            {
+                return;
+            }
+
+            string token = $"USU_{MakeToken(bodyName)}_UNLOCKABLE_NAME";
+            string rawName = entry?.DisplayName?.Trim() ?? "";
+            string name = rawName;
+
+            if (!string.IsNullOrWhiteSpace(rawName))
+            {
+                string localized = Language.GetString(rawName);
+                if (!string.IsNullOrWhiteSpace(localized) &&
+                    !string.Equals(localized, rawName, StringComparison.Ordinal))
+                {
+                    name = localized;
+                }
+            }
+
+            // Si DisplayName es otro token (GWENGWEN_NAME, etc.) que aún
+            // no se ha registrado, no propagamos ese token al chat vanilla.
+            if (string.IsNullOrWhiteSpace(name) ||
+                (string.Equals(name, rawName, StringComparison.Ordinal) &&
+                 name.IndexOf('_') >= 0 &&
+                 string.Equals(name, name.ToUpperInvariant(),
+                     StringComparison.Ordinal)))
+            {
+                name = ResolveSurvivorDisplayName(bodyName);
+            }
+
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                name = bodyName;
+            }
+
+            LanguageAPI.Add(token, name);
+            LanguageAPI.Add(token, name, "en");
+            LanguageAPI.Add(token, name, "es-419");
+            LanguageAPI.Add(token, name, "es-ES");
+
+            string activeLanguage = Language.currentLanguageName ?? "";
+            if (!string.IsNullOrWhiteSpace(activeLanguage))
+            {
+                LanguageAPI.Add(token, name, activeLanguage);
+            }
+        }
+
+
         private static UnlockableDef RegisterOneUnlockable(
             string bodyName,
             SurvivorJsonEntry entry,
@@ -129,10 +188,10 @@ namespace UniversalSurvivorUnlocks
             // TEXTOS
             // =====================================================
 
-            LanguageAPI.Add(
-                unlockableNameToken,
-                entry.DisplayName
-            );
+            // El juego usa este token en su propio chat al conceder el
+            // UnlockableDef. Sólo Add(token, value) dejaba el token crudo
+            // en es-419/es-ES (p. ej. USU_SPYBODY_UNLOCKABLE_NAME).
+            RegisterUnlockableDisplayNameTokens(bodyName, entry);
 
 
             // Los presets oficiales ya fueron registrados por

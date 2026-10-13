@@ -389,9 +389,9 @@ namespace UniversalSurvivorUnlocks
 
                 /*
                  * G8 Phase 1:
-                 * Generated se materializa únicamente sobre el snapshot
-                 * temporal. El objeto persistido SurvivorJsonEntry no se
-                 * modifica y Generated jamás se serializa como CUSTOM.
+                 * Generated vive en Survivors.json con Source=Generated y
+                 * también se recalcula sobre el snapshot efectivo. Nunca se
+                 * serializa como Custom salvo edición explícita del jugador.
                  */
                 GeneratedMissionRuntimeMaterializer.TryOverlay(
                     bodyName,
@@ -655,8 +655,8 @@ namespace UniversalSurvivorUnlocks
         /// No consulta LobbySnapshot ni RunSnapshot: un cliente puede seguir
         /// viendo y preparando su propia configuración mientras la misión del
         /// host sólo gobierna Character Select y el runtime de la partida.
-        /// Generated sí se superpone en memoria para que el Browser local no
-        /// vuelva al placeholder histórico KillEnemies 100.
+        /// Generated también puede superponerse con la versión recalculada de
+        /// esta sesión; el JSON persistido usa la misma Mission V2.
         /// </summary>
         public static bool TryGetLocalEffectiveEntry(
             string bodyName,
@@ -1081,7 +1081,8 @@ namespace UniversalSurvivorUnlocks
                 entry == null
             )
             {
-                logger?.LogInfo(
+                UsuLog.Verbose(
+                    logger,
                     $"[MISSION SESSION] {side} | " +
                     $"{bodyName} no está presente en el snapshot."
                 );
@@ -1126,7 +1127,8 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 $"[MISSION SESSION] {side} | " +
                 $"Body: {bodyName} | " +
                 $"Nombre: {missionName} | " +

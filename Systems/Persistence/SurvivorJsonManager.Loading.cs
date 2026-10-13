@@ -37,15 +37,58 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            SurvivorPersistenceCompatibility
-                .NormalizeAfterLoad(
-                    file,
-                    logger
-                );
+            bool migrationChanged =
+                SurvivorPersistenceCompatibility
+                    .NormalizeAfterLoad(
+                        file,
+                        logger
+                    );
 
 
             CurrentConfig =
                 file;
+
+
+            // =====================================================
+            // C5 - MIGRACIÓN 0.3.0 -> 0.3.1
+            // =====================================================
+            //
+            // NormalizeAfterLoad ya era no destructivo, pero una
+            // normalización de schema podía quedar sólo en memoria hasta
+            // que otra operación provocara un Save posterior. Para el RC
+            // hacemos explícita la persistencia de la migración apenas se
+            // carga el archivo, conservando el backup atómico habitual.
+            //
+            // Un schema futuro sigue protegido por IsReadOnly y jamás se
+            // sobrescribe desde una build anterior.
+            // =====================================================
+
+            if (
+                migrationChanged &&
+                !SurvivorPersistenceCompatibility.IsReadOnly
+            )
+            {
+                bool migrationSaved =
+                    Save(
+                        CurrentConfig,
+                        logger
+                    );
+
+                if (migrationSaved)
+                {
+                    logger?.LogInfo(
+                        "[PERSISTENCE MIGRATION] Normalización persistida | " +
+                        $"Schema: {CurrentConfig.SchemaVersion} | " +
+                        "Backup previo: preservado cuando existía Survivors.json."
+                    );
+                }
+                else
+                {
+                    logger?.LogWarning(
+                        "[PERSISTENCE MIGRATION] La normalización quedó sólo en memoria porque no pudo persistirse."
+                    );
+                }
+            }
 
 
             // =====================================================

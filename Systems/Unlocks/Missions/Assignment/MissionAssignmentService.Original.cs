@@ -78,6 +78,11 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
+                MissionProviderSlotStore.CaptureActiveSlots(
+                    challenge
+                );
+
+
                 missionConfig.Provider =
                     UnlockProviderKind.Original;
 
@@ -304,8 +309,23 @@ namespace UniversalSurvivorUnlocks
                 missionConfig.CustomMission =
                     null;
 
+                bool generatedPending =
+                    string.Equals(
+                        restoredChallenge.Type,
+                        "GeneratedPending",
+                        StringComparison.OrdinalIgnoreCase
+                    );
+
                 missionConfig.Source =
-                    "Preset";
+                    generatedPending
+                        ? "Generated"
+                        : "Preset";
+
+                if (generatedPending)
+                {
+                    missionConfig.BasePresetId =
+                        "";
+                }
 
                 missionConfig.SelectionMode =
                     UnlockSelectionMode.AutomaticFallback;

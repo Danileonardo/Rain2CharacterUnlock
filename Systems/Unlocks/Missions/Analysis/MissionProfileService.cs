@@ -303,7 +303,8 @@ namespace UniversalSurvivorUnlocks
                 }
             }
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 "[MISSION PROFILE] G3 Phase 2.3 construido | " +
                 $"Profiles runtime: {Profiles.Count} | " +
                 $"Modded: {moddedProfiles} | " +
@@ -327,7 +328,7 @@ namespace UniversalSurvivorUnlocks
 
         private static void LogVerboseProfiles()
         {
-            if (!UsuLog.VerboseEnabled)
+            if (!UsuLog.ExtendedAuditEnabled)
             {
                 return;
             }
@@ -346,7 +347,7 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
-                UsuLog.Verbose(
+                UsuLog.ExtendedAudit(
                     logger,
                     "[MISSION PROFILE] " +
                     profile.DisplayName +
@@ -382,7 +383,7 @@ namespace UniversalSurvivorUnlocks
                         continue;
                     }
 
-                    UsuLog.Verbose(
+                    UsuLog.ExtendedAudit(
                         logger,
                         "[MISSION SKILL] " +
                         profile.DisplayName +

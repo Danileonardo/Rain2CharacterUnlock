@@ -313,10 +313,161 @@ namespace UniversalSurvivorUnlocks
                 );
 
 
+                // =================================================
+                // GENERATED EDITADA -> CUSTOM
+                // =================================================
+                // Si el jugador modificó directamente la Generated guardada
+                // en Survivors.json, preservamos esa edición antes de que G7
+                // vuelva a calcular el fallback.
+                // =================================================
+
+                GeneratedMissionPersistenceFingerprint
+                    .TryPromoteEditedGeneratedToCustom(
+                        entry.Challenge,
+                        entry.BodyName,
+                        logger
+                    );
+
+
+                // =================================================
+                // RESOLVER GENERATEDPENDING CON AUTORIDAD YA CONOCIDA
+                // =================================================
+                // CreateAutomaticEntry ocurre antes de que el catálogo final
+                // conozca todos los Original. En Sync ya tenemos OriginalUnlock
+                // real, así que sólo dejamos GeneratedPending cuando de verdad
+                // no existe Original ni preset Official.
+                // =================================================
+
+                if (
+                    entry.Challenge != null &&
+                    string.Equals(
+                        entry.Challenge.Type,
+                        "GeneratedPending",
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    if (
+                        SurvivorChallengePresets.TryCreatePreset(
+                            entry.BodyName,
+                            entry.Source,
+                            out SurvivorChallengeJson pendingPreset
+                        ) &&
+                        pendingPreset != null
+                    )
+                    {
+                        entry.Challenge =
+                            pendingPreset;
+                    }
+                    else if (
+                        UnlockProviderPolicy.HasStoredOriginalUnlock(
+                            entry
+                        )
+                    )
+                    {
+                        entry.Challenge =
+                            CreateOriginalPlaceholderChallenge();
+                    }
+                }
+
+
+                // =================================================
+                // GENERATED -> OFFICIAL CUANDO USU AÑADE PRESET
+                // =================================================
+                // Una Generated sin editar es fallback administrado. Si una
+                // versión nueva de USU incorpora un preset oficial para ese
+                // survivor, el preset pasa a ser la fuente autorada. Custom
+                // queda protegido porque la promoción anterior cambia Source.
+                // =================================================
+
+                MissionConfiguration currentMissionConfig =
+                    entry.Challenge?.MissionConfig;
+
+                if (
+                    currentMissionConfig != null &&
+                    string.Equals(
+                        currentMissionConfig.Source,
+                        "Generated",
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    SurvivorChallengePresets.TryCreatePreset(
+                        entry.BodyName,
+                        entry.Source,
+                        out SurvivorChallengeJson generatedReplacementPreset
+                    ) &&
+                    generatedReplacementPreset != null
+                )
+                {
+                    entry.Challenge =
+                        generatedReplacementPreset;
+
+                    UsuLog.Verbose(
+                        logger,
+                        $"[PERSISTENCE] Generated reemplazada por Official | Body: {entry.BodyName}"
+                    );
+                }
+
+
+                // =================================================
+                // MIGRAR FALLBACK HISTÓRICO KILLENEMIES 100
+                // =================================================
+                // Sólo la firma automática exacta. Una Custom real de 100
+                // bajas conserva su MissionConfig y jamás coincide aquí.
+                // =================================================
+
+                if (
+                    IsHistoricalKillEnemies100Fallback(
+                        entry.Challenge
+                    )
+                )
+                {
+                    if (
+                        SurvivorChallengePresets.TryCreatePreset(
+                            entry.BodyName,
+                            entry.Source,
+                            out SurvivorChallengeJson migratedPreset
+                        ) &&
+                        migratedPreset != null
+                    )
+                    {
+                        entry.Challenge = migratedPreset;
+
+                        UsuLog.Verbose(
+                            logger,
+                            $"[PERSISTENCE] Fallback 100 migrado a Official | Body: {entry.BodyName}"
+                        );
+                    }
+                    else if (
+                        UnlockProviderPolicy.HasStoredOriginalUnlock(
+                            entry
+                        )
+                    )
+                    {
+                        entry.Challenge =
+                            CreateOriginalPlaceholderChallenge();
+
+                        UsuLog.Verbose(
+                            logger,
+                            $"[PERSISTENCE] Fallback 100 retirado por Original | Body: {entry.BodyName}"
+                        );
+                    }
+                    else
+                    {
+                        entry.Challenge =
+                            CreateGeneratedPendingChallenge();
+
+                        UsuLog.Verbose(
+                            logger,
+                            $"[PERSISTENCE] Fallback 100 migrado a GeneratedPending | Body: {entry.BodyName}"
+                        );
+                    }
+                }
+
+
                 if (entry.Challenge == null)
                 {
                     entry.Challenge =
-                        new SurvivorChallengeJson();
+                        CreateGeneratedPendingChallenge();
                 }
 
 

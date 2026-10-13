@@ -28,7 +28,8 @@ namespace UniversalSurvivorUnlocks
 
 
         public static GeneratedMissionCandidate GenerateForSurvivor(
-            IReadOnlyList<MissionTemplateCompatibilityAssessment> assessments
+            IReadOnlyList<MissionTemplateCompatibilityAssessment> assessments,
+            string generationNonce = ""
         )
         {
             if (assessments == null || assessments.Count == 0)
@@ -85,12 +86,17 @@ namespace UniversalSurvivorUnlocks
             MissionTemplateCompatibilityAssessment first =
                 shortlist[0].Assessment;
 
+            string normalizedNonce =
+                generationNonce?.Trim() ?? "";
+
             string stableSeed =
                 Plugin.PluginGuid +
                 "|" +
                 first.SurvivorId +
                 "|g7-v" +
-                GeneratorVersion;
+                GeneratorVersion +
+                "|nonce:" +
+                normalizedNonce;
 
             uint seedHash = StableHash(stableSeed);
 
@@ -136,6 +142,7 @@ namespace UniversalSurvivorUnlocks
                         assessment.AlternativePerformerCount,
                     UnlockedAlternativePerformerCount =
                         assessment.UnlockedAlternativePerformerCount,
+                    GenerationNonce = normalizedNonce,
                     StableSeed = stableSeed,
                     SeedHash = seedHash,
                     ProfileFingerprint = BuildProfileFingerprint(assessments),
@@ -178,6 +185,14 @@ namespace UniversalSurvivorUnlocks
                     assessment.RequiresTargetUsage ||
                     assessment.UnlockedAlternativePerformerCount <= 0
                 )
+                {
+                    continue;
+                }
+
+                // G8 sólo selecciona familias materializables hoy.
+                // CombatKills actúa como fallback Generated real en lugar del
+                // antiguo KillEnemies 100 fijo.
+                if (!IsRuntimeMaterializableFamily(assessment.Family))
                 {
                     continue;
                 }
@@ -231,6 +246,26 @@ namespace UniversalSurvivorUnlocks
              * genérico Compatible la desplace sólo por el random.
              */
             return strong.Count > 0 ? strong : compatible;
+        }
+
+
+        private static bool IsRuntimeMaterializableFamily(
+            MissionTemplateFamily family
+        )
+        {
+            switch (family)
+            {
+                case MissionTemplateFamily.CombatKills:
+                case MissionTemplateFamily.Execution:
+                case MissionTemplateFamily.HealingSupport:
+                case MissionTemplateFamily.ResourceMastery:
+                case MissionTemplateFamily.MeleeCombat:
+                case MissionTemplateFamily.ProjectileCombat:
+                    return true;
+
+                default:
+                    return false;
+            }
         }
 
 

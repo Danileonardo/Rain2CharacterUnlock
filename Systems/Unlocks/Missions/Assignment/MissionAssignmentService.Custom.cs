@@ -83,6 +83,15 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
+                // Conserva USU/Generated antes de activar la copia Custom.
+                MissionProviderSlotStore.CaptureActiveSlots(
+                    challenge
+                );
+
+
+                bool reactivatingStoredCustom =
+                    customMission == null;
+
                 MissionDefinition missionToUse =
                     customMission != null
                         ? CloneMissionOrNull(
@@ -90,6 +99,7 @@ namespace UniversalSurvivorUnlocks
                         )
                         : CloneMissionOrNull(
                             missionConfig.CustomMission
+                            ?? missionConfig.CustomMissionSnapshot?.Mission
                         );
 
 
@@ -155,11 +165,27 @@ namespace UniversalSurvivorUnlocks
                     challenge
                 );
 
-                // Custom usa texto literal de Survivors.json. El editor de
-                // nombre/descripcion llega después; aquí sólo evitamos que
-                // una localizationKey oficial pise esos textos.
-                challenge.LocalizationKey =
-                    "";
+                if (
+                    reactivatingStoredCustom &&
+                    missionConfig.CustomMissionSnapshot != null
+                )
+                {
+                    MissionProviderSlotStore.RestoreCustom(
+                        challenge
+                    );
+                }
+                else
+                {
+                    // Custom nueva: texto literal. El editor completo llega en
+                    // 5H; aquí sólo evitamos que una localizationKey oficial
+                    // pise el contenido y guardamos el slot completo.
+                    challenge.LocalizationKey =
+                        "";
+
+                    MissionProviderSlotStore.CaptureActiveCustom(
+                        challenge
+                    );
+                }
 
 
                 if (

@@ -169,7 +169,7 @@ namespace UniversalSurvivorUnlocks
             int added =
                 Sources.Count - before;
 
-            UsuLog.Verbose(
+            UsuLog.ExtendedAudit(
                 logger,
                 "[CONTENT CATALOG] ContentPack registrado | " +
                 "Pack: " +

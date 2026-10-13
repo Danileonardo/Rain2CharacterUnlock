@@ -1,4 +1,4 @@
-using BepInEx.Logging;
+﻿using BepInEx.Logging;
 
 namespace UniversalSurvivorUnlocks
 {
@@ -148,6 +148,9 @@ namespace UniversalSurvivorUnlocks
             MissionRuntimeRefreshService.Initialize(
                 logger
             );
+
+            // AH-64: campaña persistente entre runs, separada de MissionProgressRegistry.
+            AH64CampaignTracker.Initialize(logger);
 
             UsuLog.Verbose(
                 logger,

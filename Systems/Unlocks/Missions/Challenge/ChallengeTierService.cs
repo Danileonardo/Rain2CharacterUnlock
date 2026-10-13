@@ -203,7 +203,8 @@ namespace UniversalSurvivorUnlocks
                     ? totalAbsoluteCommunityDelta / Assessments.Count
                     : 0f;
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 "[CHALLENGE TIER] G5 Phase 1.1 construido | " +
                 $"Targets: {Assessments.Count} | " +
                 $"Survivor: {Assessments.Count} | " +
@@ -229,7 +230,7 @@ namespace UniversalSurvivorUnlocks
 
         private static void LogVerboseAssessments()
         {
-            if (!UsuLog.VerboseEnabled)
+            if (!UsuLog.ExtendedAuditEnabled)
             {
                 return;
             }
@@ -243,7 +244,7 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
-                UsuLog.Verbose(
+                UsuLog.ExtendedAudit(
                     logger,
                     "[CHALLENGE PROFILE] " +
                     assessment.DisplayName +

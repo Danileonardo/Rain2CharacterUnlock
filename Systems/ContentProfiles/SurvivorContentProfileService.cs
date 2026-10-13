@@ -443,7 +443,7 @@ namespace UniversalSurvivorUnlocks
                 userProfile
             );
 
-            UsuLog.Verbose(
+            UsuLog.ExtendedAudit(
                 logger,
                 "[SURVIVOR PROFILE] " +
                 result.DisplayName +
@@ -2145,7 +2145,8 @@ namespace UniversalSurvivorUnlocks
                 }
             }
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 "[SURVIVOR PROFILE] 5G.2D-C construido | " +
                 "Profiles: " +
                 Profiles.Count +

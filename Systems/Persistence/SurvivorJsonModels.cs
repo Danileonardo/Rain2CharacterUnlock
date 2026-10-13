@@ -171,7 +171,7 @@ namespace UniversalSurvivorUnlocks
                 Enabled = true,
 
                 Name =
-                    "Desafío de desbloqueo",
+                    "Mi desafío personalizado",
 
                 Description =
                     "",
@@ -185,7 +185,7 @@ namespace UniversalSurvivorUnlocks
                 Parameters =
                     new JObject
                     {
-                        ["amount"] = 100
+                        ["amount"] = 25
                     }
             };
     }

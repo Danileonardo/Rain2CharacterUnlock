@@ -1,5 +1,6 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.IO;
 
 using BepInEx.Logging;
 using Newtonsoft.Json.Linq;
@@ -272,7 +273,8 @@ namespace UniversalSurvivorUnlocks
             headerRect.anchorMax = new Vector2(1f, 1f);
             headerRect.pivot = new Vector2(0.5f, 1f);
             headerRect.offsetMin = new Vector2(164f, -148f);
-            headerRect.offsetMax = new Vector2(-18f, -18f);
+            // Reservar la columna derecha para las acciones Generated.
+            headerRect.offsetMax = new Vector2(-80f, -18f);
 
             survivorDetailsHeaderText =
                 headerObject.AddComponent<HGTextMeshProUGUI>();
@@ -297,6 +299,9 @@ namespace UniversalSurvivorUnlocks
             CreateSurvivorProviderControls(
                 rowTemplate
             );
+
+            CreateGeneratedRerollButton();
+            CreateGeneratedDeleteButton(rowTemplate);
 
             GameObject scrollObject =
                 new GameObject(
@@ -391,6 +396,8 @@ namespace UniversalSurvivorUnlocks
                 ContentSizeFitter.FitMode.PreferredSize;
 
             survivorDetailsScrollRect.content = textRect;
+            CreateAH64CampaignPanel(rowTemplate, scrollObject.transform);
+            CreateSurvivorPresetCards(rowTemplate, scrollObject.transform);
 
             // El contenido queda por encima del fondo interno. El borde
             // visible sigue siendo el original del panel de RiskOfOptions.
@@ -398,6 +405,243 @@ namespace UniversalSurvivorUnlocks
 
             // Sin LogInfo aquí: Risk of Options puede recrear este panel
             // durante su ciclo de vida y ese mensaje terminaba siendo spam.
+        }
+
+
+        // C5.4: geometría compartida para ambas acciones Generated.
+        // Se mantienen dentro del header (antes de la fila de providers).
+        private const float GeneratedActionButtonSize = 50f;
+        private const float GeneratedActionRightInset = 12f;
+        private const float GeneratedActionTopInset = 16f;
+        private const float GeneratedActionVerticalGap = 12f;
+
+        private void CreateGeneratedRerollButton()
+        {
+            if (survivorDetailsRoot == null)
+            {
+                return;
+            }
+
+            survivorGeneratedRerollRoot =
+                new GameObject(
+                    "GeneratedReroll",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(Image),
+                    typeof(Button)
+                );
+
+            survivorGeneratedRerollRoot.transform.SetParent(
+                survivorDetailsRoot.transform,
+                false
+            );
+
+            RectTransform rect =
+                survivorGeneratedRerollRoot.GetComponent<RectTransform>();
+
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.sizeDelta = new Vector2(
+                GeneratedActionButtonSize,
+                GeneratedActionButtonSize
+            );
+            // Rail de acciones: a la derecha del bloque superior del survivor,
+            // fuera de la fila de providers y sin tapar nombre/descripción.
+            rect.anchoredPosition = new Vector2(
+                -GeneratedActionRightInset,
+                -GeneratedActionTopInset
+            );
+
+            // IMPORTANTE: la imagen del dado ES la cara completa del botón.
+            // No se crea un segundo Image hijo ni un cuadro plomo exterior.
+            // De esta forma el arte ocupa todo el rect del botón.
+            Image face =
+                survivorGeneratedRerollRoot.GetComponent<Image>();
+
+            face.sprite = LoadGeneratedRerollIconSprite();
+            face.type = Image.Type.Simple;
+            face.preserveAspect = false;
+            face.color = face.sprite != null
+                ? Color.white
+                : new Color(0.10f, 0.18f, 0.24f, 0.96f);
+            face.raycastTarget = true;
+
+            survivorGeneratedRerollButton =
+                survivorGeneratedRerollRoot.GetComponent<Button>();
+
+            survivorGeneratedRerollButton.targetGraphic = face;
+
+            ColorBlock colors =
+                survivorGeneratedRerollButton.colors;
+
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1.08f, 1.08f, 1.08f, 1f);
+            colors.pressedColor = new Color(0.82f, 0.82f, 0.82f, 1f);
+            colors.disabledColor = new Color(0.45f, 0.45f, 0.45f, 0.72f);
+            survivorGeneratedRerollButton.colors = colors;
+
+            survivorGeneratedRerollRoot.SetActive(false);
+        }
+
+
+        private void CreateGeneratedDeleteButton(
+            GameObject rowTemplate
+        )
+        {
+            if (survivorDetailsRoot == null || rowTemplate == null)
+            {
+                return;
+            }
+
+            survivorGeneratedDeleteRoot =
+                new GameObject(
+                    "GeneratedDelete",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer),
+                    typeof(Image),
+                    typeof(Button)
+                );
+
+            survivorGeneratedDeleteRoot.transform.SetParent(
+                survivorDetailsRoot.transform,
+                false
+            );
+
+            RectTransform rect =
+                survivorGeneratedDeleteRoot.GetComponent<RectTransform>();
+
+            rect.anchorMin = new Vector2(1f, 1f);
+            rect.anchorMax = new Vector2(1f, 1f);
+            rect.pivot = new Vector2(1f, 1f);
+            rect.sizeDelta = new Vector2(
+                GeneratedActionButtonSize,
+                GeneratedActionButtonSize
+            );
+            // Segundo botón del rail vertical, debajo del dado.
+            rect.anchoredPosition = new Vector2(
+                -GeneratedActionRightInset,
+                -(GeneratedActionTopInset + GeneratedActionButtonSize + GeneratedActionVerticalGap)
+            );
+
+            Image face =
+                survivorGeneratedDeleteRoot.GetComponent<Image>();
+
+            face.color = new Color(0.24f, 0.10f, 0.10f, 0.96f);
+            face.raycastTarget = true;
+
+            survivorGeneratedDeleteButton =
+                survivorGeneratedDeleteRoot.GetComponent<Button>();
+            survivorGeneratedDeleteButton.targetGraphic = face;
+
+            ColorBlock colors = survivorGeneratedDeleteButton.colors;
+            colors.normalColor = Color.white;
+            colors.highlightedColor = new Color(1.08f, 1.08f, 1.08f, 1f);
+            colors.pressedColor = new Color(0.82f, 0.82f, 0.82f, 1f);
+            colors.disabledColor = new Color(0.45f, 0.45f, 0.45f, 0.72f);
+            survivorGeneratedDeleteButton.colors = colors;
+
+            GameObject textObject =
+                new GameObject(
+                    "TrashLabel",
+                    typeof(RectTransform),
+                    typeof(CanvasRenderer)
+                );
+
+            textObject.transform.SetParent(
+                survivorGeneratedDeleteRoot.transform,
+                false
+            );
+
+            RectTransform textRect = textObject.GetComponent<RectTransform>();
+            textRect.anchorMin = Vector2.zero;
+            textRect.anchorMax = Vector2.one;
+            textRect.offsetMin = new Vector2(3f, 2f);
+            textRect.offsetMax = new Vector2(-3f, -2f);
+
+            survivorGeneratedDeleteText =
+                textObject.AddComponent<HGTextMeshProUGUI>();
+
+            CopyTextStyleFromRow(
+                rowTemplate,
+                survivorGeneratedDeleteText
+            );
+
+            // Símbolo simple y estable: evita depender de otro PNG sólo para
+            // la herramienta temporal de prueba.
+            survivorGeneratedDeleteText.text = "X";
+            survivorGeneratedDeleteText.alignment = TextAlignmentOptions.Center;
+            survivorGeneratedDeleteText.enableAutoSizing = true;
+            survivorGeneratedDeleteText.fontSizeMin = 16f;
+            survivorGeneratedDeleteText.fontSizeMax = 26f;
+            survivorGeneratedDeleteText.raycastTarget = false;
+
+            survivorGeneratedDeleteRoot.SetActive(false);
+        }
+
+
+        private static Sprite LoadGeneratedRerollIconSprite()
+        {
+            if (generatedRerollIconSprite != null)
+            {
+                return generatedRerollIconSprite;
+            }
+
+            try
+            {
+                using Stream stream =
+                    typeof(MissionLibraryRiskOfOptionsEmbeddedHost)
+                        .Assembly
+                        .GetManifestResourceStream(
+                            "UniversalSurvivorUnlocks.generated_reroll_icon.png"
+                        );
+
+                if (stream == null)
+                {
+                    return null;
+                }
+
+                byte[] bytes = new byte[stream.Length];
+                _ = stream.Read(bytes, 0, bytes.Length);
+
+                generatedRerollIconTexture =
+                    new Texture2D(2, 2, TextureFormat.RGBA32, false);
+
+                generatedRerollIconTexture.name = "USU Generated Reroll Icon";
+                generatedRerollIconTexture.hideFlags = HideFlags.HideAndDontSave;
+
+                if (!generatedRerollIconTexture.LoadImage(bytes, false))
+                {
+                    UnityEngine.Object.Destroy(generatedRerollIconTexture);
+                    generatedRerollIconTexture = null;
+                    return null;
+                }
+
+                // El asset se reduce bastante para el botón. Bilinear + Clamp
+                // evita bordes serruchados/artefactos al escalarlo en UI.
+                generatedRerollIconTexture.filterMode = FilterMode.Bilinear;
+                generatedRerollIconTexture.wrapMode = TextureWrapMode.Clamp;
+                generatedRerollIconTexture.anisoLevel = 1;
+
+                generatedRerollIconSprite = Sprite.Create(
+                    generatedRerollIconTexture,
+                    new Rect(
+                        0f,
+                        0f,
+                        generatedRerollIconTexture.width,
+                        generatedRerollIconTexture.height
+                    ),
+                    new Vector2(0.5f, 0.5f),
+                    100f
+                );
+
+                generatedRerollIconSprite.name = "USU Generated Reroll Icon Sprite";
+                return generatedRerollIconSprite;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
 
@@ -714,13 +958,22 @@ namespace UniversalSurvivorUnlocks
             survivorDetailsHeaderText = null;
             survivorDetailsText = null;
             survivorDetailsScrollRect = null;
+            ClearAH64CampaignPanelReferences();
+            ClearSurvivorPresetCardReferences();
             survivorProviderControlsRoot = null;
             survivorProviderOriginalButton = null;
             survivorProviderUsuButton = null;
             survivorProviderCustomButton = null;
+            survivorProviderGeneratedButton = null;
             survivorProviderOriginalText = null;
             survivorProviderUsuText = null;
             survivorProviderCustomText = null;
+            survivorProviderGeneratedText = null;
+            survivorGeneratedRerollRoot = null;
+            survivorGeneratedRerollButton = null;
+            survivorGeneratedDeleteRoot = null;
+            survivorGeneratedDeleteButton = null;
+            survivorGeneratedDeleteText = null;
         }
 
 

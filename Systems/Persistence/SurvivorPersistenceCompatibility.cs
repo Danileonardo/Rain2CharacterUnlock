@@ -532,6 +532,123 @@ namespace UniversalSurvivorUnlocks
                     changed = true;
                 }
 
+                if (missionConfig.UsuPresetId == null)
+                {
+                    missionConfig.UsuPresetId =
+                        "";
+
+                    changed = true;
+                }
+
+                if (
+                    string.IsNullOrWhiteSpace(missionConfig.UsuPresetId) &&
+                    string.Equals(
+                        missionConfig.Source,
+                        "Preset",
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    !string.IsNullOrWhiteSpace(missionConfig.BasePresetId) &&
+                    !missionConfig.BasePresetId.StartsWith(
+                        "generated.",
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    missionConfig.UsuPresetId =
+                        missionConfig.BasePresetId;
+
+                    changed = true;
+                }
+
+                if (
+                    missionConfig.GeneratedMission == null &&
+                    string.Equals(
+                        missionConfig.Source,
+                        "Generated",
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    challenge.Mission != null &&
+                    challenge.Mission.Routes != null &&
+                    challenge.Mission.Routes.Count > 0
+                )
+                {
+                    missionConfig.GeneratedMission =
+                        MissionProviderSlotStore.CreateGeneratedSnapshot(
+                            challenge
+                        );
+
+                    if (missionConfig.GeneratedMission != null)
+                    {
+                        changed = true;
+                    }
+                }
+
+                if (
+                    missionConfig.CustomMissionSnapshot == null &&
+                    string.Equals(
+                        missionConfig.Source,
+                        "Custom",
+                        StringComparison.OrdinalIgnoreCase
+                    ) &&
+                    challenge.Mission != null &&
+                    challenge.Mission.Routes != null &&
+                    challenge.Mission.Routes.Count > 0
+                )
+                {
+                    MissionProviderSlotStore.CaptureActiveCustom(
+                        challenge
+                    );
+
+                    if (missionConfig.CustomMissionSnapshot != null)
+                    {
+                        changed = true;
+                    }
+                }
+
+                if (
+                    missionConfig.GeneratedMission != null &&
+                    missionConfig.GeneratedMission.Parameters == null
+                )
+                {
+                    missionConfig.GeneratedMission.Parameters =
+                        new JObject();
+
+                    changed = true;
+                }
+
+                if (
+                    missionConfig.GeneratedMission != null &&
+                    missionConfig.GeneratedMission.ExtraData == null
+                )
+                {
+                    missionConfig.GeneratedMission.ExtraData =
+                        new Dictionary<string, JToken>();
+
+                    changed = true;
+                }
+
+                if (
+                    missionConfig.CustomMissionSnapshot != null &&
+                    missionConfig.CustomMissionSnapshot.Parameters == null
+                )
+                {
+                    missionConfig.CustomMissionSnapshot.Parameters =
+                        new JObject();
+
+                    changed = true;
+                }
+
+                if (
+                    missionConfig.CustomMissionSnapshot != null &&
+                    missionConfig.CustomMissionSnapshot.ExtraData == null
+                )
+                {
+                    missionConfig.CustomMissionSnapshot.ExtraData =
+                        new Dictionary<string, JToken>();
+
+                    changed = true;
+                }
+
                 if (missionConfig.ExtraData == null)
                 {
                     missionConfig.ExtraData =

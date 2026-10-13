@@ -94,6 +94,14 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
+                // Antes de abandonar la fuente activa, conserva sus slots.
+                // Esto permite volver a Generated/USU/Custom sin destruir la
+                // alternativa anterior.
+                MissionProviderSlotStore.CaptureActiveSlots(
+                    challenge
+                );
+
+
                 // La misión custom se conserva aunque quede inactiva.
                 MissionDefinition preservedCustomMission =
                     CloneMissionOrNull(
@@ -139,6 +147,9 @@ namespace UniversalSurvivorUnlocks
                 missionConfig.BasePresetId =
                     normalizedPresetId;
 
+                missionConfig.UsuPresetId =
+                    normalizedPresetId;
+
                 missionConfig.CustomMission =
                     preservedCustomMission;
 
@@ -180,11 +191,20 @@ namespace UniversalSurvivorUnlocks
                 {
                     challenge.LocalizationKey =
                         officialDescriptor.LocalizationKey;
+
+                    // Al volver de Generated, restaurar las monedas de
+                    // este preset. Antes quedaba el 0 de la misión generada.
+                    challenge.LunarCoinReward =
+                        officialDescriptor.LunarCoinReward;
                 }
                 else
                 {
                     challenge.LocalizationKey =
                         "";
+
+                    // Preset cruzado/no oficial: no heredar monedas de la
+                    // misión anterior de otro survivor.
+                    challenge.LunarCoinReward = 0;
                 }
 
 

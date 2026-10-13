@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Newtonsoft.Json.Linq;
 
 using BepInEx.Logging;
 
@@ -158,6 +159,44 @@ namespace UniversalSurvivorUnlocks
 
 
             return foundLocalProfile;
+        }
+
+
+        // =========================================================
+        // RECOMPENSA DE LA MISIÓN EFECTIVA
+        // =========================================================
+        // AchievementDef se crea una sola vez en Awake, pero el jugador
+        // puede cambiar entre USU, Generated y Custom antes de jugar.
+        // La recompensa lunar debe corresponder a la misión congelada
+        // por el host, no al provider activo al registrar el achievement.
+        // NUNCA añadimos monedas manualmente: AddAchievement mantiene
+        // el flujo vanilla y la recompensa solo se entrega una vez.
+        // =========================================================
+        private static void SyncLunarCoinRewardForCompletedMission(
+            string bodyName,
+            AchievementDef achievementDef
+        )
+        {
+            if (achievementDef == null ||
+                string.IsNullOrWhiteSpace(bodyName))
+            {
+                return;
+            }
+
+            uint effectiveReward =
+                SurvivorUnlockManager.ResolveEffectiveLunarCoinReward(bodyName);
+
+            if (achievementDef.lunarCoinReward != effectiveReward)
+            {
+                logger?.LogInfo(
+                    "[SESSION UNLOCK] Recompensa lunar sincronizada | " +
+                    $"Body: {bodyName} | Antes: " +
+                    $"{achievementDef.lunarCoinReward} | " +
+                    $"Misión efectiva: {effectiveReward}"
+                );
+
+                achievementDef.lunarCoinReward = effectiveReward;
+            }
         }
 
 
@@ -348,6 +387,22 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            // El popup de AddAchievement() debe mostrar la misma misión
+            // efectiva que el tooltip y el progreso de Mission V2. También
+            // cubre un cambio de provider o un reroll justo antes de cobrar.
+            SurvivorUnlockManager.RefreshEffectiveMissionPresentationToken(
+                bodyName,
+                "before AddAchievement"
+            );
+
+            // Se lee el challenge efectivo de la sesión (host o snapshot)
+            // justo antes de AddAchievement, no al cargar el plugin.
+            SyncLunarCoinRewardForCompletedMission(
+                bodyName,
+                achievementDef
+            );
+
+
             foreach (
                 LocalUser localUser
                 in LocalUserManager
@@ -376,8 +431,15 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
+                // Un jugador que obtuvo el survivor mediante el mod
+                // original no debe cobrar otro logro/monedas de USU.
+                bool originalUnlockedBefore =
+                    SurvivorUnlockManager.HasRememberedOriginalUnlockInProfile(
+                        bodyName, profile
+                    );
+
                 bool wasAlreadyUnlocked =
-                    unlockableBefore;
+                    unlockableBefore || originalUnlockedBefore;
 
 
                 if (!wasAlreadyUnlocked)
@@ -400,7 +462,9 @@ namespace UniversalSurvivorUnlocks
                 //
                 // -------------------------------------------------
 
-                if (!achievementBefore)
+                // No crear un logro/popup/recompensa USU para alguien que
+                // ya tenía acceso al survivor (USU o mod original).
+                if (!achievementBefore && !wasAlreadyUnlocked)
                 {
                     profile.AddAchievement(
                         achievementDef.identifier,
@@ -434,7 +498,7 @@ namespace UniversalSurvivorUnlocks
                 // -------------------------------------------------
 
                 if (
-                    achievementAfterAdd &&
+                    (achievementAfterAdd || originalUnlockedBefore) &&
                     !unlockableAfterAdd
                 )
                 {
@@ -452,6 +516,8 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
+                // No se crea un logro nuevo para el ya desbloqueado:
+                // únicamente se puede haber reparado el Unlockable USU.
                 bool achievementAfter =
                     profile.HasAchievement(
                         achievementDef.identifier
@@ -465,7 +531,7 @@ namespace UniversalSurvivorUnlocks
 
 
                 if (
-                    achievementAfter &&
+                    (achievementAfter || originalUnlockedBefore) &&
                     !unlockableAfter
                 )
                 {
@@ -627,9 +693,11 @@ namespace UniversalSurvivorUnlocks
                 unlockableAfter;
 
 
-            bool success =
-                achievementAfter &&
-                unlockableAfter;
+            // La concesión legítima también puede ser silenciosa: un
+            // jugador que ya tiene el logro ORIGINAL no necesita uno USU.
+            // Si AddAchievement falla de verdad, GrantLocally no crea un
+            // Unlockable USU nuevo (salvo reparación de uno ya ganado).
+            bool success = unlockableAfter;
 
 
             string playerName =
@@ -639,10 +707,7 @@ namespace UniversalSurvivorUnlocks
 
 
             bool wasAlreadyComplete =
-                achievementBefore &&
-                unlockableBefore &&
-                achievementAfter &&
-                unlockableAfter;
+                unlockableBefore && unlockableAfter;
 
 
             if (!wasAlreadyComplete)

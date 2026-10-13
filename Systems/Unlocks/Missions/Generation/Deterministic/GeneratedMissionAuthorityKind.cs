@@ -9,6 +9,7 @@ namespace UniversalSurvivorUnlocks
         None = 0,
         UsuOfficialPreset = 10,
         UsuCustom = 20,
-        ExistingUsuMission = 30
+        ExistingUsuMission = 30,
+        OriginalUnlock = 40
     }
 }

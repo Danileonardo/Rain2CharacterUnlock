@@ -435,23 +435,36 @@ namespace UniversalSurvivorUnlocks
                 CanMutateConfiguration() &&
                 entry.Available;
 
+            bool originalActive =
+                activeProvider == UnlockProviderKind.Original;
+
+            bool usuActive =
+                selectionState.IsUsuActive;
+
+            bool customActive =
+                selectionState.IsCustomActive;
+
+            bool generatedActive =
+                selectionState.IsGeneratedActive;
+
             bool originalAvailable =
                 selectionState.OriginalAvailable;
 
-            OfficialMissionPresetDescriptor directUsuDescriptor =
-                selectionState.DirectUsuDescriptor;
+            bool usuAvailable =
+                selectionState.UsuTargetAvailable ||
+                selectionState.CanOfferUsuProvider;
 
-            bool directUsuAlternative =
-                selectionState.DirectUsuAlternativeDeclared;
+            bool customAvailable =
+                selectionState.CustomAvailable;
 
-            bool canReactivateUsu =
-                selectionState.UsuTargetAvailable;
+            bool generatedAvailable =
+                selectionState.GeneratedAvailable;
 
             GUILayout.BeginHorizontal();
 
             DrawProviderButton(
-                UnlockProviderKind.Original,
-                activeProvider,
+                GetProviderShortLabel(UnlockProviderKind.Original),
+                originalActive,
                 originalAvailable,
                 canMutate && originalAvailable,
                 delegate
@@ -466,30 +479,14 @@ namespace UniversalSurvivorUnlocks
                 }
             );
 
-            // Nueva política de 5G.2C FIX1:
-            // si el creador ya posee un sistema Original, USU NO ofrece un
-            // provider alternativo directo. Cualquier modificación futura se
-            // hará como CUSTOM, preservando intacto el sistema del creador.
-            //
-            // Si no existe Original, USU sigue siendo el fallback y puede
-            // cambiarse entre presets oficiales como hasta ahora.
-            bool usuSelectable =
-                selectionState.CanOfferUsuProvider;
-
             DrawProviderButton(
-                UnlockProviderKind.USU,
-                activeProvider,
-                usuSelectable || activeProvider == UnlockProviderKind.USU,
-                canMutate && usuSelectable,
+                GetProviderShortLabel(UnlockProviderKind.USU),
+                usuActive,
+                usuAvailable,
+                canMutate && usuAvailable,
                 delegate
                 {
-                    // La resolución Original -> USU vive ahora en un solo
-                    // servicio. La UI sólo decide si existe un destino inmediato
-                    // o si debe pedir al jugador que elija un preset.
-                    if (
-                        directUsuAlternative ||
-                        canReactivateUsu
-                    )
+                    if (selectionState.UsuTargetAvailable)
                     {
                         ApplyResult(
                             MissionAssignmentService.SelectProvider(
@@ -514,18 +511,45 @@ namespace UniversalSurvivorUnlocks
             );
 
             DrawProviderButton(
-                UnlockProviderKind.Custom,
-                activeProvider,
-                false,
-                false,
-                null
+                GetProviderShortLabel(UnlockProviderKind.Custom),
+                customActive,
+                customAvailable,
+                canMutate && customAvailable,
+                delegate
+                {
+                    ApplyResult(
+                        MissionAssignmentService.SelectProvider(
+                            selectedBodyName,
+                            UnlockProviderKind.Custom,
+                            logger
+                        )
+                    );
+                }
+            );
+
+            DrawProviderButton(
+                Language.GetString(
+                    SurvivorLocalization.MissionLibraryProviderGeneratedToken
+                ),
+                generatedActive,
+                generatedAvailable,
+                canMutate && generatedAvailable,
+                delegate
+                {
+                    ApplyResult(
+                        MissionAssignmentService.SelectGenerated(
+                            selectedBodyName,
+                            logger
+                        )
+                    );
+                }
             );
 
             GUILayout.EndHorizontal();
 
             GUILayout.Space(4f);
 
-            if (activeProvider == UnlockProviderKind.Original)
+            if (originalActive)
             {
                 GUILayout.Label(
                     Language.GetString(
@@ -534,10 +558,16 @@ namespace UniversalSurvivorUnlocks
                     smallStyle
                 );
             }
-            else if (
-                activeProvider == UnlockProviderKind.USU ||
-                activeProvider == UnlockProviderKind.Community
-            )
+            else if (generatedActive)
+            {
+                GUILayout.Label(
+                    Language.GetString(
+                        SurvivorLocalization.MissionLibraryUsuDescriptionToken
+                    ),
+                    smallStyle
+                );
+            }
+            else if (usuActive)
             {
                 GUILayout.Label(
                     Language.GetString(
@@ -551,57 +581,6 @@ namespace UniversalSurvivorUnlocks
                 GUILayout.Label(
                     Language.GetString(
                         SurvivorLocalization.MissionLibraryCustomDescriptionToken
-                    ),
-                    smallStyle
-                );
-            }
-
-            if (
-                originalAvailable &&
-                directUsuAlternative &&
-                directUsuDescriptor != null &&
-                selectionState.DirectUsuPreset != null
-            )
-            {
-                GUILayout.Label(
-                    Language.GetStringFormatted(
-                        SurvivorLocalization
-                            .MissionLibraryDirectUsuAlternativeToken,
-                        ResolvePresetName(selectionState.DirectUsuPreset)
-                    ),
-                    smallStyle
-                );
-            }
-
-            if (
-                originalAvailable &&
-                !directUsuAlternative
-            )
-            {
-                GUILayout.Label(
-                    Language.GetString(
-                        SurvivorLocalization
-                            .MissionLibraryUsuUnavailableWhenOriginalToken
-                    ),
-                    smallStyle
-                );
-
-                GUILayout.Label(
-                    Language.GetString(
-                        SurvivorLocalization
-                            .MissionLibraryCustomFromOriginalSoonToken
-                    ),
-                    smallStyle
-                );
-            }
-            else if (
-                activeProvider != UnlockProviderKind.USU &&
-                !canReactivateUsu
-            )
-            {
-                GUILayout.Label(
-                    Language.GetString(
-                        SurvivorLocalization.MissionLibraryChoosePresetForUsuToken
                     ),
                     smallStyle
                 );
@@ -630,39 +609,23 @@ namespace UniversalSurvivorUnlocks
 
 
         private void DrawProviderButton(
-            UnlockProviderKind provider,
-            UnlockProviderKind activeProvider,
+            string providerLabel,
+            bool active,
             bool available,
             bool canClick,
             Action action
         )
         {
-            bool active =
-                provider == activeProvider ||
-                (
-                    provider == UnlockProviderKind.USU &&
-                    activeProvider == UnlockProviderKind.Community
-                );
-
             string label =
                 (active ? "● " : "○ ") +
-                GetProviderShortLabel(provider);
+                (providerLabel ?? "");
 
-            if (!available && provider != UnlockProviderKind.Custom)
+            if (!available)
             {
                 label +=
                     " " +
                     Language.GetString(
                         SurvivorLocalization.MissionLibraryUnavailableSuffixToken
-                    );
-            }
-
-            if (provider == UnlockProviderKind.Custom)
-            {
-                label +=
-                    " " +
-                    Language.GetString(
-                        SurvivorLocalization.MissionLibrarySoonSuffixToken
                     );
             }
 

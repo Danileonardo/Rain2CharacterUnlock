@@ -55,22 +55,74 @@ namespace UniversalSurvivorUnlocks
             SurvivorJsonEntry entry
         )
         {
-            int configured =
-                entry?.Challenge?.LunarCoinReward
-                ?? 0;
+            SurvivorChallengeJson challenge = entry?.Challenge;
+            if (challenge == null)
+            {
+                return 0;
+            }
 
-
-            configured =
-                Math.Max(
-                    0,
-                    Math.Min(
-                        10,
-                        configured
-                    )
+            MissionConfiguration config = challenge.MissionConfig;
+            UnlockProviderKind provider =
+                UnlockProviderPolicy.ResolveEffectiveProvider(
+                    entry,
+                    UnlockProviderPolicy.HasStoredOriginalUnlock(entry)
                 );
 
+            // Original pertenece al mod autor: su propio UnlockableDef /
+            // AchievementDef y sus monedas son ajenos a USU. Este valor 0
+            // es sólo para el AchievementDef USU que queda DORMIDO.
+            if (provider == UnlockProviderKind.Original)
+            {
+                return 0;
+            }
 
-            return (uint)configured;
+            // Regenerar o reactivar Generated nunca hereda monedas de
+            // un preset oficial seleccionado anteriormente.
+            if (config != null && config.UsesGeneratedMission)
+            {
+                return 0;
+            }
+
+            // Cada vez que volvemos a USU, el catálogo oficial es la
+            // fuente de verdad. No leemos 0 del snapshot Generated anterior.
+            if (
+                provider == UnlockProviderKind.USU &&
+                config != null &&
+                string.Equals(config.Source, "Preset", StringComparison.OrdinalIgnoreCase) &&
+                OfficialMissionPresetRegistry.TryGetByPresetId(
+                    config.BasePresetId,
+                    out OfficialMissionPresetDescriptor official
+                ) &&
+                official != null &&
+                string.Equals(
+                    official.BodyName,
+                    entry.BodyName,
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            {
+                return (uint)Math.Max(0, Math.Min(10, official.LunarCoinReward));
+            }
+
+            // Custom conserva su recompensa configurada. Un preset
+            // oficial de otro survivor NO debe dar sus monedas.
+            if (
+                config != null &&
+                string.Equals(config.Source, "Preset", StringComparison.OrdinalIgnoreCase) &&
+                OfficialMissionPresetRegistry.IsOfficialPresetId(config.BasePresetId)
+            )
+            {
+                return 0;
+            }
+
+            return (uint)Math.Max(0, Math.Min(10, challenge.LunarCoinReward));
+        }
+
+        // El popup previo y la entrega al finalizar deben resolver la MISMA
+        // recompensa efectiva, incluyendo el snapshot del host en multijugador.
+        internal static uint ResolveEffectiveLunarCoinReward(string bodyName)
+        {
+            return GetLunarCoinReward(GetEntry(bodyName));
         }
 
 

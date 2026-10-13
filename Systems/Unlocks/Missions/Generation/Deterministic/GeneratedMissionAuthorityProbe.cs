@@ -44,6 +44,17 @@ namespace UniversalSurvivorUnlocks
                     );
             }
 
+            if (UnlockProviderPolicy.HasStoredOriginalUnlock(entry))
+            {
+                detail =
+                    "OriginalUnlock<" +
+                    (entry?.OriginalUnlock ?? "") +
+                    ">";
+
+                return GeneratedMissionAuthorityKind.OriginalUnlock;
+            }
+
+
             GeneratedMissionAuthorityKind persistedAuthority =
                 DetectPersistedAuthority(
                     entry,
@@ -129,6 +140,20 @@ namespace UniversalSurvivorUnlocks
 
             string basePresetId =
                 missionConfig.BasePresetId ?? "";
+
+            // Source=Generated es persistente pero sigue siendo fallback
+            // administrado por G7/G8. Debe poder recalcularse en cada arranque.
+            if (
+                string.Equals(
+                    source,
+                    "Generated",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            {
+                detail = "GeneratedManagedFallback";
+                return GeneratedMissionAuthorityKind.None;
+            }
 
             if (
                 string.Equals(
@@ -256,6 +281,12 @@ namespace UniversalSurvivorUnlocks
 
                 string basePresetId =
                     ReadString(missionConfig, "BasePresetId");
+
+                if (Contains(source, "generated"))
+                {
+                    detail = "RuntimeGeneratedManagedFallback";
+                    return GeneratedMissionAuthorityKind.None;
+                }
 
                 if (Contains(source, "custom"))
                 {

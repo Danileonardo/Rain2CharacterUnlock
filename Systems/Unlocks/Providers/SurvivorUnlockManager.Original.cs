@@ -72,6 +72,54 @@ namespace UniversalSurvivorUnlocks
         }
 
 
+        /// <summary>
+        /// Comprueba un desbloqueo REAL del proveedor Original en el perfil.
+        /// No presupone que un original existe basándose en Survivors.json:
+        /// solo se considera ya obtenido si existe su UnlockableDef y
+        /// profile.HasUnlockable(original) es verdadero.
+        /// </summary>
+        public static bool HasRememberedOriginalUnlockInProfile(
+            string bodyName,
+            UserProfile profile
+        )
+        {
+            if (profile == null || string.IsNullOrWhiteSpace(bodyName))
+            {
+                return false;
+            }
+
+            SurvivorDef[] survivors = SurvivorCatalog.survivorDefs;
+            if (survivors == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < survivors.Length; i++)
+            {
+                SurvivorDef survivor = survivors[i];
+                if (survivor?.bodyPrefab == null ||
+                    !string.Equals(survivor.bodyPrefab.name, bodyName,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                UnlockableDef original = null;
+                if (!TryGetRememberedOriginalUnlock(survivor, out original) ||
+                    original == null)
+                {
+                    original = survivor.unlockableDef;
+                }
+
+                return original != null &&
+                    !IsCustomUnlock(original) &&
+                    profile.HasUnlockable(original);
+            }
+
+            return false;
+        }
+
+
         // =========================================================
         // RECORDAR UNLOCK ORIGINAL
         // =========================================================

@@ -247,10 +247,20 @@ namespace UniversalSurvivorUnlocks
             ] = currentProvider;
 
 
+            // Generated es una fuente de misión (Source), no un provider
+            // independiente en la implementación actual. Mostrarla por
+            // separado evita que USU -> USU parezca una selección fallida.
+            string missionSource =
+                entry.Challenge?.MissionConfig?.Source ?? "";
+
             activeLogger?.LogInfo(
                 $"[MISSION RUNTIME] Provider aplicado | " +
                 $"Body: {normalizedBodyName} | " +
-                $"{previousProvider} -> {currentProvider}" +
+                $"{previousProvider} -> {currentProvider} | " +
+                $"Fuente misión: " +
+                (string.IsNullOrWhiteSpace(missionSource)
+                    ? "Sin especificar"
+                    : missionSource) +
                 FormatReason(reason)
             );
 

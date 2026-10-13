@@ -5,9 +5,9 @@
     <LangVersion>preview</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <Version>0.3.0</Version>
-    <AssemblyVersion>0.3.0.0</AssemblyVersion>
-    <FileVersion>0.3.0.0</FileVersion>
+    <Version>0.3.1</Version>
+    <AssemblyVersion>0.3.1.0</AssemblyVersion>
+    <FileVersion>0.3.1.0</FileVersion>
 
     <RestoreAdditionalProjectSources>
       https://api.nuget.org/v3/index.json;
@@ -105,8 +105,10 @@
 
 
   <ItemGroup>
-    <!-- Icono de USU usado por la integración soft-dependency de RiskOfOptions. -->
+    <!-- Icono de USU usado por la integración requerida de RiskOfOptions. -->
     <EmbeddedResource Include="icon.png" LogicalName="UniversalSurvivorUnlocks.icon.png" />
+    <!-- Ícono de reroll Generated (dado sci-fi elegido por el usuario). -->
+    <EmbeddedResource Include="generated_reroll_icon.png" LogicalName="UniversalSurvivorUnlocks.generated_reroll_icon.png" />
   </ItemGroup>
 
 </Project>

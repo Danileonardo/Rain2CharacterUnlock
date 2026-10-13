@@ -412,6 +412,67 @@ namespace UniversalSurvivorUnlocks
                     }
                 )
             );
+
+
+            Register(
+                MissionPresetIds.InteractWithTarget,
+                () => CreateObjectivePreset(
+                    MissionPresetIds.InteractWithTarget,
+                    MissionPresetCategories.Interaction,
+                    "Interactuar con objetivo",
+                    "Interactúa con un objetivo o interactuable concreto.",
+                    true,
+                    new MissionObjective
+                    {
+                        Id = "interact_with_target",
+                        Type = "InteractWithTarget",
+                        Amount = 1d,
+                        ResetScope = "Run",
+                        Target = new MissionTarget
+                        {
+                            Category = "Any"
+                        },
+                        Parameters = new JObject
+                        {
+                            ["objectName"] = "",
+                            ["body"] = "",
+                            ["componentType"] = "",
+                            ["nameMatch"] = "Exact"
+                        }
+                    }
+                )
+            );
+
+
+            Register(
+                MissionPresetIds.ConsumeItemOnInteraction,
+                () => CreateObjectivePreset(
+                    MissionPresetIds.ConsumeItemOnInteraction,
+                    MissionPresetCategories.Interaction,
+                    "Entregar objeto al interactuar",
+                    "Consume un objeto real del inventario al interactuar con un objetivo concreto.",
+                    true,
+                    new MissionObjective
+                    {
+                        Id = "consume_item_on_interaction",
+                        Type = "ConsumeItemOnInteraction",
+                        Amount = 1d,
+                        ResetScope = "Run",
+                        Target = new MissionTarget
+                        {
+                            Category = "Any"
+                        },
+                        Parameters = new JObject
+                        {
+                            ["objectName"] = "",
+                            ["body"] = "",
+                            ["componentType"] = "",
+                            ["nameMatch"] = "Exact",
+                            ["item"] = ""
+                        }
+                    }
+                )
+            );
         }
     }
 }

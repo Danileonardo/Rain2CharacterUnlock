@@ -6,10 +6,10 @@ using BepInEx.Logging;
 namespace UniversalSurvivorUnlocks
 {
     /// <summary>
-    /// Registro runtime-only de G7 Phase 1.
+    /// Registro de candidatos G7.
     ///
-    /// Guarda candidatos temporales y supresiones por contenido autorado.
-    /// No persiste, no asigna provider y no materializa MissionDefinition.
+    /// G7 calcula el blueprint y su nonce; G8 materializa y persiste la
+    /// Mission V2 con Source=Generated. Official/Custom/Original suprimen G7.
     /// </summary>
     public static class DeterministicMissionGeneratorService
     {
@@ -29,6 +29,11 @@ namespace UniversalSurvivorUnlocks
 
         private static ManualLogSource logger;
 
+        private static IReadOnlyList<SurvivorInfo> currentSurvivors;
+
+        private static IReadOnlyList<MissionTemplateCompatibilityAssessment>
+            currentAssessments;
+
         public static int Count => Candidates.Count;
 
 
@@ -39,6 +44,8 @@ namespace UniversalSurvivorUnlocks
         )
         {
             logger = activeLogger;
+            currentSurvivors = survivors;
+            currentAssessments = assessments;
             Rebuild(survivors, assessments);
         }
 
@@ -48,6 +55,9 @@ namespace UniversalSurvivorUnlocks
             IReadOnlyList<MissionTemplateCompatibilityAssessment> assessments
         )
         {
+            currentSurvivors = survivors;
+            currentAssessments = assessments;
+
             Candidates.Clear();
             Suppressions.Clear();
             CandidatesBySurvivorId.Clear();
@@ -83,6 +93,24 @@ namespace UniversalSurvivorUnlocks
 
                 if (authorityKind != GeneratedMissionAuthorityKind.None)
                 {
+                    SurvivorJsonEntry authorityEntry =
+                        SurvivorJsonManager.GetEntryAnywhere(first.BodyName);
+
+                    if (authorityEntry?.Challenge?.MissionConfig?.GeneratedSuppressed == true)
+                    {
+                        Suppressions.Add(
+                            new GeneratedMissionSuppression
+                            {
+                                SurvivorId = first.SurvivorId,
+                                BodyName = first.BodyName,
+                                DisplayName = first.DisplayName,
+                                AuthorityKind = authorityKind,
+                                Detail = "GeneratedSuppressedByUser"
+                            }
+                        );
+                        continue;
+                    }
+
                     Suppressions.Add(
                         new GeneratedMissionSuppression
                         {
@@ -94,12 +122,22 @@ namespace UniversalSurvivorUnlocks
                         }
                     );
 
+                    // La generación automática sigue siendo fallback: cualquier
+                    // autoridad autorada suprime G7. Si el jugador quiere una
+                    // alternativa Generated, Mission Library la crea on-demand.
                     continue;
                 }
 
+                string generationNonce =
+                    ResolveGenerationNonce(
+                        first.SurvivorId,
+                        first.BodyName
+                    );
+
                 GeneratedMissionCandidate candidate =
                     DeterministicMissionGenerator.GenerateForSurvivor(
-                        targetAssessments
+                        targetAssessments,
+                        generationNonce
                     );
 
                 if (candidate == null)
@@ -172,6 +210,151 @@ namespace UniversalSurvivorUnlocks
                 survivorId,
                 out candidate
             );
+        }
+
+
+        public static bool RebuildCurrent()
+        {
+            if (currentAssessments == null)
+            {
+                return false;
+            }
+
+            Rebuild(
+                currentSurvivors,
+                currentAssessments
+            );
+
+            return true;
+        }
+
+
+        public static bool TryPreviewForBody(
+            string bodyName,
+            string generationNonce,
+            out GeneratedMissionCandidate candidate
+        )
+        {
+            return TryPreviewForBody(
+                bodyName,
+                generationNonce,
+                out candidate,
+                false
+            );
+        }
+
+
+        public static bool TryPreviewForBody(
+            string bodyName,
+            string generationNonce,
+            out GeneratedMissionCandidate candidate,
+            bool allowAuthoredTarget
+        )
+        {
+            candidate = null;
+
+            string normalizedBodyName =
+                bodyName?.Trim() ?? "";
+
+            if (
+                string.IsNullOrWhiteSpace(normalizedBodyName) ||
+                currentAssessments == null
+            )
+            {
+                return false;
+            }
+
+            List<MissionTemplateCompatibilityAssessment> targetAssessments =
+                new List<MissionTemplateCompatibilityAssessment>();
+
+            for (int i = 0; i < currentAssessments.Count; i++)
+            {
+                MissionTemplateCompatibilityAssessment assessment =
+                    currentAssessments[i];
+
+                if (
+                    assessment == null ||
+                    !assessment.IsModded ||
+                    (!assessment.LacksOriginalUnlock &&
+                     !allowAuthoredTarget) ||
+                    !string.Equals(
+                        assessment.BodyName,
+                        normalizedBodyName,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    continue;
+                }
+
+                targetAssessments.Add(assessment);
+            }
+
+            if (targetAssessments.Count == 0)
+            {
+                return false;
+            }
+
+            candidate =
+                DeterministicMissionGenerator.GenerateForSurvivor(
+                    targetAssessments,
+                    generationNonce
+                );
+
+            return candidate != null;
+        }
+
+
+        private static string ResolveGenerationNonce(
+            string survivorId,
+            string bodyName
+        )
+        {
+            SurvivorJsonEntry entry =
+                SurvivorJsonManager.GetEntryAnywhere(bodyName);
+
+            if (
+                entry == null &&
+                !string.IsNullOrWhiteSpace(survivorId)
+            )
+            {
+                entry =
+                    SurvivorJsonManager.FindEntryBySurvivorId(
+                        survivorId
+                    );
+            }
+
+            SurvivorChallengeJson challenge =
+                entry?.Challenge;
+
+            MissionConfiguration config =
+                challenge?.MissionConfig;
+
+            if (
+                config != null &&
+                string.Equals(
+                    config.Source,
+                    "Generated",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            {
+                string persisted =
+                    challenge.Parameters?
+                        .Value<string>("generationNonce")?
+                        .Trim()
+                    ?? "";
+
+                if (!string.IsNullOrWhiteSpace(persisted))
+                {
+                    return persisted;
+                }
+            }
+
+            // Si la entrada o todo Survivors.json se eliminó, no existe nonce.
+            // Un nonce nuevo permite recuperación/regeneración al reiniciar.
+            // El reroll normal dentro del juego usa GeneratedMissionRerollService.
+            return Guid.NewGuid().ToString("N");
         }
 
 
@@ -255,20 +438,21 @@ namespace UniversalSurvivorUnlocks
                 }
             }
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 "[MISSION GENERATOR] G7 Phase 1.1 construido | " +
                 $"Targets considered: {consideredTargets} | " +
-                $"Temporary generated: {Candidates.Count} | " +
+                $"Generated candidates: {Candidates.Count} | " +
                 $"Authored suppressed: {Suppressions.Count} | " +
                 $"Official: {officialSuppressions} | " +
                 $"Custom: {customSuppressions} | " +
                 $"Existing authored: {existingSuppressions} | " +
-                "Deterministic: yes | Weighted: yes | " +
+                "Deterministic per persisted nonce: yes | Weighted: yes | " +
                 "Signature-aware: yes | Target usage: no | " +
                 "Authored mission priority: yes | " +
                 "Generated fallback only: yes | " +
                 "Authority source: persisted+official-registry | " +
-                "Assignment: no | Persistencia: no"
+                "Assignment: G8 | Persistencia: G8 Generated"
             );
         }
 
@@ -330,11 +514,13 @@ namespace UniversalSurvivorUnlocks
                     plan.ResetScope +
                     " | PerformerPolicy: " +
                     plan.PerformerPolicy +
+                    " | Nonce: " +
+                    candidate.GenerationNonce +
                     " | Seed: " +
                     candidate.SeedHash.ToString("x8") +
                     " | Fingerprint: " +
                     candidate.ProfileFingerprint +
-                    " | Temporary: yes | FallbackOnly: yes | " +
+                    " | Managed: Generated | FallbackOnly: yes | " +
                     "AuthoredOverride: yes | TargetUsage: no"
                 );
             }

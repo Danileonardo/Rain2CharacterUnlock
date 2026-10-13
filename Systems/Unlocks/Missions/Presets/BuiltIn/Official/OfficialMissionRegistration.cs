@@ -23,6 +23,13 @@ namespace UniversalSurvivorUnlocks
             Register(MissionPresetIds.SoraOfficial, CreateSoraOfficial);
             Register(MissionPresetIds.RalseiOfficial, CreateRalseiOfficial);
             Register(MissionPresetIds.MinerOfficial, CreateMinerOfficial);
+            Register(MissionPresetIds.GwenOfficial, CreateGwenOfficial);
+            Register(MissionPresetIds.KindredOfficial, CreateKindredOfficial);
+            Register(MissionPresetIds.SeamstressOfficial, CreateSeamstressOfficial);
+            Register(MissionPresetIds.BansheeOfficial, CreateBansheeOfficial);
+            Register(MissionPresetIds.WandererOfficial, CreateWandererOfficial);
+            Register(MissionPresetIds.WarlockOfficial, CreateWarlockOfficial);
+            Register(MissionPresetIds.AH64Official, CreateAH64Official);
         }
     }
 }

@@ -207,6 +207,21 @@ namespace UniversalSurvivorUnlocks
 
             return new List<DisplayRow>
             {
+                new DisplayRow(
+                    "Diagnóstico de logs",
+                    UsuLog.DiagnosticEnabled ? "ACTIVADO" : "DESACTIVADO",
+                    UsuLog.ToggleDiagnostic
+                ),
+                new DisplayRow(
+                    "Logs detallados",
+                    UsuLog.VerboseEnabled ? "ACTIVADO" : "DESACTIVADO",
+                    UsuLog.ToggleVerbose
+                ),
+                new DisplayRow(
+                    "Auditorías extensas",
+                    UsuLog.ExtendedAuditEnabled ? "ACTIVADO" : "DESACTIVADO",
+                    UsuLog.ToggleExtendedAudit
+                ),
                 Row(
                     SurvivorLocalization.MissionLibraryEmbeddedRuntimeCatalogToken,
                     ContentCatalogService.Count.ToString()

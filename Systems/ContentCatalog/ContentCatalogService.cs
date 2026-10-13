@@ -1060,7 +1060,8 @@ namespace UniversalSurvivorUnlocks
                     ContentCatalogDiscoveryState.Unknown
                 );
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 "[CONTENT CATALOG] Catálogo 5G.2D-B construido | " +
                 "Total: " +
                 Entries.Count +

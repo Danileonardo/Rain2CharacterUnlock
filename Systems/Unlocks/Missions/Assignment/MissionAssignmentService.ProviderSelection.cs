@@ -8,7 +8,9 @@ namespace UniversalSurvivorUnlocks
     {
         /// <summary>
         /// Punto único para cambiar entre los providers seleccionables desde la
-        /// Mission Library actual. CUSTOM se habilitará en su fase propia.
+        /// Mission Library actual. Custom ya puede reactivarse cuando existe
+        /// una CustomMission guardada; el editor completo sigue perteneciendo
+        /// a 5H.
         ///
         /// La resolución del preset objetivo vive en
         /// MissionProviderSelectionPolicy; este método sólo ejecuta la acción.
@@ -33,6 +35,14 @@ namespace UniversalSurvivorUnlocks
             if (provider == UnlockProviderKind.Original)
             {
                 return SelectOriginal(
+                    normalizedBodyName,
+                    logger
+                );
+            }
+
+            if (provider == UnlockProviderKind.Custom)
+            {
+                return SelectCustom(
                     normalizedBodyName,
                     logger
                 );

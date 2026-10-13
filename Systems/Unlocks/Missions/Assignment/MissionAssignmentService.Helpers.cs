@@ -79,8 +79,8 @@ namespace UniversalSurvivorUnlocks
         /// Los nueve personajes con preset oficial recuperan SU preset oficial,
         /// no el último preset que el jugador hubiese seleccionado.
         ///
-        /// Para survivors sin preset oficial todavía se mantiene el fallback
-        /// genérico histórico de USU: KillEnemies 100.
+        /// Para survivors sin preset oficial ya no se inventa KillEnemies 100.
+        /// Se vuelve a GeneratedPending para que G7/G8 regenere Mission V2.
         /// </summary>
         private static SurvivorChallengeJson CreateDefaultFallbackChallenge(
             string bodyName,
@@ -121,6 +121,9 @@ namespace UniversalSurvivorUnlocks
                 presetConfig.Source =
                     "Preset";
 
+                presetConfig.UsuPresetId =
+                    presetConfig.BasePresetId ?? "";
+
                 presetConfig.CustomMission =
                     null;
 
@@ -129,53 +132,9 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            return new SurvivorChallengeJson
-            {
-                Enabled = true,
-
-                Name =
-                    "Desafío de desbloqueo",
-
-                Description =
-                    "",
-
-                LocalizationKey =
-                    "",
-
-                LunarCoinReward =
-                    0,
-
-                Type =
-                    "KillEnemies",
-
-                Parameters =
-                    new JObject
-                    {
-                        ["amount"] = 100
-                    },
-
-                MissionConfig =
-                    new MissionConfiguration
-                    {
-                        Provider =
-                            UnlockProviderKind.USU,
-
-                        SelectionMode =
-                            UnlockSelectionMode.AutomaticFallback,
-
-                        Source =
-                            "Preset",
-
-                        BasePresetId =
-                            "",
-
-                        CustomMission =
-                            null
-                    },
-
-                Mission =
-                    null
-            };
+            return
+                SurvivorJsonManager
+                    .CreateGeneratedPendingChallenge();
         }
 
 
@@ -203,6 +162,7 @@ namespace UniversalSurvivorUnlocks
 
             return
                 config.CustomMission != null ||
+                config.CustomMissionSnapshot != null ||
                 config.EffectiveProvider == UnlockProviderKind.Custom ||
                 string.Equals(
                     config.Source,

@@ -162,6 +162,49 @@ namespace UniversalSurvivorUnlocks
                 data.Value
             );
 
+            if (data.OnClick != null)
+            {
+                canvasGroup.blocksRaycasts = true;
+
+                Button[] buttons = clone.GetComponentsInChildren<Button>(true);
+                if (buttons != null && buttons.Length > 0 && buttons[0] != null)
+                {
+                    Button actionButton = buttons[0];
+                    actionButton.interactable = true;
+                    if (actionButton.targetGraphic != null)
+                    {
+                        actionButton.targetGraphic.raycastTarget = true;
+                    }
+
+                    Action capturedAction = data.OnClick;
+                    actionButton.onClick.AddListener(
+                        delegate
+                        {
+                            capturedAction();
+
+                            // Refresca la etiqueta sin abandonar Avanzado.
+                            // Los toggles modifican ConfigEntry<bool> real;
+                            // el archivo .cfg se guarda desde UsuLog.
+                            if (data.Label == "Diagnóstico de logs")
+                            {
+                                ApplyRowText(clone, data.Label,
+                                    UsuLog.DiagnosticEnabled ? "ACTIVADO" : "DESACTIVADO");
+                            }
+                            else if (data.Label == "Logs detallados")
+                            {
+                                ApplyRowText(clone, data.Label,
+                                    UsuLog.VerboseEnabled ? "ACTIVADO" : "DESACTIVADO");
+                            }
+                            else if (data.Label == "Auditorías extensas")
+                            {
+                                ApplyRowText(clone, data.Label,
+                                    UsuLog.ExtendedAuditEnabled ? "ACTIVADO" : "DESACTIVADO");
+                            }
+                        }
+                    );
+                }
+            }
+
             return clone;
         }
 

@@ -15,6 +15,24 @@ namespace UniversalSurvivorUnlocks
 
         public bool OriginalAvailable { get; internal set; }
 
+        public string ActiveSource
+        {
+            get;
+            internal set;
+        } = "";
+
+        public bool CustomAvailable
+        {
+            get;
+            internal set;
+        }
+
+        public bool GeneratedAvailable
+        {
+            get;
+            internal set;
+        }
+
         public OfficialMissionPresetDescriptor DirectUsuDescriptor
         {
             get;
@@ -66,7 +84,9 @@ namespace UniversalSurvivorUnlocks
         public bool DirectUsuPresetAvailable =>
             DirectUsuAlternativeDeclared &&
             DirectUsuPreset != null &&
-            !string.IsNullOrWhiteSpace(UsuTargetPresetId);
+            !string.IsNullOrWhiteSpace(
+                DirectUsuDescriptor?.PresetId
+            );
 
         public bool RememberedUsuPresetAvailable =>
             RememberedPreset != null &&
@@ -90,11 +110,22 @@ namespace UniversalSurvivorUnlocks
         /// en un clic, o cuando USU ya es la familia activa.
         /// </summary>
         public bool CanSelectUsuImmediately =>
-            DirectUsuPresetAvailable ||
-            (!OriginalAvailable && RememberedUsuPresetAvailable);
+            UsuTargetAvailable;
+
+        public bool IsGeneratedActive =>
+            UnlockProviderPolicy.IsUsuFamily(ActiveProvider) &&
+            string.Equals(
+                ActiveSource,
+                "Generated",
+                StringComparison.OrdinalIgnoreCase
+            );
+
+        public bool IsCustomActive =>
+            ActiveProvider == UnlockProviderKind.Custom;
 
         public bool IsUsuActive =>
-            UnlockProviderPolicy.IsUsuFamily(ActiveProvider);
+            UnlockProviderPolicy.IsUsuFamily(ActiveProvider) &&
+            !IsGeneratedActive;
     }
 
 
@@ -176,9 +207,44 @@ namespace UniversalSurvivorUnlocks
                 return true;
             }
 
-            return IsDirectOfficialUsuPreset(
-                entry,
-                presetId
+            // Con la fila de providers 0.3.1, una misión Official propia de
+            // USU puede coexistir con Original como alternativa explícita del
+            // jugador. Seguimos bloqueando presets arbitrarios/cruzados.
+            return
+                IsOfficialUsuPresetForEntry(
+                    entry,
+                    presetId
+                ) ||
+                IsDirectOfficialUsuPreset(
+                    entry,
+                    presetId
+                );
+        }
+
+
+        public static bool IsOfficialUsuPresetForEntry(
+            SurvivorJsonEntry entry,
+            string presetId
+        )
+        {
+            if (
+                entry == null ||
+                string.IsNullOrWhiteSpace(presetId) ||
+                !OfficialMissionPresetRegistry.TryResolve(
+                    entry.BodyName,
+                    entry.Source,
+                    out OfficialMissionPresetDescriptor descriptor
+                ) ||
+                descriptor == null
+            )
+            {
+                return false;
+            }
+
+            return string.Equals(
+                descriptor.PresetId,
+                presetId.Trim(),
+                StringComparison.OrdinalIgnoreCase
             );
         }
 
@@ -240,11 +306,23 @@ namespace UniversalSurvivorUnlocks
             bool originalAvailable
         )
         {
+            MissionConfiguration missionConfig =
+                entry?.Challenge?.MissionConfig;
+
             MissionProviderSelectionState state =
                 new MissionProviderSelectionState
                 {
                     ActiveProvider = activeProvider,
-                    OriginalAvailable = originalAvailable
+                    OriginalAvailable = originalAvailable,
+                    ActiveSource = missionConfig?.Source ?? "",
+                    CustomAvailable =
+                        MissionProviderSlotStore.HasCustomMission(
+                            entry?.Challenge
+                        ),
+                    GeneratedAvailable =
+                        MissionProviderSlotStore.HasGeneratedMission(
+                            entry?.Challenge
+                        )
                 };
 
             if (entry == null)
@@ -252,18 +330,19 @@ namespace UniversalSurvivorUnlocks
                 return state;
             }
 
+            // Conserva la excepción histórica Original <-> USU (Miner).
             if (
                 TryResolveDirectOfficialUsuDescriptor(
                     entry,
-                    out OfficialMissionPresetDescriptor descriptor
+                    out OfficialMissionPresetDescriptor directDescriptor
                 )
             )
             {
-                state.DirectUsuDescriptor = descriptor;
+                state.DirectUsuDescriptor = directDescriptor;
 
                 if (
                     MissionPresetLibraryService.TryGetAssignableMissionPreset(
-                        descriptor.PresetId,
+                        directDescriptor.PresetId,
                         out MissionPreset directPreset
                     ) &&
                     directPreset != null
@@ -273,16 +352,17 @@ namespace UniversalSurvivorUnlocks
                 }
             }
 
-            MissionConfiguration missionConfig =
-                entry.Challenge?.MissionConfig;
+            string rememberedPresetId =
+                MissionProviderSlotStore.ResolveRememberedUsuPresetId(
+                    entry.Challenge
+                );
 
-            state.RememberedPresetId =
-                missionConfig?.BasePresetId?.Trim() ?? "";
+            state.RememberedPresetId = rememberedPresetId;
 
             if (
-                !string.IsNullOrWhiteSpace(state.RememberedPresetId) &&
+                !string.IsNullOrWhiteSpace(rememberedPresetId) &&
                 MissionPresetLibraryService.TryGetAssignableMissionPreset(
-                    state.RememberedPresetId,
+                    rememberedPresetId,
                     out MissionPreset rememberedPreset
                 ) &&
                 rememberedPreset != null
@@ -291,19 +371,44 @@ namespace UniversalSurvivorUnlocks
                 state.RememberedPreset = rememberedPreset;
             }
 
-            if (state.DirectUsuAlternativeDeclared)
+            // Cualquier Official propio de USU puede aparecer como opción si
+            // no existe Original. Con Original sólo se permite la excepción
+            // explícita del registry (por ahora Miner). Esto también cubre el
+            // caso futuro Generated -> aparece Official USU.
+            if (
+                OfficialMissionPresetRegistry.TryResolve(
+                    entry.BodyName,
+                    entry.Source,
+                    out OfficialMissionPresetDescriptor officialDescriptor
+                ) &&
+                officialDescriptor != null &&
+                MissionPresetLibraryService.TryGetAssignableMissionPreset(
+                    officialDescriptor.PresetId,
+                    out MissionPreset officialPreset
+                ) &&
+                officialPreset != null
+            )
+            {
+                state.UsuTargetPresetId =
+                    officialDescriptor.PresetId?.Trim() ?? "";
+                state.UsuTargetPreset = officialPreset;
+            }
+            else if (state.DirectUsuPresetAvailable)
             {
                 state.UsuTargetPresetId =
                     state.DirectUsuDescriptor.PresetId?.Trim() ?? "";
-
-                state.UsuTargetPreset =
-                    state.DirectUsuPreset;
+                state.UsuTargetPreset = state.DirectUsuPreset;
             }
-            else
+            else if (
+                !originalAvailable ||
+                CanAssignUsuPreset(
+                    entry,
+                    state.RememberedPresetId
+                )
+            )
             {
                 state.UsuTargetPresetId =
                     state.RememberedPresetId;
-
                 state.UsuTargetPreset =
                     state.RememberedPreset;
             }

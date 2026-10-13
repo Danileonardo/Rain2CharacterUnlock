@@ -2,6 +2,8 @@ using System;
 
 using BepInEx.Logging;
 using RoR2;
+using UnityEngine;
+using UnityEngine.Networking;
 
 namespace UniversalSurvivorUnlocks
 {
@@ -33,6 +35,11 @@ namespace UniversalSurvivorUnlocks
         public static event Action<CharacterBody, GenericSkill> SkillActivated;
         public static event Action<GameplayHealingEvent> HealingProcessed;
         public static event Action<ScrapperTransaction> ScrapperProcessed;
+        public static event Action<GameplayInteractionEvent> InteractionPerformed;
+        // Sólo se emite tras una compra REAL en un Shrine of Blood.
+        // La identidad del componente permite distinguir altares físicos.
+        public static event Action<CharacterMaster, CharacterBody, int> BloodShrinePurchased;
+        public static event Action<GameplayConsumedItemInteractionEvent> ItemConsumedOnInteraction;
 
         public static void Initialize(ManualLogSource log)
         {
@@ -50,6 +57,8 @@ namespace UniversalSurvivorUnlocks
             On.RoR2.CharacterBody.OnSkillActivated += CharacterBody_OnSkillActivated;
             On.RoR2.HealthComponent.Heal += HealthComponent_Heal;
             On.RoR2.ScrapperController.BeginScrapping_UniquePickup += ScrapperController_BeginScrapping;
+            On.RoR2.Interactor.PerformInteraction += Interactor_PerformInteraction;
+            On.RoR2.ShrineBloodBehavior.AddShrineStack += ShrineBloodBehavior_AddShrineStack;
 
             UsuLog.Verbose(
                 logger,
@@ -243,6 +252,232 @@ namespace UniversalSurvivorUnlocks
                     converted
                 )
             );
+        }
+
+        private static void ShrineBloodBehavior_AddShrineStack(
+            On.RoR2.ShrineBloodBehavior.orig_AddShrineStack orig,
+            ShrineBloodBehavior shrine,
+            Interactor interactor)
+        {
+            int previous = shrine != null ? shrine.purchaseCount : -1;
+
+            // No interrumpir ni reemplazar la mecánica nativa del santuario.
+            orig(shrine, interactor);
+
+            if (!NetworkServer.active ||
+                Run.instance == null ||
+                shrine == null ||
+                interactor == null ||
+                shrine.purchaseCount <= previous ||
+                !MissionRuntimeActivityPlan.IsTypeActive("InteractWithTarget") ||
+                BloodShrinePurchased == null)
+            {
+                return;
+            }
+
+            CharacterBody body = interactor.GetComponent<CharacterBody>();
+            CharacterMaster master = body?.master;
+            if (master == null)
+            {
+                return;
+            }
+
+            BloodShrinePurchased.Invoke(master, body, shrine.GetInstanceID());
+        }
+
+        private static void Interactor_PerformInteraction(
+            On.RoR2.Interactor.orig_PerformInteraction orig,
+            Interactor self,
+            GameObject interactableObject
+        )
+        {
+            bool shouldObserve =
+                NetworkServer.active &&
+                Run.instance != null &&
+                MissionRuntimeActivityPlan.IsTypeActive(
+                    "InteractWithTarget"
+                ) &&
+                interactableObject != null;
+
+            GameplayInteractionEvent interaction = null;
+            int[] itemCountsBefore = null;
+
+            if (shouldObserve)
+            {
+                try
+                {
+                    IInteractable interactable =
+                        interactableObject.GetComponent<IInteractable>();
+
+                    bool available =
+                        interactable != null &&
+                        (int)interactable.GetInteractability(self) == 1;
+
+                    if (available)
+                    {
+                        CharacterBody playerBody =
+                            self != null
+                                ? self.GetComponent<CharacterBody>()
+                                : null;
+
+                        CharacterBody targetBody =
+                            interactableObject.GetComponent<CharacterBody>() ??
+                            interactableObject.GetComponentInParent<CharacterBody>();
+
+                        Component[] components =
+                            interactableObject.GetComponents<Component>();
+
+                        string[] componentTypes =
+                            new string[components?.Length ?? 0];
+
+                        for (int i = 0; i < componentTypes.Length; i++)
+                        {
+                            Component component = components[i];
+                            Type type = component?.GetType();
+
+                            componentTypes[i] =
+                                type?.FullName ??
+                                type?.Name ??
+                                "";
+                        }
+
+                        interaction =
+                            new GameplayInteractionEvent(
+                                playerBody,
+                                playerBody?.master,
+                                targetBody,
+                                interactableObject.name ?? "",
+                                targetBody != null
+                                    ? (BodyCatalog.GetBodyName(targetBody.bodyIndex) ?? "")
+                                    : "",
+                                componentTypes
+                            );
+
+                        if (
+                            MissionRuntimeActivityPlan.IsTypeActive(
+                                "ConsumeItemOnInteraction"
+                            ) &&
+                            playerBody?.master?.inventory != null
+                        )
+                        {
+                            Inventory inventory = playerBody.master.inventory;
+                            int itemCount = ItemCatalog.itemCount;
+                            itemCountsBefore = new int[itemCount];
+
+                            for (int i = 0; i < itemCount; i++)
+                            {
+                                itemCountsBefore[i] =
+                                    inventory.GetItemCountPermanent((ItemIndex)i);
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    logger?.LogWarning(
+                        "[RUNTIME] No fue posible observar interacción | " +
+                        ex.Message
+                    );
+                }
+            }
+
+            // RoR2 y el resto de la cadena siempre se ejecutan exactamente una vez.
+            orig(self, interactableObject);
+
+            if (interaction != null)
+            {
+                InteractionPerformed?.Invoke(interaction);
+
+                if (
+                    itemCountsBefore != null &&
+                    interaction.PlayerMaster?.inventory != null &&
+                    ItemConsumedOnInteraction != null
+                )
+                {
+                    Inventory inventory = interaction.PlayerMaster.inventory;
+                    int itemCount = Math.Min(
+                        itemCountsBefore.Length,
+                        ItemCatalog.itemCount
+                    );
+
+                    for (int i = 0; i < itemCount; i++)
+                    {
+                        int after =
+                            inventory.GetItemCountPermanent((ItemIndex)i);
+                        int consumed = itemCountsBefore[i] - after;
+
+                        if (consumed <= 0)
+                        {
+                            continue;
+                        }
+
+                        ItemConsumedOnInteraction.Invoke(
+                            new GameplayConsumedItemInteractionEvent(
+                                interaction,
+                                (ItemIndex)i,
+                                consumed
+                            )
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Interacción real iniciada por un jugador contra un IInteractable que
+    /// estaba disponible antes de ejecutar la cadena original. Los metadatos
+    /// se capturan antes de orig porque algunos interactuables pueden destruirse
+    /// o transformarse durante OnInteractionBegin.
+    /// </summary>
+    public sealed class GameplayInteractionEvent
+    {
+        public CharacterBody PlayerBody { get; }
+        public CharacterMaster PlayerMaster { get; }
+        public CharacterBody TargetBody { get; }
+        public string TargetObjectName { get; }
+        public string TargetBodyName { get; }
+        public string[] ComponentTypeNames { get; }
+
+        public GameplayInteractionEvent(
+            CharacterBody playerBody,
+            CharacterMaster playerMaster,
+            CharacterBody targetBody,
+            string targetObjectName,
+            string targetBodyName,
+            string[] componentTypeNames
+        )
+        {
+            PlayerBody = playerBody;
+            PlayerMaster = playerMaster;
+            TargetBody = targetBody;
+            TargetObjectName = targetObjectName ?? "";
+            TargetBodyName = targetBodyName ?? "";
+            ComponentTypeNames = componentTypeNames ?? Array.Empty<string>();
+        }
+    }
+
+    /// <summary>
+    /// Item(s) that actually disappeared from the interacting player's
+    /// permanent inventory while an available IInteractable processed the
+    /// interaction. This is intentionally generic: it does not know Acolyte
+    /// or any particular item category.
+    /// </summary>
+    public sealed class GameplayConsumedItemInteractionEvent
+    {
+        public GameplayInteractionEvent Interaction { get; }
+        public ItemIndex ItemIndex { get; }
+        public int AmountConsumed { get; }
+
+        public GameplayConsumedItemInteractionEvent(
+            GameplayInteractionEvent interaction,
+            ItemIndex itemIndex,
+            int amountConsumed
+        )
+        {
+            Interaction = interaction;
+            ItemIndex = itemIndex;
+            AmountConsumed = amountConsumed;
         }
     }
 

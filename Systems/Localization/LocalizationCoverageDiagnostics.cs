@@ -15,7 +15,8 @@ namespace UniversalSurvivorUnlocks
     /// No registra tokens, no cambia LanguageAPI, no altera unlocks y no
     /// modifica el Logbook. Sólo imprime exactamente lo que los Content
     /// Profiles ya resolvieron en runtime y los tokens nativos asociados.
-    /// Plugin sólo lo ejecuta cuando Logging.VerboseLogging=true.
+    /// Plugin lo ejecuta con Logging.VerboseLogging=true para el resumen;
+    /// el volcado exhaustivo exige Logging.ExtendedAuditLogging=true.
     /// </summary>
     internal static class LocalizationCoverageDiagnostics
     {
@@ -32,10 +33,13 @@ namespace UniversalSurvivorUnlocks
             string language =
                 Language.currentLanguageName ?? "";
 
-            logger.LogInfo(
-                "[LOCALIZATION AUDIT] ===== INICIO ===== | Idioma: " +
-                language
-            );
+            if (UsuLog.ExtendedAuditEnabled)
+            {
+                logger.LogInfo(
+                    "[LOCALIZATION AUDIT] ===== INICIO ===== | Idioma: " +
+                    language
+                );
+            }
 
             int moddedCount = 0;
             int missingLoreCount = 0;
@@ -90,48 +94,51 @@ namespace UniversalSurvivorUnlocks
                     suspiciousLoreCount++;
                 }
 
-                logger.LogInfo(
-                    "[LOCALIZATION AUDIT] SURVIVOR | Body: " + bodyName +
-                    " | Name: " + Escape(displayName) +
-                    " | Source: " + source
-                );
-
-                logger.LogInfo(
-                    "[LOCALIZATION AUDIT] TOKENS | Body: " + bodyName +
-                    " | NameToken: " + Escape(nameToken) +
-                    " | SubtitleToken: " + Escape(subtitleToken) +
-                    " | DescriptionToken: " + Escape(descriptionToken) +
-                    " | LoreToken: " + Escape(loreToken)
-                );
-
-                logger.LogInfo(
-                    "[LOCALIZATION AUDIT] SUBTITLE | Body: " + bodyName +
-                    " | Text: " + Escape(subtitle)
-                );
-
-                logger.LogInfo(
-                    "[LOCALIZATION AUDIT] DESCRIPTION | Body: " + bodyName +
-                    " | Text: " + Escape(description)
-                );
-
-                logger.LogInfo(
-                    "[LOCALIZATION AUDIT] LORE | Body: " + bodyName +
-                    " | Missing: " + missingLore +
-                    " | Suspicious: " + suspiciousLore +
-                    " | Chars: " + lore.Length +
-                    " | Words: " + loreWords +
-                    " | Text: " + Escape(lore)
-                );
-
-                LogUnlock(
-                    bodyName,
-                    "SURVIVOR",
-                    Member(profile, "SurvivorUnlock"),
-                    logger
-                );
-
-                LogSkills(profile, bodyName, logger);
-                LogSkins(profile, bodyName, logger);
+                if (UsuLog.ExtendedAuditEnabled)
+                {
+                    logger.LogInfo(
+                        "[LOCALIZATION AUDIT] SURVIVOR | Body: " + bodyName +
+                        " | Name: " + Escape(displayName) +
+                        " | Source: " + source
+                    );
+    
+                    logger.LogInfo(
+                        "[LOCALIZATION AUDIT] TOKENS | Body: " + bodyName +
+                        " | NameToken: " + Escape(nameToken) +
+                        " | SubtitleToken: " + Escape(subtitleToken) +
+                        " | DescriptionToken: " + Escape(descriptionToken) +
+                        " | LoreToken: " + Escape(loreToken)
+                    );
+    
+                    logger.LogInfo(
+                        "[LOCALIZATION AUDIT] SUBTITLE | Body: " + bodyName +
+                        " | Text: " + Escape(subtitle)
+                    );
+    
+                    logger.LogInfo(
+                        "[LOCALIZATION AUDIT] DESCRIPTION | Body: " + bodyName +
+                        " | Text: " + Escape(description)
+                    );
+    
+                    logger.LogInfo(
+                        "[LOCALIZATION AUDIT] LORE | Body: " + bodyName +
+                        " | Missing: " + missingLore +
+                        " | Suspicious: " + suspiciousLore +
+                        " | Chars: " + lore.Length +
+                        " | Words: " + loreWords +
+                        " | Text: " + Escape(lore)
+                    );
+    
+                    LogUnlock(
+                        bodyName,
+                        "SURVIVOR",
+                        Member(profile, "SurvivorUnlock"),
+                        logger
+                    );
+    
+                    LogSkills(profile, bodyName, logger);
+                    LogSkins(profile, bodyName, logger);
+                }
             }
 
             logger.LogInfo(
@@ -140,9 +147,12 @@ namespace UniversalSurvivorUnlocks
                 " | Lore suspicious: " + suspiciousLoreCount
             );
 
-            logger.LogInfo(
-                "[LOCALIZATION AUDIT] ===== FIN ====="
-            );
+            if (UsuLog.ExtendedAuditEnabled)
+            {
+                logger.LogInfo(
+                    "[LOCALIZATION AUDIT] ===== FIN ====="
+                );
+            }
         }
 
         private static void LogSkills(

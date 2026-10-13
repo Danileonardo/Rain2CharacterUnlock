@@ -185,10 +185,10 @@ namespace UniversalSurvivorUnlocks
                 self
             );
 
-            CaptureBaseColorIfNeeded(
-                self
-            );
-
+            // La base visual se captura DESPUÉS del recálculo vanilla,
+            // exclusivamente al aplicar la silueta (ApplyLockedColor).
+            // Capturarla aquí podía guardar negro de un estado anterior y
+            // restaurarlo sobre un survivor que ya está desbloqueado.
             orig(self);
 
             RefreshPortrait(
@@ -205,10 +205,10 @@ namespace UniversalSurvivorUnlocks
                 self
             );
 
-            CaptureBaseColorIfNeeded(
-                self
-            );
-
+            // La base visual se captura DESPUÉS del recálculo vanilla,
+            // exclusivamente al aplicar la silueta (ApplyLockedColor).
+            // Capturarla aquí podía guardar negro de un estado anterior y
+            // restaurarlo sobre un survivor que ya está desbloqueado.
             orig(self);
 
             RefreshPortrait(
@@ -242,31 +242,6 @@ namespace UniversalSurvivorUnlocks
             RestoreOurOverrideOnly(
                 self
             );
-        }
-
-        private static void CaptureBaseColorIfNeeded(
-            SurvivorIconController self
-        )
-        {
-            if (
-                self == null ||
-                self.survivorDef == null ||
-                self.survivorIcon == null ||
-                !ShouldManageVisual(self)
-            )
-            {
-                return;
-            }
-
-            if (
-                !OriginalColors.ContainsKey(
-                    self
-                )
-            )
-            {
-                OriginalColors[self] =
-                    self.survivorIcon.color;
-            }
         }
 
         private static bool ShouldManageVisual(
@@ -307,48 +282,98 @@ namespace UniversalSurvivorUnlocks
                 self.survivorDef.unlockableDef;
 
             bool activeIsUsu =
-                SurvivorUnlockManager.IsCustomUnlock(
-                    unlockable
-                );
+                SurvivorUnlockManager.IsCustomUnlock(unlockable);
 
             bool runtimeManaged =
-                IsRuntimeManagedBody(
-                    self.survivorDef
-                );
+                IsRuntimeManagedBody(self.survivorDef);
 
-            /*
-             * Para survivors que nunca cambiaron de provider en esta sesión
-             * y que están usando Original, USU sigue sin tocar el visual.
-             *
-             * Para un survivor que SÍ fue cambiado en runtime, la
-             * disponibilidad continúa siendo la de RoR2
-             * (survivorIsUnlocked), pero USU asegura que un false no quede a
-             * color por un cache viejo del selector.
-             */
-            if (
-                !activeIsUsu &&
-                !runtimeManaged
-            )
+            if (!activeIsUsu && !runtimeManaged)
             {
                 return;
             }
 
-            /*
-             * Si el UnlockableDef activo está realmente desbloqueado dejamos
-             * intacto el resultado visual de RoR2.
-             */
+            // Es posible que ScrollableLobbyUI recicle una celda con el
+            // survivorIsUnlocked anterior justo después de desbloquear o
+            // cambiar Original/USU. Consultamos el unlockable ACTIVO en el
+            // perfil local para no volver a ocultar una identidad liberada.
+            bool? unlockedInProfile =
+                TryGetLocalUnlockState(unlockable);
+
+            if (unlockedInProfile == true)
+            {
+                RestoreOurOverrideOnly(self);
+                RestoreVisibleUnlockedColor(self);
+                return;
+            }
+
+            // La visualización del provider Original pertenece a RoR2.
+            // No aplicamos una segunda silueta de USU sobre su resultado,
+            // aunque el survivor haya cambiado de provider en esta sesión.
+            if (!activeIsUsu)
+            {
+                return;
+            }
+
             if (self.survivorIsUnlocked)
             {
-                RestoreOurOverrideOnly(
-                    self
-                );
-
+                RestoreOurOverrideOnly(self);
                 return;
             }
 
-            ApplyLockedColor(
-                self
-            );
+            ApplyLockedColor(self);
+        }
+
+        private static bool? TryGetLocalUnlockState(
+            UnlockableDef unlockable
+        )
+        {
+            if (unlockable == null)
+            {
+                return true;
+            }
+
+            try
+            {
+                LocalUser localUser =
+                    LocalUserManager.GetFirstLocalUser();
+
+                if (localUser == null || localUser.userProfile == null)
+                {
+                    return null;
+                }
+
+                return localUser.userProfile.HasUnlockable(unlockable);
+            }
+            catch
+            {
+                // Sin perfil disponible, no inventar un desbloqueo.
+                // La disponibilidad normal sigue en manos de RoR2.
+                return null;
+            }
+        }
+
+        private static void RestoreVisibleUnlockedColor(
+            SurvivorIconController self
+        )
+        {
+            if (self == null || self.survivorIcon == null)
+            {
+                return;
+            }
+
+            Color current = self.survivorIcon.color;
+
+            // Reparar únicamente un tinte negro residual, sin alterar
+            // el retrato, el alpha ni los colores normales de selección.
+            if (
+                current.r <= 0.025f &&
+                current.g <= 0.025f &&
+                current.b <= 0.025f
+            )
+            {
+                self.survivorIcon.color =
+                    new Color(1f, 1f, 1f, current.a);
+            }
         }
 
         /// <summary>
@@ -403,11 +428,9 @@ namespace UniversalSurvivorUnlocks
                     self.survivorIcon.color;
             }
 
-            UsuLog.Verbose(
-                Logger,
-                $"Silueta bloqueada aplicada: " +
-                $"{self.survivorDef.cachedName}"
-            );
+            // No registrar cada aplicación de color: Rebuild y UpdateAvailability
+            // pueden ejecutar esta ruta varias veces por frame. Los logs de
+            // RefreshAll / [MISSION UI] ya describen los refrescos relevantes.
 
             Color original =
                 OriginalColors[self];
@@ -455,11 +478,8 @@ namespace UniversalSurvivorUnlocks
                 self
             );
 
-            UsuLog.Verbose(
-                Logger,
-                $"Override visual USU liberado: " +
-                $"{self.survivorDef?.cachedName ?? "<null>"}"
-            );
+            // No escribir un evento por cada restauración durante las
+            // reconstrucciones de la UI. Esto no afecta la restauración real.
         }
 
         private static void ReleaseAllPortraitOverrides()

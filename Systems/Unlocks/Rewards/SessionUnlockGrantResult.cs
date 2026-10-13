@@ -50,9 +50,9 @@ namespace UniversalSurvivorUnlocks
             UnlockableAfter;
 
 
-        public bool Success =>
-            AchievementAfter &&
-            UnlockableAfter;
+        // Puede estar desbloqueado por el proveedor Original y recibir
+        // solamente la normalización silenciosa del Unlockable USU.
+        public bool Success => UnlockableAfter;
 
 
         public SessionUnlockGrantResult(

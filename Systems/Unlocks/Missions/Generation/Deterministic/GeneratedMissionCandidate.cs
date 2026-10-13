@@ -1,10 +1,11 @@
 namespace UniversalSurvivorUnlocks
 {
     /// <summary>
-    /// Candidato runtime-only producido por G7 Phase 1.
+    /// Candidato producido por G7.
     ///
-    /// Es deliberadamente temporal: no cambia provider, no reemplaza una
-    /// misión autorada, no escribe Survivors.json y no desbloquea nada.
+    /// G8 Phase 1.5 lo materializa como Mission V2 y lo persiste con
+    /// Source=Generated. Sigue siendo fallback: Original/Official/Custom
+    /// siempre tienen prioridad.
     /// </summary>
     public sealed class GeneratedMissionCandidate
     {
@@ -98,6 +99,13 @@ namespace UniversalSurvivorUnlocks
             set;
         }
 
+        public string GenerationNonce
+        {
+            get;
+            set;
+        } = "";
+
+
         public string StableSeed
         {
             get;
@@ -123,7 +131,7 @@ namespace UniversalSurvivorUnlocks
         } = new GeneratedMissionParameterPlan();
 
         /// <summary>
-        /// G7 Phase 1 nunca persiste este resultado.
+        /// El blueprint es temporal; G8 persiste su MissionDefinition materializada.
         /// </summary>
         public bool IsTemporary
         {

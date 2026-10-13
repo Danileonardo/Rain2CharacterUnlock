@@ -22,6 +22,13 @@ namespace UniversalSurvivorUnlocks
                 new List<SurvivorDefinition>
                 {
                     new AurelionSolDefinition(),
+                    new GwenDefinition(),
+                    new KindredDefinition(),
+                    new SeamstressDefinition(),
+                    new BansheeDefinition(),
+                    new WandererDefinition(),
+                    new WarlockDefinition(),
+                    new AH64Definition(),
                     new AurielDefinition(),
                     new RalseiDefinition(),
                     new SoraDefinition(),

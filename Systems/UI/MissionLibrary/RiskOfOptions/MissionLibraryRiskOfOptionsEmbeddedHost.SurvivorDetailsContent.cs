@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 using BepInEx.Logging;
@@ -48,11 +48,33 @@ namespace UniversalSurvivorUnlocks
                 profile
             );
 
-            survivorDetailsText.text =
-                BuildSurvivorDetailsText(profile);
+            // Preset visual común para todos los supervivientes. El provider
+            // activo y sus controles siguen viniendo del estado real.
+            StyleSurvivorPresetProviderRow(profile);
 
-            RectTransform detailsTextRect =
-                survivorDetailsText.rectTransform;
+            UpdateGeneratedRerollControl(
+                profile
+            );
+
+            UpdateGeneratedDeleteControl(
+                profile
+            );
+
+            bool ah64 = string.Equals(profile.BodyName, "AH64Body",
+                StringComparison.OrdinalIgnoreCase);
+            RectTransform detailsTextRect;
+            if (ah64)
+            {
+                HideSurvivorPresetCards();
+                UpdateAH64CampaignPanel(profile);
+                detailsTextRect = ah64CampaignContentRoot;
+            }
+            else
+            {
+                HideAH64CampaignPanel();
+                UpdateSurvivorPresetCards(profile);
+                detailsTextRect = survivorPresetContentRoot;
+            }
 
             if (detailsTextRect != null)
             {
@@ -161,7 +183,9 @@ namespace UniversalSurvivorUnlocks
         }
 
         private static string BuildSurvivorDetailsText(
-            SurvivorContentProfile profile
+            SurvivorContentProfile profile,
+            bool skipNotes = false,
+            bool skipCampaign = false
         )
         {
             if (profile == null)
@@ -243,21 +267,33 @@ namespace UniversalSurvivorUnlocks
                 builder.Append(localizedDescription);
             }
 
-            AppendSectionTitle(
-                builder,
-                L(
-                    SurvivorLocalization
-                        .MissionLibraryBrowserNotesToken
-                )
-            );
+            // ÚNICO PERSONAJE CON CAMPAÑA PERSISTENTE: AH-64.
+            // Se ubica después de la misión/Descripción y ANTES de Notas,
+            // manteniendo toda la UI de los demás survivors intacta.
+            if (!skipCampaign && string.Equals(profile.BodyName, "AH64Body",
+                StringComparison.OrdinalIgnoreCase))
+            {
+                AppendSectionTitle(builder,
+                    AH64CampaignTracker.IsSpanish
+                        ? "Progreso de campaña — Protocolo 64"
+                        : "Campaign progress — Protocol 64");
+                builder.Append("\n");
+                builder.Append(AH64CampaignTracker.BuildProgressText());
+            }
 
-            builder.Append("\n");
-            builder.Append(
-                ResolveNotesText(
-                    profile,
-                    hidden
-                )
-            );
+            if (!skipNotes)
+            {
+                AppendSectionTitle(
+                    builder,
+                    L(
+                        SurvivorLocalization
+                            .MissionLibraryBrowserNotesToken
+                    )
+                );
+
+                builder.Append("\n");
+                builder.Append(ResolveNotesText(profile, hidden));
+            }
 
             return builder.ToString();
         }
@@ -454,7 +490,13 @@ namespace UniversalSurvivorUnlocks
                 );
 
             result.ProviderLabel =
-                GetProviderLabel(provider);
+                provider != UnlockProviderKind.Original &&
+                IsGeneratedChallenge(entry?.Challenge)
+                    ? L(
+                        SurvivorLocalization
+                            .MissionLibraryProviderGeneratedToken
+                    )
+                    : GetProviderLabel(provider);
 
             if (provider == UnlockProviderKind.Original)
             {
@@ -728,6 +770,20 @@ namespace UniversalSurvivorUnlocks
             }
 
             labels.Add(label);
+        }
+
+
+        private static bool IsGeneratedChallenge(
+            SurvivorChallengeJson challenge
+        )
+        {
+            return
+                challenge?.MissionConfig != null &&
+                string.Equals(
+                    challenge.MissionConfig.Source,
+                    "Generated",
+                    StringComparison.OrdinalIgnoreCase
+                );
         }
 
 

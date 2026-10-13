@@ -68,10 +68,10 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            // Política 5G.2C FIX1:
-            // cuando el survivor ya posee un sistema de desbloqueo Original
-            // del creador, USU no lo reemplaza directamente con un preset.
-            // Las variantes del jugador se crearán como CUSTOM en 5H/5I.
+            // Política 0.3.1:
+            // Original sigue protegido frente a presets arbitrarios. La única
+            // excepción general es la misión Official USU propia del survivor,
+            // que puede coexistir y activarse sólo por elección explícita.
             if (
                 !MissionProviderSelectionPolicy.CanAssignUsuPreset(
                     entry,
@@ -82,7 +82,7 @@ namespace UniversalSurvivorUnlocks
                 return MissionAssignmentResult.CreateFailure(
                     MissionAssignmentResultCodes.OriginalProviderProtected,
                     "Este personaje ya tiene un sistema de desbloqueo Original. " +
-                    "USU lo respeta; crea una variante CUSTOM para modificarlo.",
+                    "Sólo puede alternarse a su misión Official USU propia o a una Custom guardada.",
                     normalizedBodyName,
                     normalizedPresetId
                 );

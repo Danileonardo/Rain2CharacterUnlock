@@ -1,3 +1,5 @@
+using System;
+using Newtonsoft.Json.Linq;
 using System.Collections.Generic;
 
 using BepInEx.Logging;
@@ -49,6 +51,29 @@ namespace UniversalSurvivorUnlocks
 
         private static bool initialized;
 
+        // Distinct bosses are counted per owner, per objective, for the current run.
+        private static readonly Dictionary<string, HashSet<BodyIndex>> DistinctBosses =
+            new Dictionary<string, HashSet<BodyIndex>>();
+
+        private static void ResetDistinctBosses(Run run)
+        {
+            DistinctBosses.Clear();
+        }
+
+        private static bool MeetsItemRequirement(MissionObjective objective, CharacterBody playerBody)
+        {
+            JObject p = objective?.Parameters;
+            string required = p?.Value<string>("requiredItem");
+            if (string.IsNullOrWhiteSpace(required)) return true;
+            Inventory inventory = playerBody?.inventory;
+            if (inventory == null) return false;
+            ItemIndex item = ItemCatalog.FindItemIndex(required);
+            if (item == ItemIndex.None) return false;
+            int count = p.Value<int?>("requiredItemCount") ?? 1;
+            return inventory.GetItemCountPermanent(item) >= Math.Max(1, count);
+        }
+
+
 
         // =========================================================
         // INITIALIZE
@@ -70,6 +95,9 @@ namespace UniversalSurvivorUnlocks
             logger =
                 log;
 
+
+            MissionRunLifecycle.RunStarted += ResetDistinctBosses;
+            MissionRunLifecycle.RunDestroyed += ResetDistinctBosses;
 
             GameplayEventHub
                 .CharacterDeath +=
@@ -299,6 +327,37 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
+                if (!MeetsItemRequirement(binding.Objective, playerBody))
+                {
+                    continue;
+                }
+
+                // Objetivo dependiente: la muerte NO puede contar antes
+                // de que el otro objetivo de la misma ruta esté completo.
+                // Este parámetro es opcional para no alterar las misiones
+                // oficiales existentes.
+                if (!MeetsPriorObjectiveRequirement(binding, playerMaster))
+                {
+                    continue;
+                }
+
+                bool distinct = binding.Objective.Parameters?
+                    .Value<bool?>("distinctBossBodies") == true;
+                string distinctKey = null;
+                HashSet<BodyIndex> seen = null;
+                if (distinct)
+                {
+                    if (!victimBody.isBoss) continue;
+                    distinctKey = playerMaster.GetInstanceID().ToString() + ":" +
+                        binding.MissionId + ":" + binding.RouteIndex + ":" + binding.ObjectiveIndex;
+                    if (!DistinctBosses.TryGetValue(distinctKey, out seen))
+                    {
+                        seen = new HashSet<BodyIndex>();
+                        DistinctBosses[distinctKey] = seen;
+                    }
+                    if (seen.Contains(victimBody.bodyIndex)) continue;
+                }
+
                 MissionCompositionProgressResult result =
                     MissionCompositionProgressEvaluator
                         .AddProgress(
@@ -310,6 +369,12 @@ namespace UniversalSurvivorUnlocks
                             1d
                         );
 
+
+                // Remember a species only if its kill passed the composition evaluator.
+                if (distinct && result != null)
+                {
+                    seen.Add(victimBody.bodyIndex);
+                }
 
                 GenericMissionDispatcher
                     .HandleProgressResult(
@@ -323,6 +388,51 @@ namespace UniversalSurvivorUnlocks
             }
         }
 
+
+        private static bool MeetsPriorObjectiveRequirement(
+            MissionObjectiveRuntimeBinding binding,
+            CharacterMaster playerMaster)
+        {
+            string priorId = binding?.Objective?.Parameters?
+                .Value<string>("afterObjectiveId");
+            if (string.IsNullOrWhiteSpace(priorId))
+            {
+                return true;
+            }
+
+            if (binding?.Route?.Objectives == null)
+            {
+                return false;
+            }
+
+            MissionProgressScope scope =
+                MissionProgressKeyBuilder.GetProgressScope(binding.Mission);
+            NetworkUser user = scope == MissionProgressScope.Shared
+                ? null
+                : MissionPlayerIdentity.GetNetworkUser(playerMaster);
+            if (scope == MissionProgressScope.PerPlayer && user == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < binding.Route.Objectives.Count; i++)
+            {
+                MissionObjective candidate = binding.Route.Objectives[i];
+                if (candidate == null ||
+                    !string.Equals(candidate.Id, priorId,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                string storageId = MissionProgressKeyBuilder.GetStorageObjectiveId(
+                    binding.Route, binding.RouteIndex, candidate, i);
+                return MissionProgressRegistry.IsObjectiveCompleted(
+                    scope, user, binding.MissionId, storageId);
+            }
+
+            return false;
+        }
 
         // =========================================================
         // DETAILS

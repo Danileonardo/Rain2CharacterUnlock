@@ -22,7 +22,12 @@ namespace UniversalSurvivorUnlocks
 
     [BepInDependency(
         "com.rune580.riskofoptions",
-        BepInDependency.DependencyFlags.SoftDependency
+        "2.8.6"
+    )]
+
+    [BepInDependency(
+        "com.KingEnderBrine.ScrollableLobbyUI",
+        "1.10.5"
     )]
 
     public class Plugin :
@@ -37,7 +42,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public const string PluginVersion =
-            "0.3.0";
+            "0.3.1";
 
 
         public static List<SurvivorInfo> Survivors
@@ -52,6 +57,10 @@ namespace UniversalSurvivorUnlocks
             // Logging.VerboseLogging=false por defecto:
             // mantiene la consola limpia sin perder warnings/errores.
             UsuLog.Initialize(
+                Config
+            );
+
+            TemporaryGeneratedTestOptions.Initialize(
                 Config
             );
 
@@ -184,6 +193,65 @@ namespace UniversalSurvivorUnlocks
 
 
             /*
+             * C2.1 - Current Game / DLC4 compatibility audit.
+             *
+             * Reconoce explícitamente los nuevos survivors oficiales y
+             * verifica que sigan clasificados como contenido del juego, no
+             * como mods. Es sólo diagnóstico: no cambia unlocks, providers,
+             * JSON ni Generated.
+             */
+            CurrentGameCompatibilityService
+                .Audit(
+                    Survivors,
+                    Logger
+                );
+
+
+            /*
+             * C2.3 - Catálogo estructural de métodos de desbloqueo vanilla.
+             *
+             * Lee los AchievementDef que entregan el unlock de cada survivor
+             * oficial para identificar patrones reutilizables en Mission V2.
+             * Es diagnóstico solamente: no altera autoridad ni progreso.
+             */
+            VanillaUnlockMethodCatalogService
+                .Audit(
+                    Survivors,
+                    Logger
+                );
+
+
+            /*
+             * C2.4 - Cobertura de métodos vanilla contra Mission V2.
+             *
+             * Clasifica de forma conservadora qué Achievement/Tracker oficiales
+             * parecen estar representados por objetivos reutilizables existentes.
+             * Sólo diagnóstico: los casos dudosos quedan como LikelyCovered o
+             * Unmapped para revisión con el log real.
+             */
+            VanillaUnlockCoverageService
+                .Audit(
+                    Survivors,
+                    Logger
+                );
+
+
+            /*
+             * C2.5 - Inspección semántica de métodos oficiales.
+             *
+             * Extrae por reflexión nombres de miembros relevantes desde los
+             * Achievement/ServerTracker reales. Esto nos permite decidir qué
+             * mecánicas Mission V2 faltan usando evidencia del runtime actual,
+             * sin modificar achievements ni autoridad.
+             */
+            VanillaUnlockSemanticInspectionService
+                .Audit(
+                    Survivors,
+                    Logger
+                );
+
+
+            /*
              * Registro NUEVO de definiciones curadas.
              *
              * Fase 1: completamente pasivo. Sólo reconoce definitions cuyo
@@ -236,6 +304,19 @@ namespace UniversalSurvivorUnlocks
             SurvivorJsonManager
                 .Sync(
                     Survivors,
+                    Logger
+                );
+
+
+            /*
+             * C5 - 0.3.0 -> 0.3.1 persistence migration gate.
+             *
+             * Audita el resultado real después de NormalizeAfterLoad + Sync.
+             * No modifica el JSON; sólo comprueba que la forma final siga
+             * siendo compatible con provider/source y slots dormidos.
+             */
+            PersistenceMigrationAuditService
+                .Audit(
                     Logger
                 );
 
@@ -352,9 +433,9 @@ namespace UniversalSurvivorUnlocks
             /*
              * G7 Phase 1.1 - Deterministic Mission Generator / Authority Bridge.
              *
-             * Genera únicamente candidatos TEMPORALES en memoria a partir
-             * del ranking de G6. Nunca persiste ni asigna una MissionDefinition
-             * en esta fase. La autoridad se resuelve desde Survivors.json y el registro oficial.
+             * Genera el blueprint a partir del ranking de G6 y de un nonce
+             * persistido por survivor. G8 materializa y guarda Mission V2.
+             * La autoridad se resuelve desde Survivors.json y el registro oficial.
              * Un preset oficial o una misión CUSTOM creada con USU siempre
              * tiene prioridad y suprime el fallback generado.
              *
@@ -373,9 +454,10 @@ namespace UniversalSurvivorUnlocks
             /*
              * G8 Phase 1 - Generated Mission Runtime Materialization.
              *
-             * Convierte los blueprints temporales válidos de G7 en una
-             * MissionDefinition runtime-only. No persiste Generated, no la
-             * convierte en CUSTOM y vuelve a comprobar autoridad autorada
+             * Convierte los blueprints válidos de G7 en MissionDefinition.
+             * Phase 1.5 persiste la misión con Source=Generated en el mismo
+             * Survivors.json que usa Custom, sin convertirla en Custom.
+             * Vuelve a comprobar autoridad autorada
              * cada vez que SessionMissionRegistry construye una entrada
              * efectiva. Phase 1.4 añade HealingSupport, ResourceMastery,
              * MeleeCombat y ProjectileCombat al soporte inicial Execution.
@@ -386,6 +468,72 @@ namespace UniversalSurvivorUnlocks
                     MissionProfileService.GetAll(),
                     Logger
                 );
+
+
+            /*
+             * G8 Phase 1.5 - Generated JSON Authority.
+             *
+             * Cada Generated materializada se guarda con Source=Generated.
+             * Si el jugador borra su entrada o todo Survivors.json, también
+             * desaparece generationNonce y el siguiente arranque usa una seed
+             * nueva: reroll manual temporal hasta añadirlo a la UI.
+             */
+            GeneratedMissionRuntimeMaterializer
+                .PersistGeneratedMissions();
+
+
+            /*
+             * C2.6 - Invariante final de autoridad de contenido oficial.
+             *
+             * Una actualización del juego nunca debe hacer que un survivor
+             * oficial/DLC pase a ser objetivo Generated. El guard sólo audita
+             * y alerta; no reescribe silenciosamente Survivors.json.
+             */
+            OfficialContentAuthorityInvariantService
+                .Audit(
+                    Survivors,
+                    Logger
+                );
+
+            UsuLog.Diagnostic(
+                Logger,
+                "[CURRENT GAME COMPAT] C2 runtime validado | " +
+                "Dependencias actuales + DLC4 + métodos vanilla + " +
+                "Mission V2 extraction + authority guard."
+            );
+
+
+            /*
+             * C4 - Provider Coexistence / G8 Phase 1.7 validation bridge.
+             *
+             * Audita la fila Original - USU - Personalizada - Generada sin
+             * modificar Survivors.json. Cuando existen slots dormidos, prueba
+             * su restauración únicamente sobre clones en memoria. También
+             * comprueba coherencia Provider/Source, snapshot Generated y si
+             * el nonce necesario para reroll sigue presente.
+             */
+            ProviderCoexistenceAuditService
+                .Audit(
+                    Logger
+                );
+
+            UsuLog.Verbose(
+                Logger,
+                "[PROVIDER COEXISTENCE] C4 código completo | " +
+                "inventario de slots + restore dry-run + Generated snapshot + " +
+                "reroll readiness + provider/source invariant | " +
+                "cambios persistidos por auditoría: no."
+            );
+
+
+            /*
+             * G8 Phase 1.6 - Generated Reroll UI.
+             *
+             * La Mission Library muestra Source=Generated como "Generada" y
+             * habilita un dado junto al bloque de misión. Al pulsarlo cambia
+             * generationNonce, recalcula G7/G8, persiste la nueva Mission V2 y
+             * refresca presentación/runtime sin convertirla a Custom.
+             */
 
 
             /*
@@ -407,10 +555,11 @@ namespace UniversalSurvivorUnlocks
              *
              * Es deliberadamente opt-in porque recorre por reflexión los
              * perfiles, skills, skins y tokens visibles. Durante desarrollo
-             * puede habilitarse con Logging.VerboseLogging=true; en una
-             * ejecución normal no añade trabajo ni spam al arranque.
+             * con VerboseLogging=true emite sólo un resumen;
+             * ExtendedAuditLogging=true habilita el volcado completo.
+             * En una ejecución normal no añade trabajo ni spam al arranque.
              */
-            if (UsuLog.VerboseEnabled)
+            if (UsuLog.VerboseEnabled || UsuLog.ExtendedAuditEnabled)
             {
                 LocalizationCoverageDiagnostics.Log(
                     SurvivorContentProfileService.GetAll(),

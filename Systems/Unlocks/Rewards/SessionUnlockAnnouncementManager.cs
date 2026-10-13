@@ -90,7 +90,12 @@ namespace UniversalSurvivorUnlocks
                     paramTokens =
                         new string[]
                         {
-                            achievementDef.nameToken
+                            // El nameToken del AchievementDef lleva un hash
+                            // por idioma/contenido y NO se puede enviar en red.
+                            // Cada cliente traduce localmente este token estable.
+                            SurvivorUnlockManager.GetNetworkSafeAchievementNameToken(
+                                bodyName
+                            )
                         }
                 };
 

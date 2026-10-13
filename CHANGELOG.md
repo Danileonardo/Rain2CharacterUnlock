@@ -1,13 +1,66 @@
+
+## 0.3.1 DEV — C2.3 Vanilla Unlock Method Catalog
+
+- Added a read-only catalog of official survivor unlock achievement structures.
+- Logs achievement type, server tracker type, prerequisite and reward for vanilla/DLC survivor unlocks.
+- Intended to identify reusable Mission V2 mechanics without modifying official unlock authority.
+
 # Changelog
+
+## 0.3.1 — Universal visual preset and expanded provider support
+
+### Main changes
+
+- Reused the AH-64-inspired Mission Library design for other survivors, while using each survivor's actual portrait, state, active provider mission, overview and unlocked Logbook notes.
+- Added clearer mission and notes cards with scrollable content and larger text; retained the existing character selection and provider actions.
+- Refined AH-64's `Protocol 64: Air Supremacy` cumulative campaign presentation: tracked goals for flight time, airborne bullets, missiles/rockets and teleporter bosses, followed by a Monsoon escape objective. The campaign widgets are exclusive to AH-64.
+- Expanded curated mission/definition/localization work for compatible modded survivors; preserved Original ownership and native achievements where applicable.
+- Continued improvements to Generated mission reroll, provider coexistence/persistence, multiplayer authority pathways and logging.
+- Updated declared dependencies for Risk Of Options, ScrollableLobbyUI, R2API components and SurvivorSortOrder (the latter is not a required BepInEx assembly).
+
+### Known limitations / ongoing QA
+
+- Long mission text and custom provider combinations can still require UI adjustments.
+- AH-64's campaign tracking and multiplayer persistence are not fully verified for all configurations.
+- Some survivor-specific unlock paths and multiplayer scenarios need broader testing.
+
+
+
+- Adds generic Mission v2 `ConsumeItemOnInteraction` objective, extracted from the official Acolyte unlock pattern without replacing its native unlock.
+
+## 0.3.1 (development) — Current game dependency alignment
+
+- Added `KingEnderBrine-ScrollableLobbyUI-1.10.5` as a required dependency for large survivor/skill/skin rosters.
+- Added BepInEx hard dependency `com.KingEnderBrine.ScrollableLobbyUI` >= `1.10.5`.
+- ScrollableLobbyUI remains an external UI/QoL dependency; USU does not patch or alter its behavior.
+
+- Risk Of Options is now a **required dependency** instead of a soft integration.
+- Minimum/packaged dependency: `Rune580-Risk_Of_Options-2.8.6`.
+- Updated Thunderstore BepInEx dependency to `bbepis-BepInExPack-5.4.2122`.
+- Confirmed the R2API modules used directly by USU are already at their current published versions: Core 5.3.0, ContentManagement 1.0.11, Language 1.1.0, Unlockable 1.0.2 and Networking 1.0.4.
+- The legacy Character Select launcher remains as a defensive runtime fallback only; it is no longer the supported normal configuration path.
+
+## 0.3.1 — Generated Controls, Provider Completion & Compatibility
+
+> **0.3.1 release history:** additional development details below. Full compatibility QA continues.
+
+- Fixes the release-version integrity path so the packaged DLL, BepInEx plugin metadata, assembly version and Thunderstore manifest cannot silently disagree.
+- Includes the Generated mission reroll control and final full-face dice icon.
+- Includes the four-source provider row: Original / USU / Personalizada / Generada.
+- Includes provider-slot persistence work from G8 Phase 1.7.
+- Compatibility validation for the Risk of Rain 2 1.5.0 / Hallowed Concepts update is in progress.
+- Adds the first DLC4-inspired reusable Mission v2 building block: `InteractWithTarget` (`base.objective.interact_with_target`), without hardcoding or replacing Acolyte's native unlock.
 
 All notable changes to Universal Survivor Unlocks are documented here for Thunderstore and GitHub releases.
 
 ## 0.3.0 — Adaptive Generated Missions & Runtime Authority
 
+- G8 Phase 1.6 — Generated Reroll UI: las misiones `Source=Generated` muestran proveedor **Generada** y un dado de reroll en el navegador. El reroll cambia `generationNonce`, recalcula y persiste Mission V2, y actualiza nombre/descripción sin convertir la misión en Custom.
+
 ### Highlights
 
 - Added the first public **adaptive Generated mission pipeline** for modded survivors that do not currently have an applicable Original, Official USU, or player CUSTOM mission.
-- Generated missions are **temporary runtime fallbacks**: they are rebuilt from the currently installed survivor/profile context and are not persisted as player CUSTOM content.
+- Generated missions now use the same persisted Mission v2 configuration path as Custom: they are stored in `Survivors.json` with `source = Generated`, while remaining auto-managed fallbacks rather than player CUSTOM content.
 - Added survivor gameplay/profile analysis, local power assessment, challenge-tier resolution, template compatibility scoring, deterministic candidate generation, and runtime mission materialization.
 - Preserved creator-owned unlock content: vanilla/DLC progression and mod-author Original unlocks remain authoritative when present. USU Generated content does not replace them.
 - Kept the 10 Official Mission v2 presets authoritative over Generated candidates and retained the 12 Legacy recipes as hidden reusable compatibility/editor assets.
@@ -29,8 +82,11 @@ All notable changes to Universal Survivor Unlocks are documented here for Thunde
 
 ### Runtime, authority, and presentation
 
-- Added a runtime Generated materialization bridge into `SessionMissionRegistry` so Generated candidates become real Mission v2 definitions without writing them into `Survivors.json`.
-- Added effective mission routing so Mission v2 Generated content is used for challenge evaluation instead of accidentally progressing the historical fallback in parallel.
+- Added Generated Mission v2 persistence into `Survivors.json` with a per-entry generation nonce and automatic refresh when the survivor/profile analysis changes.
+- Deleting a Generated survivor entry or the whole `Survivors.json` now creates a fresh generation nonce on the next startup, providing a temporary manual reroll path until the in-game reroll UI exists.
+- Editing a stamped Generated block directly in `Survivors.json` is detected on the next sync and promoted to `source = Custom` so player edits are not overwritten by the generator.
+- Removed the historical automatic `KillEnemies 100` creation path. Existing exact legacy fallback entries are migrated to Official, Original-neutral, or Generated as appropriate; genuine Custom/author missions of 100 kills are preserved.
+- Added effective mission routing so Mission v2 Generated content is used for challenge evaluation.
 - Added `AllowedPerformerSkill` runtime condition support and generalized skill-token/internal-skill matching for generated performer constraints.
 - Added Mission v2 objective support used by the new generated families for healing and compatible skill/resource actions.
 - Added an effective presentation bridge for Character Select / achievement-facing text so Generated and Official USU missions present the mission that is actually active.
@@ -46,7 +102,7 @@ All notable changes to Universal Survivor Unlocks are documented here for Thunde
 
 ### Validation
 
-- Current test profile: **7 Generated candidates → 7 materialized**, with `Unsupported families: 0` and `Invalid materializations: 0`.
+- Previous G8 test profile reached **7 Generated candidates → 7 materialized**, with `Unsupported families: 0` and `Invalid materializations: 0`; Phase 1.5 now requires a fresh compile/runtime validation because persistence semantics changed.
 - Confirmed that Original provider presentation is preserved while Generated/Official USU presentation continues to refresh normally.
 - Confirmed that generated mission data remains temporary (`Persistencia: no`) and does not become a stored CUSTOM mission.
 
@@ -540,3 +596,43 @@ When using r2modman or Thunderstore Mod Manager, the file is located inside the 
 - Run completion challenges.
 - Custom challenge presets for exceptionally powerful modded survivors.
 - Additional compatibility testing with survivor frameworks and character packs.
+
+### 0.3.1 DEV — C2.1 Current Game / DLC4 compatibility audit
+- Added a runtime-only compatibility audit for official `Enforcer2Body` and `AcolyteBody`.
+- Confirms official survivors are not misclassified as modded content.
+- Reports whether each new official survivor keeps an Original unlock.
+- Does not assign Generated missions to official survivors and does not alter provider authority.
+
+### 0.3.1 DEV — C2.4 Vanilla Unlock Coverage
+- Added read-only `VanillaUnlockCoverageService`.
+- Compares official survivor achievement/tracker type names against existing Mission V2 primitives.
+- Reports conservative `Covered`, `LikelyCovered`, and `Unmapped` candidates.
+- Does not change original unlocks, provider authority, persistence, or Generated missions.
+
+## 0.3.1 DEV — C2.5-C2.7 Current Game Compatibility completion
+
+- Added `VanillaUnlockSemanticInspectionService` to inspect current official Achievement/ServerTracker implementations without changing them.
+- Added semantic member fingerprints for official survivor unlocks so future Mission V2 primitives are based on runtime evidence rather than class-name guesses.
+- Added `OfficialContentAuthorityInvariantService` after G7/G8 persistence.
+- The new authority guard verifies official/vanilla-DLC survivors receive neither Generated candidates nor persisted `Source=Generated` ownership.
+- Official-content violations are reported as errors and are never silently rewritten.
+- C2 implementation scope is now code-complete; one accumulated Windows/runtime pass remains to validate C2.2-C2.6 together on RoR2 1.5.0/DLC4.
+
+## 0.3.1 DEV — C4 Provider Coexistence validation bridge
+
+- C2 accumulated runtime validation completed successfully on RoR2 1.5.0 / Hallowed Concepts.
+- Added passive `ProviderCoexistenceAuditService` for the four-provider row: Original / USU / Custom / Generated.
+- Audits available provider slots, remembered USU preset, active Provider/Source consistency and Generated reroll readiness.
+- Performs Generated and Custom restore dry-runs only on in-memory clones; no audit operation writes `Survivors.json` or changes runtime authority.
+- Compares active Generated mission against its dormant snapshot when both exist and reports mismatches.
+- C4 code scope is complete; Windows compile and a runtime pass with at least one valid modded survivor are still required for functional Generated/provider validation.
+
+## 0.3.1-dev — C5 Release Candidate gate
+- Persistencia de normalizaciones de schema al arrancar, usando el guardado atómico/backup existente.
+- Nueva auditoría `[PERSISTENCE MIGRATION]` después de Sync para revisar migración 0.3.0 → 0.3.1 y coexistencia de slots provider/source.
+- `build-release.bat` añadido para ejecutar desde CMD el verificador de release endurecido sin tener que escribir comandos PowerShell manualmente.
+- C5 no autoriza publicación por sí solo: C4 Generated/provider runtime y la migración con un `Survivors.json` real siguen siendo gates funcionales.
+
+- C5.2: startup diagnostics compacted; per-survivor vanilla method/coverage/semantic details, DLC4 detail, provider-entry detail and mission snapshot body detail now require `Logging.VerboseLogging=true`. Summary/warning/error lines remain visible.
+
+- C5.2: compacted normal startup logging. Per-survivor compatibility/audit details now require `Logging.VerboseLogging=true`; summaries, warnings and errors remain visible.

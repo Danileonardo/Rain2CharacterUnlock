@@ -185,7 +185,8 @@ namespace UniversalSurvivorUnlocks
                 }
             }
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 "[MISSION COMPATIBILITY] G6 Phase 1 construido | " +
                 $"Profiles: {profileCount} | " +
                 $"Modded: {modded} | " +
@@ -205,7 +206,7 @@ namespace UniversalSurvivorUnlocks
 
         private static void LogVerboseProfiles()
         {
-            if (!UsuLog.VerboseEnabled)
+            if (!UsuLog.ExtendedAuditEnabled)
             {
                 return;
             }
@@ -224,7 +225,7 @@ namespace UniversalSurvivorUnlocks
 
                 MissionTemplateCompatibilityAssessment first = ranked[0];
 
-                UsuLog.Verbose(
+                UsuLog.ExtendedAudit(
                     logger,
                     "[MISSION COMPATIBILITY PROFILE] " +
                     first.DisplayName +
@@ -248,7 +249,7 @@ namespace UniversalSurvivorUnlocks
                 {
                     MissionTemplateCompatibilityAssessment assessment = ranked[i];
 
-                    UsuLog.Verbose(
+                    UsuLog.ExtendedAudit(
                         logger,
                         "[MISSION TEMPLATE] " +
                         assessment.DisplayName +

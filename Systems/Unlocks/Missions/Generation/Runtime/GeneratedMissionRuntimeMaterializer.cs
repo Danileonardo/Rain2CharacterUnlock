@@ -8,19 +8,21 @@ using Newtonsoft.Json.Linq;
 namespace UniversalSurvivorUnlocks
 {
     /// <summary>
-    /// G8 Phase 1 - materialización runtime de los blueprints Generated de G7.
+    /// G8 - materialización de los blueprints Generated de G7.
+    ///
+    /// Desde Phase 1.5 la Mission V2 Generated se guarda en Survivors.json
+    /// con Source=Generated. Nunca se guarda como CustomMission salvo que el
+    /// jugador la edite mediante el flujo Custom.
     ///
     /// Reglas de autoridad:
-    /// - la definición se mantiene únicamente en memoria;
-    /// - nunca se escribe como MissionConfig.CustomMission;
     /// - Official/CUSTOM/otra misión autorada siempre la suprimen;
     /// - el overlay se aplica sólo sobre snapshots/lecturas efectivas;
     /// - el target jamás se añade como performer.
     ///
-    /// G8 Phase 1.4 materializa las familias actualmente generadas por el
-    /// roster de validación: Execution, MeleeCombat, ProjectileCombat,
-    /// ResourceMastery y HealingSupport. Las demás familias continúan siendo
-    /// candidatas G7 válidas pero permanecen sin runtime hasta una fase futura.
+    /// Las familias materializables actuales son CombatKills, Execution,
+    /// MeleeCombat, ProjectileCombat, ResourceMastery y HealingSupport. G7
+    /// limita la selección a ellas para que todo candidato pueda convertirse
+    /// inmediatamente en Mission V2.
     /// </summary>
     public static class GeneratedMissionRuntimeMaterializer
     {
@@ -44,6 +46,7 @@ namespace UniversalSurvivorUnlocks
 
 
         private static IReadOnlyList<SurvivorInfo> survivors;
+        private static IReadOnlyList<MissionProfile> currentProfiles;
         private static ManualLogSource logger;
 
 
@@ -58,6 +61,7 @@ namespace UniversalSurvivorUnlocks
         )
         {
             survivors = installedSurvivors;
+            currentProfiles = profiles;
             logger = activeLogger;
 
             MaterializationsByBody.Clear();
@@ -106,7 +110,8 @@ namespace UniversalSurvivorUnlocks
                 }
             }
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 "[GENERATED RUNTIME] G8 Phase 1 construido | " +
                 $"Candidates: {candidates?.Count ?? 0} | " +
                 $"Materialized: {MaterializationsByBody.Count} | " +
@@ -115,10 +120,457 @@ namespace UniversalSurvivorUnlocks
                 "Snapshot overlay: yes | " +
                 "Authored authority recheck: yes | " +
                 "Target usage: no | " +
-                "Persistencia: no"
+                "Persistencia: Generated JSON"
             );
 
             LogVerboseMaterializations();
+        }
+
+
+        public static bool RebuildCurrent()
+        {
+            if (currentProfiles == null)
+            {
+                return false;
+            }
+
+            Initialize(
+                survivors,
+                currentProfiles,
+                logger
+            );
+
+            return true;
+        }
+
+
+        /// <summary>
+        /// Crea de forma explícita una Generated para un único survivor modded.
+        /// Se usa desde Mission Library cuando el jugador pulsa Generada y aún
+        /// no existe ese slot. Original/USU/Custom se conservan como slots; la
+        /// selección activa se realiza después mediante SelectGenerated.
+        /// </summary>
+        public static bool TryGenerateForBodyOnDemand(
+            string bodyName,
+            ManualLogSource activeLogger,
+            out string error
+        )
+        {
+            error = "";
+
+            string normalized = bodyName?.Trim() ?? "";
+
+            if (string.IsNullOrWhiteSpace(normalized))
+            {
+                error = "BodyName vacío.";
+                return false;
+            }
+
+            if (currentProfiles == null)
+            {
+                error = "El contexto de perfiles G8 todavía no está disponible.";
+                return false;
+            }
+
+            string nonce = Guid.NewGuid().ToString("N");
+
+            if (
+                !DeterministicMissionGeneratorService.TryPreviewForBody(
+                    normalized,
+                    nonce,
+                    out GeneratedMissionCandidate candidate,
+                    true
+                ) ||
+                candidate == null
+            )
+            {
+                error = "G7 no encontró una misión compatible para este survivor.";
+                return false;
+            }
+
+            RuntimeMaterialization materialization =
+                BuildMaterialization(candidate, currentProfiles);
+
+            if (materialization == null || materialization.Mission == null)
+            {
+                error = "G8 no pudo materializar la misión generada.";
+                return false;
+            }
+
+            SurvivorJsonEntry entry =
+                SurvivorJsonManager.GetEntryAnywhere(normalized);
+
+            if (entry == null)
+            {
+                error = "El survivor no existe en Survivors.json.";
+                return false;
+            }
+
+            SurvivorChallengeJson generated =
+                BuildPersistedChallenge(
+                    candidate,
+                    materialization.Mission,
+                    entry.Challenge
+                );
+
+            GeneratedMissionSnapshot snapshot =
+                generated?.MissionConfig?.GeneratedMission;
+
+            if (generated == null || snapshot == null)
+            {
+                error = "No se pudo crear el snapshot Generated.";
+                return false;
+            }
+
+            string authorityDetail;
+            GeneratedMissionAuthorityKind authority =
+                GeneratedMissionAuthorityProbe.Detect(
+                    survivors,
+                    candidate.SurvivorId,
+                    candidate.BodyName,
+                    out authorityDetail
+                );
+
+            if (authority == GeneratedMissionAuthorityKind.None)
+            {
+                entry.Challenge = generated;
+            }
+            else
+            {
+                if (entry.Challenge == null)
+                {
+                    entry.Challenge =
+                        new SurvivorChallengeJson
+                        {
+                            Enabled = true,
+                            Name = "",
+                            Description = "",
+                            LocalizationKey = "",
+                            LunarCoinReward = 0,
+                            Type = "MissionV2",
+                            Mission = null,
+                            MissionConfig =
+                                new MissionConfiguration
+                                {
+                                    Provider =
+                                        authority == GeneratedMissionAuthorityKind.OriginalUnlock
+                                            ? UnlockProviderKind.Original
+                                            : UnlockProviderKind.USU,
+                                    SelectionMode = UnlockSelectionMode.AutomaticFallback,
+                                    Source = "Preset",
+                                    GeneratedMission = snapshot,
+                                    GeneratedSuppressed = false
+                                }
+                        };
+                }
+                else
+                {
+                    MissionConfiguration config =
+                        entry.Challenge.MissionConfig ??
+                        new MissionConfiguration();
+
+                    entry.Challenge.MissionConfig = config;
+                    MissionProviderSlotStore.CaptureActiveSlots(entry.Challenge);
+                    config.GeneratedMission = snapshot;
+                    config.GeneratedSuppressed = false;
+                }
+            }
+
+            if (!SurvivorJsonManager.TrySaveCurrentConfig(activeLogger ?? logger))
+            {
+                error = "No se pudo guardar Survivors.json.";
+                return false;
+            }
+
+            return true;
+        }
+
+
+        /// <summary>
+        /// Persiste las Generated materializadas en la misma configuración
+        /// Mission V2 que usa Custom. Source=Generated las mantiene editables
+        /// como base pero actualizables automáticamente por G7/G8.
+        /// </summary>
+        public static int PersistGeneratedMissions()
+        {
+            int updated = 0;
+
+            foreach (
+                KeyValuePair<string, RuntimeMaterialization> pair
+                in MaterializationsByBody
+            )
+            {
+                RuntimeMaterialization materialization =
+                    pair.Value;
+
+                GeneratedMissionCandidate candidate =
+                    materialization?.Candidate;
+
+                if (
+                    candidate == null ||
+                    materialization.Mission == null
+                )
+                {
+                    continue;
+                }
+
+                SurvivorJsonEntry entry =
+                    SurvivorJsonManager.GetEntryAnywhere(
+                        candidate.BodyName
+                    );
+
+                if (entry == null)
+                {
+                    continue;
+                }
+
+                string authorityDetail;
+
+                GeneratedMissionAuthorityKind authority =
+                    GeneratedMissionAuthorityProbe.Detect(
+                        survivors,
+                        candidate.SurvivorId,
+                        candidate.BodyName,
+                        out authorityDetail
+                    );
+
+                if (authority != GeneratedMissionAuthorityKind.None)
+                {
+                    if (!TemporaryGeneratedTestOptions.CanGenerateAlongside(authority))
+                    {
+                        continue;
+                    }
+
+                    SurvivorChallengeJson generatedDormant =
+                        BuildPersistedChallenge(
+                            candidate,
+                            materialization.Mission,
+                            entry.Challenge
+                        );
+
+                    GeneratedMissionSnapshot dormantSnapshot =
+                        generatedDormant?.MissionConfig?.GeneratedMission;
+
+                    if (dormantSnapshot == null)
+                    {
+                        continue;
+                    }
+
+                    // Un survivor con Original puede no tener Challenge porque
+                    // USU no lo controlaba. Creamos sólo un contenedor de slots
+                    // con Provider=Original; la Generated queda DORMIDA y no
+                    // toma autoridad hasta que el jugador la seleccione.
+                    if (entry.Challenge == null)
+                    {
+                        entry.Challenge =
+                            new SurvivorChallengeJson
+                            {
+                                Enabled = true,
+                                Name = "",
+                                Description = "",
+                                LocalizationKey = "",
+                                LunarCoinReward = 0,
+                                Type = "MissionV2",
+                                Mission = null,
+                                MissionConfig =
+                                    new MissionConfiguration
+                                    {
+                                        Provider = UnlockProviderKind.Original,
+                                        SelectionMode = UnlockSelectionMode.AutomaticFallback,
+                                        Source = "Preset",
+                                        GeneratedMission = dormantSnapshot
+                                    }
+                            };
+
+                        updated++;
+                        continue;
+                    }
+
+                    MissionConfiguration activeConfig =
+                        entry.Challenge.MissionConfig;
+
+                    if (activeConfig == null)
+                    {
+                        activeConfig = new MissionConfiguration();
+
+                        if (authority == GeneratedMissionAuthorityKind.OriginalUnlock)
+                        {
+                            activeConfig.Provider = UnlockProviderKind.Original;
+                            activeConfig.SelectionMode = UnlockSelectionMode.AutomaticFallback;
+                        }
+
+                        entry.Challenge.MissionConfig = activeConfig;
+                    }
+
+                    string beforeDormant =
+                        activeConfig.GeneratedMission == null
+                            ? ""
+                            : Newtonsoft.Json.JsonConvert.SerializeObject(
+                                activeConfig.GeneratedMission,
+                                Newtonsoft.Json.Formatting.None
+                            );
+
+                    string afterDormant =
+                        Newtonsoft.Json.JsonConvert.SerializeObject(
+                            dormantSnapshot,
+                            Newtonsoft.Json.Formatting.None
+                        );
+
+                    if (!string.Equals(beforeDormant, afterDormant, StringComparison.Ordinal))
+                    {
+                        activeConfig.GeneratedMission = dormantSnapshot;
+                        updated++;
+                    }
+
+                    continue;
+                }
+
+                SurvivorChallengeJson generated =
+                    BuildPersistedChallenge(
+                        candidate,
+                        materialization.Mission,
+                        entry.Challenge
+                    );
+
+                string before =
+                    entry.Challenge == null
+                        ? ""
+                        : Newtonsoft.Json.JsonConvert.SerializeObject(
+                            entry.Challenge,
+                            Newtonsoft.Json.Formatting.None
+                        );
+
+                string after =
+                    Newtonsoft.Json.JsonConvert.SerializeObject(
+                        generated,
+                        Newtonsoft.Json.Formatting.None
+                    );
+
+                if (string.Equals(before, after, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                entry.Challenge = generated;
+                updated++;
+
+                UsuLog.Verbose(
+                    logger,
+                    "[GENERATED PERSISTED] " +
+                    candidate.DisplayName +
+                    " | Id: " +
+                    candidate.CandidateId +
+                    " | Family: " +
+                    candidate.Family +
+                    " | Nonce: " +
+                    candidate.GenerationNonce
+                );
+            }
+
+            if (
+                updated > 0 &&
+                !SurvivorJsonManager.TrySaveCurrentConfig(logger)
+            )
+            {
+                logger?.LogWarning(
+                    "[GENERATED PERSISTENCE] No se pudo guardar Survivors.json. " +
+                    "Las Generated seguirán activas sólo durante esta sesión."
+                );
+            }
+
+            UsuLog.Diagnostic(
+                logger,
+                "[GENERATED PERSISTENCE] G8 Phase 1.5 | " +
+                $"Materialized: {MaterializationsByBody.Count} | " +
+                $"Updated JSON: {updated} | Source: Generated | " +
+                "Legacy KillEnemies100: disabled"
+            );
+
+            return updated;
+        }
+
+
+        private static SurvivorChallengeJson BuildPersistedChallenge(
+            GeneratedMissionCandidate candidate,
+            MissionDefinition mission,
+            SurvivorChallengeJson previousChallenge
+        )
+        {
+            MissionConfiguration previousConfig =
+                previousChallenge?.MissionConfig;
+
+            MissionDefinition preservedCustomMission =
+                previousConfig?.CustomMission == null
+                    ? null
+                    : CloneMission(previousConfig.CustomMission);
+
+            CustomMissionSnapshot preservedCustomSnapshot =
+                previousConfig?.CustomMissionSnapshot == null
+                    ? null
+                    : JToken
+                        .FromObject(previousConfig.CustomMissionSnapshot)
+                        .ToObject<CustomMissionSnapshot>();
+
+            string preservedUsuPresetId =
+                MissionProviderSlotStore.ResolveRememberedUsuPresetId(
+                    previousChallenge
+                );
+
+            UnlockSelectionMode selectionMode =
+                previousConfig != null &&
+                string.Equals(
+                    previousConfig.Source,
+                    "Generated",
+                    StringComparison.OrdinalIgnoreCase
+                )
+                    ? previousConfig.EffectiveSelectionMode
+                    : UnlockSelectionMode.AutomaticFallback;
+
+            SurvivorChallengeJson challenge =
+                new SurvivorChallengeJson
+                {
+                    Enabled = true,
+                    Name = BuildChallengeName(candidate),
+                    Description = BuildChallengeDescription(candidate),
+                    LocalizationKey = "",
+                    LunarCoinReward = 0,
+                    Type = "GeneratedMission",
+                    Parameters = BuildGeneratedMetadata(candidate),
+                    Mission = CloneMission(mission),
+                    MissionConfig =
+                        new MissionConfiguration
+                        {
+                            Provider = UnlockProviderKind.USU,
+                            SelectionMode = selectionMode,
+                            Source = "Generated",
+                            BasePresetId = candidate?.CandidateId ?? "",
+                            UsuPresetId = preservedUsuPresetId,
+                            CustomMissionSnapshot = preservedCustomSnapshot,
+                            CustomMission = preservedCustomMission
+                        }
+                };
+
+            if (
+                GeneratedMissionPresentationFormatter.TryResolve(
+                    challenge,
+                    out string localizedName,
+                    out string localizedDescription
+                )
+            )
+            {
+                challenge.Name = localizedName;
+                challenge.Description = localizedDescription;
+            }
+
+            GeneratedMissionPersistenceFingerprint
+                .Stamp(challenge);
+
+            // Mantiene una copia dormida independiente para poder alternar
+            // Generated <-> USU/Custom/Original sin destruir esta misión.
+            MissionProviderSlotStore
+                .CaptureActiveGenerated(challenge);
+
+            return challenge;
         }
 
 
@@ -238,8 +690,8 @@ namespace UniversalSurvivorUnlocks
 
             /*
              * MissionConfig se conserva EXACTAMENTE como autoridad/provider
-             * persistidos. En particular, no cambiamos Source a Custom ni
-             * rellenamos CustomMission.
+             * persistidos. Source=Generated sigue administrado por G8 y no se
+             * convierte en Custom sin una edición explícita.
              */
 
             entryJson["challenge"] =
@@ -257,7 +709,7 @@ namespace UniversalSurvivorUnlocks
                 $"Performers: {materialization.PerformerCount} | " +
                 $"Performer skills: {materialization.PerformerSkillCount} | " +
                 "TargetUsage: no | Shared: yes | " +
-                "Source: snapshot-overlay | Persistencia: no"
+                "Source: Generated | Persistencia: JSON+snapshot"
             );
 
             return true;
@@ -280,6 +732,7 @@ namespace UniversalSurvivorUnlocks
         {
             switch (family)
             {
+                case MissionTemplateFamily.CombatKills:
                 case MissionTemplateFamily.Execution:
                 case MissionTemplateFamily.MeleeCombat:
                 case MissionTemplateFamily.ProjectileCombat:
@@ -310,6 +763,9 @@ namespace UniversalSurvivorUnlocks
 
             switch (candidate.Family)
             {
+                case MissionTemplateFamily.CombatKills:
+                    return BuildCombatKillsMaterialization(candidate);
+
                 case MissionTemplateFamily.Execution:
                     return BuildSkillDrivenMaterialization(
                         candidate,
@@ -358,6 +814,106 @@ namespace UniversalSurvivorUnlocks
                 default:
                     return null;
             }
+        }
+
+
+        private static RuntimeMaterialization BuildCombatKillsMaterialization(
+            GeneratedMissionCandidate candidate
+        )
+        {
+            int amount =
+                Math.Max(
+                    1,
+                    candidate?.Parameters?.Amount ?? 1
+                );
+
+            string resetScope =
+                NormalizeResetScope(
+                    candidate?.Parameters?.ResetScope
+                );
+
+            MissionObjective objective =
+                new MissionObjective
+                {
+                    Id =
+                        candidate.CandidateId +
+                        ".objective.combat_kills",
+
+                    Type = "Kill",
+                    Amount = amount,
+                    ResetScope = resetScope,
+
+                    Target =
+                        new MissionTarget
+                        {
+                            Category = "AnyEnemy",
+                            Id = ""
+                        },
+
+                    Conditions =
+                        new List<MissionCondition>
+                        {
+                            new MissionCondition
+                            {
+                                Type = "ExcludedSurvivor",
+                                Parameters =
+                                    new JObject
+                                    {
+                                        ["bodies"] =
+                                            new JArray(
+                                                candidate?.BodyName ?? ""
+                                            )
+                                    }
+                            }
+                        },
+
+                    Parameters =
+                        BuildGeneratedMetadata(candidate)
+                };
+
+            MissionRoute route =
+                new MissionRoute
+                {
+                    Id =
+                        candidate.CandidateId +
+                        ".route.combatkills",
+
+                    Objectives =
+                        new List<MissionObjective>
+                        {
+                            objective
+                        },
+
+                    Conditions =
+                        new List<MissionCondition>(),
+
+                    Rules =
+                        new MissionRules
+                        {
+                            SingleRun = true,
+                            ResetOnDeath = false,
+                            IsStreak = false
+                        }
+                };
+
+            return new RuntimeMaterialization
+            {
+                Candidate = candidate,
+                Mission =
+                    new MissionDefinition
+                    {
+                        SchemaVersion = 2,
+                        ProgressScope = "Shared",
+                        RewardScope = "Session",
+                        Routes =
+                            new List<MissionRoute>
+                            {
+                                route
+                            }
+                    },
+                PerformerCount = 0,
+                PerformerSkillCount = 0
+            };
         }
 
 
@@ -889,6 +1445,12 @@ namespace UniversalSurvivorUnlocks
                 ["generatedMissionId"] =
                     candidate?.CandidateId ?? "",
 
+                ["generatorVersion"] =
+                    candidate?.GeneratorVersion ?? 0,
+
+                ["generationNonce"] =
+                    candidate?.GenerationNonce ?? "",
+
                 ["generatedTemplateId"] =
                     candidate?.TemplateId ?? "",
 
@@ -906,7 +1468,8 @@ namespace UniversalSurvivorUnlocks
                         candidate?.Parameters?.ResetScope
                     ),
 
-                ["temporary"] = true,
+                ["temporary"] = false,
+                ["managed"] = true,
                 ["fallbackOnly"] = true,
                 ["targetUsage"] = false
             };
@@ -919,6 +1482,9 @@ namespace UniversalSurvivorUnlocks
         {
             switch (candidate?.Family)
             {
+                case MissionTemplateFamily.CombatKills:
+                    return "Cacería calculada";
+
                 case MissionTemplateFamily.Execution:
                     return "Ejecución calculada";
 
@@ -959,6 +1525,13 @@ namespace UniversalSurvivorUnlocks
 
             switch (candidate?.Family)
             {
+                case MissionTemplateFamily.CombatKills:
+                    return
+                        $"Derrota {amount} enemigos;\n" +
+                        (stageReset
+                            ? "hazlo en un sector."
+                            : "hazlo en una partida.");
+
                 case MissionTemplateFamily.Execution:
                     return
                         $"Consigue {amount} bajas con habilidades de ejecución;\n" +
@@ -1082,7 +1655,8 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
-                logger?.LogInfo(
+                UsuLog.Diagnostic(
+                logger,
                     "[GENERATED RUNTIME MATERIALIZED] " +
                     $"{candidate.DisplayName} | " +
                     $"Id: {candidate.CandidateId} | " +
@@ -1093,7 +1667,7 @@ namespace UniversalSurvivorUnlocks
                     $"Performers: {item.PerformerCount} | " +
                     $"Performer skills: {item.PerformerSkillCount} | " +
                     "Progress: Shared | TargetUsage: no | " +
-                    "Temporary: yes | Persistencia: no"
+                    "Managed Generated: yes | Persistencia: JSON"
                 );
             }
         }

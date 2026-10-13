@@ -94,6 +94,15 @@ namespace UniversalSurvivorUnlocks
         public const string RecruitMinions =
             "base.objective.recruit_minions";
 
+        // Interacción genérica con un objetivo/interactuable concreto.
+        // Introducida a partir del patrón oficial de desbloqueo de Acolyte
+        // en Hallowed Concepts, pero NO está acoplada a ese personaje.
+        public const string InteractWithTarget =
+            "base.objective.interact_with_target";
+
+        public const string ConsumeItemOnInteraction =
+            "base.objective.consume_item_on_interaction";
+
         public const string BombingRun =
             "base.objective.bombing_run";
 
@@ -342,6 +351,17 @@ namespace UniversalSurvivorUnlocks
 
         public const string RalseiOfficial =
             "creator.official.ralsei.power_of_kindness";
+
+        public const string GwenOfficial = "creator.official.gwen.threads_and_needles";
+
+        public const string KindredOfficial = "creator.official.kindred.mark_of_fate";
+
+        public const string SeamstressOfficial = "creator.official.seamstress.crimson_thread";
+
+        public const string BansheeOfficial = "creator.official.banshee.omen_from_above";
+        public const string WandererOfficial = "creator.official.wanderer.last_breath";
+        public const string WarlockOfficial = "creator.official.warlock.tribute_to_throne";
+        public const string AH64Official = "creator.official.ah64.air_supremacy";
 
         public const string MinerOfficial =
             "creator.official.miner.excavation";

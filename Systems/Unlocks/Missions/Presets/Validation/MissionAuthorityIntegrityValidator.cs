@@ -16,7 +16,7 @@ namespace UniversalSurvivorUnlocks
     /// </summary>
     public static class MissionAuthorityIntegrityValidator
     {
-        private const int ExpectedOfficialCount = 10;
+        private const int ExpectedOfficialCount = 17;
         private const int ExpectedLegacyCount = 12;
 
         public static bool Validate(
@@ -195,18 +195,13 @@ namespace UniversalSurvivorUnlocks
                 {
                     directUsuAlternatives++;
 
-                    if (
-                        !string.Equals(
-                            bodyName,
-                            "MinerBody",
-                            StringComparison.Ordinal
-                        ) ||
-                        !string.Equals(
-                            presetId,
-                            MissionPresetIds.MinerOfficial,
-                            StringComparison.OrdinalIgnoreCase
-                        )
-                    )
+                    bool minerAlternative =
+                        string.Equals(bodyName, "MinerBody", StringComparison.Ordinal) &&
+                        string.Equals(presetId, MissionPresetIds.MinerOfficial, StringComparison.OrdinalIgnoreCase);
+                    bool warlockAlternative =
+                        string.Equals(bodyName, "WarlockBody", StringComparison.Ordinal) &&
+                        string.Equals(presetId, MissionPresetIds.WarlockOfficial, StringComparison.OrdinalIgnoreCase);
+                    if (!minerAlternative && !warlockAlternative)
                     {
                         valid = false;
                         logger.LogWarning(
@@ -217,12 +212,12 @@ namespace UniversalSurvivorUnlocks
                 }
             }
 
-            if (directUsuAlternatives != 1)
+            if (directUsuAlternatives != 2)
             {
                 valid = false;
                 logger.LogWarning(
                     "[MISSION AUTHORITY] Excepciones directas Original ↔ USU inesperadas | " +
-                    $"Esperadas: 1 (Miner) | Encontradas: {directUsuAlternatives}"
+                    $"Esperadas: 2 (Miner, Warlock) | Encontradas: {directUsuAlternatives}"
                 );
             }
 
@@ -237,7 +232,7 @@ namespace UniversalSurvivorUnlocks
                     "[MISSION AUTHORITY] Integridad final OK | " +
                     $"Oficiales: {ExpectedOfficialCount} | " +
                     $"Legacy: {ExpectedLegacyCount} | " +
-                    "Original ↔ USU directo: Miner"
+                    "Original ↔ USU directo: Miner, Warlock"
                 );
             }
             else

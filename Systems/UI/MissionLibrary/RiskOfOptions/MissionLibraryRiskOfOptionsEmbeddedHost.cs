@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 using BepInEx.Logging;
@@ -64,9 +64,21 @@ namespace UniversalSurvivorUnlocks
         private Button survivorProviderOriginalButton;
         private Button survivorProviderUsuButton;
         private Button survivorProviderCustomButton;
+        private Button survivorProviderGeneratedButton;
         private HGTextMeshProUGUI survivorProviderOriginalText;
         private HGTextMeshProUGUI survivorProviderUsuText;
         private HGTextMeshProUGUI survivorProviderCustomText;
+        private HGTextMeshProUGUI survivorProviderGeneratedText;
+
+        // G8 Phase 1.6: el reroll Generated vive junto al bloque de misión.
+        // No aparece para Original, Official USU ni Custom.
+        private GameObject survivorGeneratedRerollRoot;
+        private Button survivorGeneratedRerollButton;
+        private GameObject survivorGeneratedDeleteRoot;
+        private Button survivorGeneratedDeleteButton;
+        private HGTextMeshProUGUI survivorGeneratedDeleteText;
+        private static Texture2D generatedRerollIconTexture;
+        private static Sprite generatedRerollIconSprite;
 
         // UI/log cleanup: evita reconstrucciones informativas repetidas
         // dentro de la misma instancia de Mod Options.
@@ -102,14 +114,17 @@ namespace UniversalSurvivorUnlocks
         {
             public string Label;
             public string Value;
+            public Action OnClick;
 
             public DisplayRow(
                 string label,
-                string value
+                string value,
+                Action onClick = null
             )
             {
                 Label = label ?? "";
                 Value = value ?? "";
+                OnClick = onClick;
             }
         }
 
@@ -304,6 +319,7 @@ namespace UniversalSurvivorUnlocks
                 );
             }
 
+            RefreshAH64CampaignBarsIfVisible();
         }
 
 

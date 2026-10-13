@@ -97,6 +97,8 @@ namespace UniversalSurvivorUnlocks
             DefeatUmbraWavesObjectiveHandler.Initialize(log);
             LeaveStageObjectiveHandler.Initialize(log);
             RecruitMinionsObjectiveHandler.Initialize(log);
+            InteractWithTargetObjectiveHandler.Initialize(log);
+            ConsumeItemOnInteractionObjectiveHandler.Initialize(log);
 
 
             UsuLog.Verbose(

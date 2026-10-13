@@ -137,6 +137,47 @@ namespace UniversalSurvivorUnlocks
                 2
             ),
             new OfficialMissionPresetDescriptor(
+                "GwenBody", "com.Dragonyck.Gwen",
+                MissionPresetIds.GwenOfficial, SurvivorLocalizationKeys.Gwen, 3
+            ),
+            new OfficialMissionPresetDescriptor(
+                "KindredBody", "com.Dragonyck.Kindred",
+                MissionPresetIds.KindredOfficial, SurvivorLocalizationKeys.Kindred, 4
+            ),
+            new OfficialMissionPresetDescriptor(
+                "SeamstressBody", "com.kenko.Seamstress",
+                MissionPresetIds.SeamstressOfficial, SurvivorLocalizationKeys.Seamstress, 3
+            ),
+            new OfficialMissionPresetDescriptor(
+                "BansheeBody",
+                "com.kenko.Banshee",
+                MissionPresetIds.BansheeOfficial,
+                SurvivorLocalizationKeys.Banshee,
+                3
+            ),
+            new OfficialMissionPresetDescriptor(
+                "UnforgivenBody",
+                "com.kenko.Unforgiven",
+                MissionPresetIds.WandererOfficial,
+                SurvivorLocalizationKeys.Wanderer,
+                4
+            ),
+            new OfficialMissionPresetDescriptor(
+                "WarlockBody",
+                "com.kenko.Warlock",
+                MissionPresetIds.WarlockOfficial,
+                SurvivorLocalizationKeys.Warlock,
+                4,
+                true // alternativa explícita; conservar Original por defecto
+            ),
+            new OfficialMissionPresetDescriptor(
+                "AH64Body",
+                "com.JohnstonStu.AH64",
+                MissionPresetIds.AH64Official,
+                SurvivorLocalizationKeys.AH64,
+                10
+            ),
+            new OfficialMissionPresetDescriptor(
                 "MinerBody",
                 "DiggerUnearthed.DiggerContent",
                 MissionPresetIds.MinerOfficial,

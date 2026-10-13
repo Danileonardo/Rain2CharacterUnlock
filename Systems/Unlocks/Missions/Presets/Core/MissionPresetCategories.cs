@@ -45,6 +45,9 @@ namespace UniversalSurvivorUnlocks
         public const string Allies =
             "Allies";
 
+        public const string Interaction =
+            "Interaction";
+
         public const string Legacy =
             "Legacy";
 

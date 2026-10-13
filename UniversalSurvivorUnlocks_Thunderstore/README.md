@@ -4,7 +4,7 @@
 
 USU automatically detects compatible modded survivors, normally respects characters that already provide their own unlock requirement, and can give progression challenges to survivors that would otherwise be available immediately. Curated compatibility cases can also expose a separate USU-owned alternative without modifying the creator's Original system.
 
-**Current release:** `0.3.0`
+**Current release:** `0.3.1`
 
 [Thunderstore](https://thunderstore.io/c/riskofrain2/p/Shleidericks/UniversalSurvivorUnlocks/) · [GitHub / Source Code](https://github.com/Danileonardo/Rain2CharacterUnlock) · [Support development / Donate](https://github.com/sponsors/Danileonardo) · Discord: `@shleiderick`
 
@@ -52,17 +52,32 @@ Main goals:
 - Localize the official challenge names/descriptions according to the game's active language.
 - Reward official USU challenges with configurable Lunar Coin rewards.
 
+## 0.3.1 release focus — Universal Survivor Mission Library
+
+Version `0.3.1` adds a shared, more readable Mission Library layout inspired by AH-64's panel, while preserving each survivor's own content and unlock ownership.
+
+Highlights:
+
+- Shared visual preset for survivor information: portrait, unlock state, provider selection, active mission, overview and Logbook/Notes, without replacing original lore or achievements.
+- Provider selection supports **Original / USU / Personalizada / Generada** with the existing persisted-slot and authority rules.
+- AH-64 receives **Protocol 64: Air Supremacy**, an experimental cumulative campaign with four tracked goals and a final Monsoon escape. Its campaign cards, progress bars and final operation remain AH-64 specific; they are not shown for other survivors without real tracked objectives.
+- Refined text size, scrolling and the compact mission/campaign/notes presentation within Risk Of Options.
+- Continues the work on Generated mission controls, provider coexistence, curated official presets, localization and compatibility with additional modded survivors.
+- Requires **Risk Of Options** and **ScrollableLobbyUI** in the Thunderstore dependency list; SurvivorSortOrder is listed as a package dependency for roster sorting, not as a hard BepInEx DLL dependency.
+
+**Testing note:** visual improvements and gameplay changes remain subject to compatibility and multiplayer feedback, including AH-64 campaign counters and long-text layouts for individual survivors. No universal multiplayer persistence guarantee is made for the AH-64 campaign.
+
 ## 0.3.0 release focus
 
 Version `0.3.0` adds the first public **adaptive Generated mission pipeline** on top of the Mission Authority & Persistence foundation introduced in `0.2.2`.
 
 Highlights:
 
-- Compatible modded survivors with no applicable creator Original, Official USU, or player CUSTOM mission can receive a **temporary Generated mission** at runtime.
-- Generated missions are built from the currently installed survivor/profile context and may differ between players with different local mod rosters. That is intentional: they are temporary fallbacks, not permanent authored presets.
-- Generated content is **not persisted as CUSTOM**. If USU later gains an Official preset for that survivor, or the mod author adds an Original unlock, the authored content takes priority according to the normal provider/authority rules.
+- Compatible modded survivors with no applicable creator Original, Official USU, or player CUSTOM mission receive a **Generated Mission v2** fallback.
+- Generated missions are built from the currently installed survivor/profile context and may differ between players with different local mod rosters. They are persisted in `Survivors.json` with `source = Generated`, but remain managed fallbacks rather than authored presets.
+- Editing a Generated mission promotes the edited copy to **CUSTOM**. If USU later gains an Official preset for that survivor, or the mod author adds an Original unlock, authored content keeps normal provider/authority priority.
 - The current generated runtime supports `Execution`, `HealingSupport`, `ResourceMastery`, `MeleeCombat`, and `ProjectileCombat` families.
-- The historical `KillEnemies 100` challenge remains only as an emergency compatibility fallback; USU does not use it as a reason to replace vanilla/DLC progression or a mod author's Original unlock.
+- The historical automatic `KillEnemies 100` fallback is migrated away and is no longer created for newly detected survivors. `KillEnemies` remains available as a legitimate mission objective for authored/custom content.
 - Generated missions use the same Mission v2/session architecture as other USU missions, including host-authoritative lobby snapshots.
 - Original provider presentation is explicitly preserved: USU does not rewrite EFFECTIVE achievement text while a creator-owned Original provider is active.
 - Miner remains the curated exception where the player can explicitly choose the creator's Original unlock or USU's independent `Excavación / Excavation` alternative.
@@ -101,7 +116,7 @@ Highlights of this release:
 - Added curated Spanish localization (`es-419` / `es-ES`) and English repairs for visible modded-survivor content when the original mod does not provide the required text.
 - Added survivor content profiles for overview/details, skills, keywords, skins, unlock information, and Logbook-facing lore/Notes.
 - Kept `Notes` tied to the real native Logbook state instead of creating a separate USU discovery flag.
-- Added the in-game Mission Library/provider interface. When **Risk Of Options** is installed, USU embeds its interface there; otherwise a Character Select launcher is used as fallback.
+- Added the in-game Mission Library/provider interface. **Risk Of Options 2.8.6+ is now required** and USU embeds its interface directly inside Mod Options. The legacy Character Select launcher remains only as a defensive fallback if the dependency fails to load.
 - Added provider selection/restoration flows for `Original`, `USU`, and stored `Custom` configuration state, while protecting native creator unlock systems from unintended replacement.
 - Added a runtime content catalog used by the survivor browser and future mission-editor work.
 - Added quieter default logging with optional verbose diagnostics through BepInEx config.
@@ -128,9 +143,9 @@ A curated compatibility entry may expose a **separate USU-owned alternative** wi
 
 Compatible survivors without their own unlock requirement can receive a USU challenge and start locked until that challenge is completed.
 
-In `0.3.0`, when no applicable Original, Official USU, or player CUSTOM mission owns that survivor, USU can build a **temporary Generated mission** from the locally detected gameplay/profile context. Generated missions are intentionally local and temporary: two players with different installed/unlocked rosters may receive different temporary missions for the same newly installed survivor. During multiplayer, the host's effective mission remains authoritative for the session.
+In `0.3.0`, when no applicable Original, Official USU, or player CUSTOM mission owns that survivor, USU builds a **Generated Mission v2** from the locally detected gameplay/profile context and stores it in `Survivors.json` as `source = Generated`. Two players with different installed/unlocked rosters may receive different Generated missions. During multiplayer, the host's effective mission remains authoritative for the session.
 
-Generated missions do not overwrite creator content and are not saved as player CUSTOM missions. If authored content later becomes available, the normal authority/provider rules take precedence.
+Generated missions do not overwrite creator content. They use the same JSON/Mission v2 model as Custom; editing one turns the edited copy into `source = Custom`, while an untouched Generated mission remains automatically refreshable by USU. Generated missions can be rerolled directly from Mission Library with the dice control; deleting their JSON entry (or the whole `Survivors.json`) is kept only as a recovery path that creates a fresh generation nonce on the next startup.
 
 ---
 
@@ -142,7 +157,7 @@ USU is moving toward a preset-based mission system with a clear ownership rule.
 
 A built-in preset created for USU is the **official source preset**.
 
-Version `0.3.0` includes the same **10 official USU presets** and adds temporary Generated missions for otherwise unowned survivor unlock gaps. These source presets are kept separate from the reusable Objective and Condition templates used internally by Mission System v2.
+Version `0.3.0` includes the same **10 official USU presets** and adds persisted, auto-managed Generated missions for otherwise unowned survivor unlock gaps. These source presets are kept separate from the reusable Objective and Condition templates used internally by Mission System v2.
 
 Creator presets are intended to remain unchanged so future updates can improve or rebalance them without destroying the original definition.
 
@@ -156,7 +171,7 @@ This allows USU to keep:
 - The player's customized version.
 - The technical relationship between the custom mission and the preset it came from.
 
-Version `0.3.0` exposes the current preset/provider library in-game and can also show the effective temporary Generated mission for compatible fallback targets. Official built-in presets remain source definitions and are refreshed from their stable `BasePresetId`, so editing a preset-backed snapshot directly in `Survivors.json` is not a reliable way to create a permanent custom variant. Stored custom mission data is kept separate from the official preset source. The full visual editor for creating arbitrary custom missions is still planned for a later release.
+Version `0.3.0` exposes the current preset/provider library in-game and can also show the effective Generated mission for compatible fallback targets. Official built-in presets remain source definitions and are refreshed from their stable `BasePresetId`, so editing a preset-backed snapshot directly in `Survivors.json` is not a reliable way to create a permanent custom variant. Stored custom mission data is kept separate from the official preset source. The full visual editor for creating arbitrary custom missions is still planned for a later release.
 
 ---
 
@@ -511,7 +526,7 @@ This allows mission logic to remain independent from the player's selected langu
 
 ## Current v2 runtime status
 
-In `0.3.0`, the authored library still contains **10 assignable official Mission v2 presets**, while compatible unowned survivor unlock gaps can also receive temporary Generated Mission v2 definitions built from reusable objectives, conditions, targets, routes, and rules.
+In `0.3.0`, the authored library still contains **10 assignable official Mission v2 presets**, while compatible unowned survivor unlock gaps can also receive Generated Mission v2 definitions persisted with `source = Generated` built from reusable objectives, conditions, targets, routes, and rules.
 
 The internal catalog also retains hidden legacy recipes and reusable Objective/Condition templates for compatibility and future editing workflows.
 
@@ -621,7 +636,9 @@ Using a mod manager is recommended.
 
 # Dependencies
 
-The Thunderstore package for `0.3.0` declares:
+For `0.3.1`, use the current `manifest.json` as the authoritative list. New required package entries include Risk Of Options, ScrollableLobbyUI and SurvivorSortOrder (sort order is a package dependency only).
+
+For reference, the earlier Thunderstore package for `0.3.0` declared:
 
 - `bbepis-BepInExPack-5.4.2121`
 - `RiskofThunder-R2API_Core-5.3.0`
@@ -630,7 +647,7 @@ The Thunderstore package for `0.3.0` declares:
 - `RiskofThunder-R2API_Unlockable-1.0.2`
 - `RiskofThunder-R2API_Networking-1.0.4`
 
-**Risk Of Options is an optional soft integration in version `0.3.0`, not a hard Thunderstore dependency.** When it is installed, USU embeds the Mission Library inside Mod Options. Without it, USU uses its Character Select launcher fallback.
+**Risk Of Options is a required dependency in `0.3.1`.** Thunderstore/r2modman will install `Rune580-Risk_Of_Options-2.8.6` together with USU. The Mission Library is embedded inside Mod Options; the old Character Select launcher remains only as a defensive fallback if Risk Of Options fails to initialize.
 
 Always treat the `manifest.json` included with the current release as the authoritative dependency list.
 
@@ -832,3 +849,8 @@ Original alias: `Shleider#3336`
 > **Thank you for playing and helping test Universal Survivor Unlocks.**
 >
 > **Gracias por jugar y ayudar a probar Universal Survivor Unlocks.**
+
+
+### Generated reroll
+
+Las misiones administradas como **Generated** muestran un dado en Mission Library. El dado vuelve a calcular la misión, actualiza `Survivors.json` y refresca su nombre/descripción inmediatamente. Editar la misión sigue convirtiéndola en **Custom**; el reroll no.

@@ -224,7 +224,8 @@ namespace UniversalSurvivorUnlocks
                     ? moddedConfidenceTotal / modded
                     : 0f;
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 "[POWER ASSESSMENT] G4 Phase 1.4 construido | " +
                 $"Profiles: {Assessments.Count} | " +
                 $"Modded: {modded} | " +
@@ -255,7 +256,7 @@ namespace UniversalSurvivorUnlocks
 
         private static void LogVerboseAssessments()
         {
-            if (!UsuLog.VerboseEnabled)
+            if (!UsuLog.ExtendedAuditEnabled)
             {
                 return;
             }
@@ -269,7 +270,7 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
-                UsuLog.Verbose(
+                UsuLog.ExtendedAudit(
                     logger,
                     "[POWER PROFILE] " +
                     assessment.DisplayName +
@@ -361,7 +362,7 @@ namespace UniversalSurvivorUnlocks
                             ")";
                     }
 
-                    UsuLog.Verbose(
+                    UsuLog.ExtendedAudit(
                         logger,
                         "[POWER INDIRECT] " +
                         assessment.DisplayName +
@@ -468,7 +469,7 @@ namespace UniversalSurvivorUnlocks
                     "%}";
             }
 
-            UsuLog.Verbose(
+            UsuLog.ExtendedAudit(
                 logger,
                 "[POWER MAGNITUDE] " +
                 assessment.DisplayName +
@@ -497,7 +498,7 @@ namespace UniversalSurvivorUnlocks
                 return;
             }
 
-            UsuLog.Verbose(
+            UsuLog.ExtendedAudit(
                 logger,
                 "[COMMUNITY POWER] " +
                 assessment.DisplayName +
@@ -547,7 +548,7 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
-                UsuLog.Verbose(
+                UsuLog.ExtendedAudit(
                     logger,
                     "[COMMUNITY SOURCE] " +
                     assessment.DisplayName +
@@ -625,7 +626,7 @@ namespace UniversalSurvivorUnlocks
                 localBand = "LowOrUnresolved";
             }
 
-            UsuLog.Verbose(
+            UsuLog.ExtendedAudit(
                 logger,
                 "[POWER REVIEW] " +
                 assessment.DisplayName +

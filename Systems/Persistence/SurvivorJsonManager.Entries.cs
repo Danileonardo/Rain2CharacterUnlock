@@ -358,7 +358,13 @@ namespace UniversalSurvivorUnlocks
 
 
             // =====================================================
-            // SI NO HAY MISIÓN DORMIDA NI PRESET, USAR GENÉRICA
+            // SI NO HAY MISIÓN DORMIDA NI PRESET, DEJAR PENDIENTE
+            // PARA GENERATED
+            // =====================================================
+            //
+            // Desde G8 Phase 1.5 ya no se crea el fallback histórico
+            // KillEnemies 100. G7/G8 lo reemplazará por una Generated
+            // Mission V2 una vez confirmado que tampoco existe Original.
             // =====================================================
 
             if (
@@ -367,27 +373,7 @@ namespace UniversalSurvivorUnlocks
             )
             {
                 challenge =
-                    new SurvivorChallengeJson
-                    {
-                        Enabled =
-                            true,
-
-                        Name =
-                            "Desafío de desbloqueo",
-
-                        Description =
-                            "",
-
-                        Type =
-                            "KillEnemies",
-
-                        Parameters =
-                            new JObject
-                            {
-                                ["amount"] =
-                                    100
-                            }
-                    };
+                    CreateGeneratedPendingChallenge();
             }
 
 
@@ -535,12 +521,113 @@ namespace UniversalSurvivorUnlocks
                     $"Survivor: {displayName} | " +
                     $"Body: {bodyName} | " +
                     $"Pack: {entry.Source} | " +
-                    $"Challenge: KillEnemies 100"
+                    $"Challenge: Generated pending"
                 );
             }
 
 
             return entry;
+        }
+
+
+        /// <summary>
+        /// Estado neutro previo a la generación. No representa una misión
+        /// jugable y no es Custom ni Preset. G7/G8 lo reemplaza por una
+        /// Generated Mission V2 dentro del mismo Survivors.json.
+        /// </summary>
+        internal static SurvivorChallengeJson CreateGeneratedPendingChallenge()
+        {
+            return new SurvivorChallengeJson
+            {
+                Enabled = true,
+                Name = "",
+                Description = "",
+                LocalizationKey = "",
+                LunarCoinReward = 0,
+                Type = "GeneratedPending",
+                Parameters = new JObject(),
+                MissionConfig = null,
+                Mission = null
+            };
+        }
+
+
+        /// <summary>
+        /// Contenedor neutro para survivors cuyo contenido Original es la
+        /// autoridad. Se conserva para permitir futuras alternativas USU/Custom
+        /// sin inventar detrás una misión automática de 100 bajas.
+        /// </summary>
+        internal static SurvivorChallengeJson CreateOriginalPlaceholderChallenge()
+        {
+            return new SurvivorChallengeJson
+            {
+                Enabled = false,
+                Name = "",
+                Description = "",
+                LocalizationKey = "",
+                LunarCoinReward = 0,
+                Type = "Original",
+                Parameters = new JObject(),
+                MissionConfig = null,
+                Mission = null
+            };
+        }
+
+
+        /// <summary>
+        /// Reconoce exclusivamente el fallback automático histórico exacto.
+        /// Una Custom real de 100 bajas posee MissionConfig/Source y no entra.
+        /// </summary>
+        internal static bool IsHistoricalKillEnemies100Fallback(
+            SurvivorChallengeJson challenge
+        )
+        {
+            if (
+                challenge == null ||
+                challenge.Mission != null ||
+                challenge.MissionConfig != null ||
+                !string.Equals(
+                    challenge.Type,
+                    "KillEnemies",
+                    StringComparison.OrdinalIgnoreCase
+                )
+            )
+            {
+                return false;
+            }
+
+            int amount =
+                challenge.Parameters?.Value<int?>("amount")
+                ?? 0;
+
+            if (amount != 100)
+            {
+                return false;
+            }
+
+            string name =
+                challenge.Name?.Trim() ?? "";
+
+            string description =
+                challenge.Description?.Trim() ?? "";
+
+            string localizationKey =
+                challenge.LocalizationKey?.Trim() ?? "";
+
+            bool defaultName =
+                string.IsNullOrWhiteSpace(name) ||
+                string.Equals(
+                    name,
+                    "Desafío de desbloqueo",
+                    StringComparison.OrdinalIgnoreCase
+                );
+
+            return
+                challenge.Enabled &&
+                defaultName &&
+                string.IsNullOrWhiteSpace(description) &&
+                string.IsNullOrWhiteSpace(localizationKey) &&
+                challenge.LunarCoinReward == 0;
         }
 
 
