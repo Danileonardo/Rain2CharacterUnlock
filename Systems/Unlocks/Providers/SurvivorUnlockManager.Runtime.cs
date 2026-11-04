@@ -253,10 +253,20 @@ namespace UniversalSurvivorUnlocks
                 false;
 
 
-            unlockable.achievementIcon =
+            // Retener el Sprite en una variable local permite reutilizarlo
+            // en AchievementDef sin leer la propiedad obsoleta otra vez.
+            Sprite initialAchievementIcon =
                 LegacyResourcesAPI.Load<Sprite>(
                     "Textures/MiscIcons/texUnlockIcon"
                 );
+
+            // Compatibilidad legado: conservar el icono asociado al
+            // UnlockableDef mientras se migra la presentación a
+            // AchievementIconRef sin alterar los portraits existentes.
+#pragma warning disable CS0618
+            unlockable.achievementIcon =
+                initialAchievementIcon;
+#pragma warning restore CS0618
 
 
             unlockable.getHowToUnlockString =
@@ -381,7 +391,7 @@ namespace UniversalSurvivorUnlocks
                         achievementDescriptionToken,
 
                     achievedIcon =
-                        unlockable.achievementIcon,
+                        initialAchievementIcon,
 
                     // RoR2 usa este campo para:
                     // 1) mostrar la Moneda lunar +N en la UI vanilla;

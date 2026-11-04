@@ -170,7 +170,7 @@ namespace UniversalSurvivorUnlocks
                     )
                 )
                 {
-                    logger?.LogInfo(
+                    UsuLog.Diagnostic(logger, 
                         $"[BombingRun] Bombardeo listo: {killsPerRun}/{killsPerRun} bajas"
                     );
                 }

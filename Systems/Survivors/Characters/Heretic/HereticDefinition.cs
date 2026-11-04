@@ -103,13 +103,13 @@ namespace UniversalSurvivorUnlocks
             RegisterOverviewOverlays();
             RegisterHereticSpanishTokens();
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | HereticBody | " +
                 "adaptador Moffein-Heretic + vista general USU + es-419 / es-ES para pasiva + " +
                 "Marca de Herejía + skills corregidas + unlock original"
             );
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[HERETIC LOCALIZATION] HereticBody es SurvivorDef vanilla reutilizado por " +
                 "com.Moffein.Heretic; identidad/lore/skills base permanecen oficiales. " +
                 "Vista general ampliada por USU. Unlock original Survivors.MoffeinHeretic preservado."

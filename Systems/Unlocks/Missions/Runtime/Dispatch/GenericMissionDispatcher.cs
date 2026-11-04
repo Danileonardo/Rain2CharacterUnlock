@@ -89,6 +89,12 @@ namespace UniversalSurvivorUnlocks
             PickupItemObjectiveHandler.Initialize(log);
             ScrapItemsObjectiveHandler.Initialize(log);
             KillObjectiveHandler.Initialize(log);
+            ExposeDashHitsObjectiveHandler.Initialize(log);
+            BayonettaDodgeKillsObjectiveHandler.Initialize(log);
+            SonicTransportHitsObjectiveHandler.Initialize(log);
+            ShadowPowerWeaponHitsObjectiveHandler.Initialize(log);
+            ThreeSurvivorObjectiveHandlers.Initialize(log);
+            VaderCubeKillsObjectiveHandler.Initialize(log);
             UseSkillObjectiveHandler.Initialize(log);
             HealingObjectiveHandler.Initialize(log);
             BombingRunObjectiveHandler.Initialize(log);
@@ -99,6 +105,10 @@ namespace UniversalSurvivorUnlocks
             RecruitMinionsObjectiveHandler.Initialize(log);
             InteractWithTargetObjectiveHandler.Initialize(log);
             ConsumeItemOnInteractionObjectiveHandler.Initialize(log);
+            HelPDroneMissionHandler.Initialize(log);
+            MixedMissionParticipationTracker.Initialize(log);
+            MissionContributionLedger.Initialize(log);
+            MissionStageDeathTracker.Initialize(log);
 
 
             UsuLog.Verbose(
@@ -151,7 +161,9 @@ namespace UniversalSurvivorUnlocks
         public static void HandleProgressResult(
             MissionObjectiveRuntimeBinding binding,
             MissionCompositionProgressResult result,
-            string details = ""
+            string details = "",
+            NetworkUser individualRecipient = null,
+            CharacterBody killedBody = null
         )
         {
             if (
@@ -218,9 +230,10 @@ namespace UniversalSurvivorUnlocks
                         $"{result.CurrentValue:0.##}/{result.RequiredValue:0.##}"
                     );
                 }
-                else if (ShouldLogProgress(result))
+                else if (UsuLog.DiagnosticEnabled && ShouldLogProgress(result))
                 {
-                    logger?.LogInfo(
+                    UsuLog.Diagnostic(
+                        logger,
                         "[MISSION V2] PROGRESO | " +
                         $"Body: {binding.BodyName} | " +
                         $"Route: {result.RouteId} | " +
@@ -235,6 +248,13 @@ namespace UniversalSurvivorUnlocks
                 }
             }
 
+
+            // Guardar evidencia personal antes del evento que completa la ruta.
+            // Individual: autoría del progreso, aislada por ruta OR.
+            if (MissionModeConfiguration.GetMode(binding.Mission) == MissionUnlockMode.Individual)
+                MissionContributionLedger.Record(binding, result);
+            if (MissionModeConfiguration.GetMode(binding.Mission) == MissionUnlockMode.Mixed)
+                MixedMissionParticipationTracker.Record(binding, result, killedBody);
 
             if (!result.MissionJustCompleted)
             {
@@ -300,6 +320,62 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            // La recompensa se decide por la misión, NO por el nombre del
+            // personaje. El progreso PerPlayer y la recompensa Individual
+            // son conceptos distintos (una misión mixta los combina).
+            MissionUnlockMode unlockMode = MissionModeConfiguration.GetMode(
+                binding.Mission);
+            if (unlockMode == MissionUnlockMode.Individual)
+            {
+                NetworkUser recipient = individualRecipient ??
+                    result.CompletingNetworkUser;
+                if (result.ProgressScope != MissionProgressScope.PerPlayer ||
+                    recipient == null || recipient.gameObject == null)
+                {
+                    logger?.LogWarning(
+                        "[MISSION MODE] Individual sin identidad validada; " +
+                        "se evita entregar el desbloqueo | Body: " + bodyName);
+                    return;
+                }
+                List<NetworkUser> validatedRecipients =
+                    MissionContributionLedger.EligibleRecipients(binding, result.RouteId, recipient);
+                if (validatedRecipients.Count == 0)
+                {
+                    logger?.LogWarning("[MISSION CREDIT AUDIT] Sin destinatarios conectados " +
+                        "tras completar misión individual | Body: " + bodyName +
+                        " | Route: " + result.RouteId + " | User: " + recipient.userName);
+                    // Sin fallback a broadcast: nunca entregar a un espectador.
+                    return;
+                }
+                logger?.LogInfo("[MISSION CREDIT AUDIT] Entrega individual ampliada | Body: " +
+                    bodyName + " | Route: " + result.RouteId +
+                    " | Participantes verificados: " + validatedRecipients.Count);
+                foreach (NetworkUser validatedRecipient in validatedRecipients)
+                    SessionUnlockManager.CompleteMissionForPlayer(bodyName, validatedRecipient);
+                return;
+            }
+
+            if (unlockMode == MissionUnlockMode.Mixed)
+            {
+                List<NetworkUser> recipients =
+                    MixedMissionParticipationTracker.EligibleRecipients(binding);
+                if (recipients.Count == 0)
+                {
+                    // La ruta se cerró sin nadie elegible. No difundir el logro.
+                    logger?.LogWarning("[MISSION MIXED] Meta cumplida, " +
+                        "sin participantes personales elegibles | Body: " + bodyName);
+                    return;
+                }
+
+                CompletedBodiesThisRun.Add(bodyName);
+                foreach (NetworkUser recipient in recipients)
+                    SessionUnlockManager.CompleteMissionForPlayer(
+                        bodyName, recipient, result.RouteId);
+                logger?.LogInfo("[MISSION MIXED] Desbloqueos individuales | Body: " +
+                    bodyName + " | Participantes: " + recipients.Count);
+                return;
+            }
+
             CompletedBodiesThisRun.Add(
                 bodyName
             );
@@ -335,7 +411,8 @@ namespace UniversalSurvivorUnlocks
              */
             SessionUnlockManager
                 .CompleteMission(
-                    bodyName
+                    bodyName,
+                    result.RouteId
                 );
         }
 

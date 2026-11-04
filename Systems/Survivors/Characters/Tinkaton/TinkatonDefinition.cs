@@ -11,7 +11,7 @@ namespace UniversalSurvivorUnlocks
     ///
     /// Autoridad USU para localización visible ES, sus tres pasivas,
     /// skills, skins, achievement de Maestría, Vista general reparada
-    /// ES/EN y traducción del lore nativo del creador.
+    /// ES/EN y adaptación narrativa USU del lore del creador.
     ///
     /// La misión oficial USU "Forjada en Chatarra" permanece en el
     /// sistema legacy de misiones y no se migra en esta fase.
@@ -37,45 +37,19 @@ namespace UniversalSurvivorUnlocks
 
         private static object TinkatonEnglishDescriptionOverlay;
 
-        private static readonly string TinkatonSpanishDescription =
-            "Tinkaton es una combatiente versátil que combina golpes pesados de martillo, ataques a distancia " +
-            "y apoyo para todo el equipo.<style=cSub>\r\n\r\n" +
-            "< ! > Sus tres pasivas cambian su enfoque: Hurto puede generar chatarra al matar, Rompemoldes " +
-            "hace que sus ataques ignoren la armadura y Ritmo Propio reduce a la mitad la duración de las " +
-            "debilitaciones mientras prolonga los objetos temporales.<style=cSub>\r\n\r\n" +
-            "< ! > Antiaéreo castiga especialmente a los enemigos en el aire, mientras Foco Resplandor reduce " +
-            "armadura y Metaláser convierte salud en una descarga de múltiples impactos.<style=cSub>\r\n\r\n" +
-            "< ! > Protección, Danza Espada, Reflejo y Otra Vez permiten alternar entre defensa, daño de equipo " +
-            "y control de tiempos de recarga.<style=cSub>\r\n\r\n" +
-            "< ! > Martillo Colosal requiere al menos 3 cargas, consume todas al usarlo e inflige daño adicional " +
-            "por cada carga extra.";
+        private static readonly string TinkatonSpanishDescription = TinkatonLocalization.TinkatonSpanishDescription;
 
-        private static readonly string TinkatonEnglishDescription =
-            "Tinkaton is a versatile fighter that combines heavy hammer blows, ranged attacks, and support for " +
-            "the whole team.<style=cSub>\r\n\r\n" +
-            "< ! > Her three passives change her approach: Pickpocket can generate scrap on kills, Mold Breaker " +
-            "makes her attacks ignore armor, and Own Tempo halves debuff duration while extending temporary " +
-            "item duration.<style=cSub>\r\n\r\n" +
-            "< ! > Smack Down especially punishes airborne enemies, while Flash Cannon reduces armor and Steel " +
-            "Beam converts health into a multi-hit blast.<style=cSub>\r\n\r\n" +
-            "< ! > Protect, Swords Dance, Reflect, and Encore let her switch between defense, team damage, and " +
-            "cooldown control.<style=cSub>\r\n\r\n" +
-            "< ! > Gigaton Hammer requires at least 3 stocks, consumes all stocks on use, and gains additional " +
-            "damage for every extra stock.";
+        private static readonly string TinkatonEnglishDescription = TinkatonLocalization.TinkatonEnglishDescription;
 
-        // Traducción fiel del lore nativo publicado por el creador.
-        // El texto inglés original se conserva sin overlay ni reparación.
-        private static readonly string TinkatonSpanishLore =
-            "Nadie sabe de dónde vino. Lo único que sabemos es que es adorable, es rosa y blande un martillo " +
-            "gigantesco. También sabemos que nos causa bastantes problemas, porque a veces vemos piezas " +
-            "desaparecidas de la nave incorporadas a su martillo. Si intentamos recuperarlas, o alguien termina " +
-            "en la enfermería después de recibir un golpe, o desaparecen todavía más partes de la nave. El " +
-            "departamento de investigación informó de que faltaban algunos especímenes. Hace poco vimos una " +
-            "pieza de un artilugio de latón unida al martillo, y eso nos dio una idea.\n\n" +
-            "Parece entender el lenguaje humano, aunque es discutible que esté dispuesta a escuchar. Vamos a " +
-            "enviarla al planeta y esperar lo mejor. Le dijeron que allí abajo podía encontrar más metal. Sus " +
-            "ojos se iluminaron de alegría al oírlo.\n\n" +
-            "Lo que no sabíamos era la violencia que desataría sobre sus habitantes.";
+        // Diario curado USU: registro personal del Ingeniero en primera persona.
+        // Seis párrafos EN/ES-419: aprendizaje de Tinkatink, rebeldía de
+        // Tinkatuff, misión de recuperación en Canto de la Sirena, dos ojos
+        // mecánicos, evolución en combate y reparación conjunta del TC-280.
+        // El contenido de la misión de desbloqueo permanece intacto.
+        // El token estático jamás contiene el diario completo: se resuelve de forma dinámica en la ficha.
+        private static readonly string TinkatonEnglishLore = "[USU] Diary record unavailable from static localization.";
+
+        private static readonly string TinkatonSpanishLore = "[USU] Diario disponible desde la biblioteca de supervivientes.";
 
         public override void RegisterInstalledLocalization(
             SurvivorInfo survivor,
@@ -90,9 +64,9 @@ namespace UniversalSurvivorUnlocks
             RegisterEnglishDescriptionOverlay();
             RegisterTinkatonSpanishTokens();
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | TinkatonBody | " +
-                "es-419 / es-ES + vista general USU + 3 pasivas + skills + skins + Maestría + lore nativo"
+                "es-419 / es-ES / en + vista general USU + 3 pasivas + skills + skins + Maestría + lore USU bilingüe"
             );
         }
 
@@ -129,11 +103,9 @@ namespace UniversalSurvivorUnlocks
             string fallback
         )
         {
-            // Tinkaton sí publica lore nativo en inglés. USU sólo proporciona
-            // su traducción española y nunca reemplaza el original inglés.
-            return IsSpanishLanguage()
-                ? TinkatonSpanishLore
-                : fallback ?? "";
+            if (IsSpanishLanguage()) return USUTinkatonEncounterGate.ResolveTinkatonLore(true);
+            if (IsEnglishLanguage()) return USUTinkatonEncounterGate.ResolveTinkatonLore(false);
+            return fallback ?? "";
         }
 
         private static void RegisterEnglishDescriptionOverlay()
@@ -159,6 +131,7 @@ namespace UniversalSurvivorUnlocks
             RegisterSpanishToken("TINKATON_SUBTITLE", "Saqueadora");
             RegisterSpanishToken("TINKATON_DESCRIPTION", TinkatonSpanishDescription);
             RegisterSpanishToken("TINKATON_LORE", TinkatonSpanishLore);
+            LanguageAPI.Add("TINKATON_LORE", TinkatonEnglishLore, "en");
 
             // Primaria
             RegisterSpanishToken("TINKATON_M1", "Giro Vil");

@@ -683,6 +683,9 @@ namespace UniversalSurvivorUnlocks
                 ProgressScope =
                     resolved.ProgressScope,
 
+                CompletingNetworkUser =
+                    resolved.ContributorNetworkUser,
+
                 ResetScope =
                     resolved.ResetScope
             };
@@ -827,6 +830,25 @@ namespace UniversalSurvivorUnlocks
                 )
             )
             {
+                return false;
+            }
+
+
+            /*
+             * Dependencias secuenciales (AND), antes de cualquier escritura.
+             * Soporta afterObjectiveId y afterObjectiveIds y se aplica a
+             * TODOS los handlers, no solo a Kill. Un evento anterior a
+             * sus prerrequisitos no se almacena ni se retroacredita.
+             */
+            if (!MissionObjectivePrerequisiteEvaluator.AreSatisfied(
+                missionId,
+                resolved.Route,
+                resolved.RouteIndex,
+                resolved.Objective,
+                resolved.ProgressScope,
+                resolved.NetworkUser))
+            {
+                resolved = null;
                 return false;
             }
 
@@ -1048,7 +1070,10 @@ namespace UniversalSurvivorUnlocks
                             ),
 
                     NetworkUser =
-                        networkUser
+                        networkUser,
+
+                    ContributorNetworkUser =
+                        ResolveContributor(context)
                 };
 
 
@@ -1059,6 +1084,14 @@ namespace UniversalSurvivorUnlocks
         // =========================================================
         // PLAYER
         // =========================================================
+
+        // La identidad del autor de la acción se preserva incluso en Shared.
+        // La clave del contador compartido continúa siendo null.
+        private static NetworkUser ResolveContributor(MissionEventContext context)
+        {
+            CharacterMaster master = context?.PlayerMaster ?? context?.PlayerBody?.master;
+            return master == null ? null : MissionPlayerIdentity.GetNetworkUser(master);
+        }
 
         private static NetworkUser ResolveNetworkUser(
             MissionProgressScope progressScope,
@@ -1131,6 +1164,8 @@ namespace UniversalSurvivorUnlocks
             public MissionProgressResetScope ResetScope;
 
             public NetworkUser NetworkUser;
+
+            public NetworkUser ContributorNetworkUser;
         }
     }
 }

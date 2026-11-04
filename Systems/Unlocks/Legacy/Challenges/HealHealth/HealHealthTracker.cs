@@ -39,7 +39,7 @@ namespace UniversalSurvivorUnlocks
 
             if (MissionRuntimeActivityPlan.IsTypeActive("HealHealth"))
             {
-                logger?.LogInfo("[HealHealth] Nueva run | Total reiniciado.");
+                UsuLog.Verbose(logger, "[HealHealth] Nueva run | Total reiniciado.");
             }
         }
 
@@ -47,7 +47,8 @@ namespace UniversalSurvivorUnlocks
         {
             if (MissionRuntimeActivityPlan.IsTypeActive("HealHealth"))
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(
+                    logger,
                     $"[HealHealth] Run finalizada | Total: {TotalHealing:0.##}"
                 );
             }
@@ -85,6 +86,7 @@ namespace UniversalSurvivorUnlocks
             TotalHealing += healingEvent.ActualHealing;
 
             if (
+                UsuLog.DiagnosticEnabled &&
                 MissionLogLimiter.ShouldLogMilestone(
                     "legacy-healing",
                     TotalHealing,
@@ -92,7 +94,8 @@ namespace UniversalSurvivorUnlocks
                 )
             )
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(
+                    logger,
                     $"[HealHealth] PROGRESO | Total: {TotalHealing:0.##}"
                 );
             }

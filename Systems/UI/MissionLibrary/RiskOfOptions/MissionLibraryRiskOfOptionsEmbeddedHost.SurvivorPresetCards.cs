@@ -156,7 +156,8 @@ namespace UniversalSurvivorUnlocks
             survivorPresetNotesTitle.text =
                 L(SurvivorLocalization.MissionLibraryBrowserNotesToken) + ":";
             survivorPresetNotesText.text =
-                ResolveNotesText(profile, profile.ShouldHideIdentity);
+                USUAdditionalDiaries.AppendToNotes(profile, profile.ShouldHideIdentity,
+                    ResolveNotesText(profile, profile.ShouldHideIdentity));
 
             float width = survivorDetailsScrollRect.viewport != null
                 ? survivorDetailsScrollRect.viewport.rect.width - 44f : 520f;

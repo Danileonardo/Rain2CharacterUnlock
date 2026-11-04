@@ -151,7 +151,7 @@ namespace UniversalSurvivorUnlocks
                 true;
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 "[MISSION PROGRESS] Nueva run | " +
                 "progreso preparado en el host."
             );
@@ -185,7 +185,7 @@ namespace UniversalSurvivorUnlocks
                 false;
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 "[MISSION PROGRESS] Fin de run | " +
                 $"Jugadores eliminados: {players} | " +
                 $"Misiones shared eliminadas: {sharedMissions}"
@@ -250,7 +250,7 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 "[MISSION PROGRESS] Nuevo sector | " +
                 $"Objetivos Stage reiniciados: {resetCount}"
             );
@@ -850,7 +850,7 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                logger?.LogInfo(
+                UsuLog.Diagnostic(logger, 
                     "[MISSION PROGRESS] Jugador recuperado | " +
                     $"Nickname: {incomingIdentity.Nickname} | " +
                     $"Identidad: {incomingIdentity.IdentitySource}"
@@ -876,7 +876,7 @@ namespace UniversalSurvivorUnlocks
                 created;
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 "[MISSION PROGRESS] Jugador registrado | " +
                 $"Nickname: {incomingIdentity.Nickname} | " +
                 $"Identidad: {incomingIdentity.IdentitySource}"

@@ -51,9 +51,8 @@ namespace UniversalSurvivorUnlocks
                 {
                     // En shared probamos con cada jugador hasta encontrar un
                     // contexto que satisfaga las condiciones de la ruta.
-                    foreach (PlayerCharacterMasterController controller in PlayerCharacterMasterController.instances)
+                    foreach (CharacterMaster master in MissionConnectedPlayerEnumerator.GetMasters())
                     {
-                        CharacterMaster master = controller?.master;
                         if (master == null) continue;
 
                         MissionCompositionProgressResult result = Add(binding, master);
@@ -63,18 +62,32 @@ namespace UniversalSurvivorUnlocks
                             binding,
                             result,
                             $"Teleporter: {stageContext?.StageName ?? ""}"
-            );
+                        );
                         break;
                     }
                 }
                 else
                 {
-                    foreach (PlayerCharacterMasterController controller in PlayerCharacterMasterController.instances)
+                    foreach (CharacterMaster master in MissionConnectedPlayerEnumerator.GetMasters())
                     {
-                        CharacterMaster master = controller?.master;
                         if (master == null) continue;
 
                         MissionCompositionProgressResult result = Add(binding, master);
+                        NetworkUser player = MissionPlayerIdentity.GetNetworkUser(master);
+                        // Auditoria de Scout para distinguir fallo de tiempo,
+                        // objetos y muerte sin confundir a los dos jugadores.
+                        string scoutAudit = binding.BodyName == "ScoutBody"
+                            ? " | WithoutItems: " + !PickupItemObjectiveHandler.HasPickedAnyItem(master) +
+                              " | SurvivedStage: " + MissionStageDeathTracker.HasNotDied(
+                                  new MissionEventContext { PlayerMaster = master }) +
+                              " | RunSeconds: " + Run.instance.GetRunStopwatch().ToString("0.0")
+                            : "";
+                        UsuLog.Diagnostic(logger, "[MISSION TELEPORTER PLAYER] " +
+                            "Body: " + binding.BodyName +
+                            " | User: " + (player?.userName ?? "unknown") +
+                            scoutAudit +
+                            " | Accepted: " + result.Accepted +
+                            " | MissionJustCompleted: " + result.MissionJustCompleted);
                         GenericMissionDispatcher.HandleProgressResult(
                             binding,
                             result,

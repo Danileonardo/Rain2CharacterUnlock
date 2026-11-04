@@ -96,7 +96,8 @@ namespace UniversalSurvivorUnlocks
             LastPlayerCounts.Clear();
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[HoldItemStack] Nueva run detectada | " +
                 "Contadores individuales reiniciados."
             );

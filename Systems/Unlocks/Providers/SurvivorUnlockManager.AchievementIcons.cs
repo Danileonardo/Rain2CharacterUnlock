@@ -129,8 +129,13 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            // Compatibilidad de icono legado: otras pantallas todavía
+            // pueden leer achievementIcon, aunque RoR2 recomienda usar
+            // AchievementIconRef en implementaciones nuevas.
+#pragma warning disable CS0618
             unlockable.achievementIcon =
                 icon;
+#pragma warning restore CS0618
 
 
             if (

@@ -348,7 +348,13 @@ namespace UniversalSurvivorUnlocks
                 if (distinct)
                 {
                     if (!victimBody.isBoss) continue;
-                    distinctKey = playerMaster.GetInstanceID().ToString() + ":" +
+                    // Si el objetivo es Shared, la lista de especies
+                    // distintas también es del equipo, no de cada jugador.
+                    string distinctOwner =
+                        MissionProgressKeyBuilder.GetProgressScope(binding.Mission) ==
+                            MissionProgressScope.Shared
+                            ? "shared" : playerMaster.GetInstanceID().ToString();
+                    distinctKey = distinctOwner + ":" +
                         binding.MissionId + ":" + binding.RouteIndex + ":" + binding.ObjectiveIndex;
                     if (!DistinctBosses.TryGetValue(distinctKey, out seen))
                     {
@@ -371,9 +377,19 @@ namespace UniversalSurvivorUnlocks
 
 
                 // Remember a species only if its kill passed the composition evaluator.
-                if (distinct && result != null)
+                if (distinct && result != null && result.Accepted)
                 {
                     seen.Add(victimBody.bodyIndex);
+                }
+
+                // Solo un Kill que pasó todas las condiciones puede convertir
+                // daño previo al jefe en evidencia de ayuda cooperativa.
+                if (MissionModeConfiguration.GetMode(binding.Mission) == MissionUnlockMode.Individual &&
+                    victimBody.isBoss && result != null && result.Accepted)
+                {
+                    MissionContributionLedger.RecordBossAssist(
+                        binding, result,
+                        MissionPreDamageStatusTracker.GetBossDamageContributorKeys(victimBody));
                 }
 
                 GenericMissionDispatcher
@@ -383,9 +399,12 @@ namespace UniversalSurvivorUnlocks
                         BuildDetails(
                             victimBody,
                             result
-                        )
+                        ),
+                        killedBody: victimBody
                     );
             }
+
+            MissionPreDamageStatusTracker.ForgetBossDamageContributors(victimBody);
         }
 
 

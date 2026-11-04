@@ -15,8 +15,11 @@ namespace UniversalSurvivorUnlocks
         public override string SourceIdentifier { get { return "com.kenko.Seamstress"; } }
         public override string BodyName { get { return "SeamstressBody"; } }
         public override string DefinitionName { get { return "Seamstress"; } }
-        private const string SpanishDescription = "Seamstress es una superviviente móvil que convierte su salud en daño. Obtiene menos daño base por nivel, así que acumula objetos de salud para sacar partido a la conversión de salud en daño.<color=#CCD3E0>\n\n< ! > Las agujas aportan daño adicional y movilidad; úsalas con cuidado.\n\n< ! > Utiliza Cercenar con tantas agujas como sea posible. Puede aplicar hemorragia rápidamente durante Insaciable.\n\n< ! > Cúrate tanto como puedas durante Insaciable: la barrera obtenida puede marcar la diferencia entre vivir y morir.\n\n< ! > Brutalizar puede aumentar mucho el daño, pero vigila tu salud.\n\n< ! > Lanza y recupera tus tijeras simbióticas para obtener agujas fuera de Insaciable.\n\n";
-        private const string SpanishLore = "Piel pálida y fatiga. Señales de una enfermedad que se extiende entre los hijos de la alta corte. Qué desafortunados son.\n\nUna bebé enfermiza, frágil y débil, llora mientras sus padres también lloran. Un destino trágico para estos nobles ya entrados en años: es su única heredera. Ante un futuro incierto, su <style=cIsHealth>corazón</style> aún late.\n\nLa enfermedad puede curarse con un corazón artificial, pero la operación es peligrosa para los más jóvenes. Solo unos pocos tienen edad suficiente para someterse a ella.\n\nUna adolescente postrada en cama, con la salud deteriorándose rápidamente, se aferra a la vida con todas sus fuerzas. Necesita sobrevivir una semana más. Pendiendo de un hilo, su <color=#292525>corazón</color> aún late.\n\nAunque se curen, la vida de los pacientes sigue siendo la misma. Con el mantenimiento frecuente y el riesgo de fallos, alejarse demasiado del hogar podría significar la muerte. Muchos adoptan pasatiempos tranquilos, como hornear o coser, pero no todos se conforman.\n\nUna costurera inquieta, sostenida por una vitalidad sintética, detesta los muros entre los que vive. No quiere saber nada de su nobleza. Todo es monótono. Cuando cae la oscuridad, se cuela como polizón en una nave civil. Llena de adrenalina, su <style=cIsUtility>corazón</style> aún late.\n\nA muchos de los que huyen se les muestra la realidad. La galaxia fuera de la alta corte no es el país de las maravillas sobre el que leían de niños. Se parece más a un cuento de hadas trágico.\n\nUna criatura corrompida, viviendo de tiempo prestado. ¿Cómo pudo salir todo tan mal? La nave que eligió fue engullida por una grieta creada por imps que deseaban escapar tanto como ella. De pronto, una oleada de sangre se mezcló con el cielo carmesí; humanos e imps por igual fueron seccionados limpiamente. Mientras su visión empezaba a desvanecerse, una figura saltó para alejarse y otra se acercó en silencio. Un susurro, un objetivo, una nueva vida. Su <color=#9B3737>corazón</color> aún late.";
+        private const string SpanishDescription = SeamstressLocalization.SpanishDescription;
+        // El origen del creador permanece intacto como primera parte;
+        // USU continúa la historia de Seamstress en Profundidades Abisales.
+        private static readonly string SpanishLore = SeamstressLore.SpanishLore;
+        private static readonly string EnglishLore = SeamstressLore.EnglishLore;
 
         public override void RegisterInstalledLocalization(SurvivorInfo survivor, ManualLogSource logger)
         {
@@ -25,6 +28,7 @@ namespace UniversalSurvivorUnlocks
             // Source audit reports LoreToken empty; ResolveLore supplies the native Logbook translation.
             // Future creator revisions may use this conventional token.
             RegisterSpanishToken("KENKO_SEAMSTRESS_LORE", SpanishLore);
+            LanguageAPI.Add("KENKO_SEAMSTRESS_LORE", EnglishLore, "en");
             RegisterSpanishToken("KENKO_SEAMSTRESS_NAME", "Seamstress");
             RegisterSpanishToken("KENKO_SEAMSTRESS_SUBTITLE", "La Doncella Andrajosa");
             RegisterSpanishToken("KENKO_SEAMSTRESS_PASSIVE_NAME", "Tiene hambre");
@@ -53,7 +57,12 @@ namespace UniversalSurvivorUnlocks
             RegisterSpanishToken("KENKO_SEAMSTRESS_UTILITY_HEARTDASH_DESCRIPTION", FormatLongSkillText("Desplázate rápidamente e inflige <style=cIsDamage>250% de daño</style>; entra en estado <color=#9B3737>Insaciable</color>, que consume <style=cIsHealth>5% de salud y escudo</style> cada 0,2 s. Vuelve a usar la habilidad para convertir la <style=cIsHealing>barrera</style> en <style=cIsHealth>salud</style> y provocar una explosión de <style=cIsDamage>300% a 1200% de daño</style>, que aumenta según la barrera convertida."));
             RegisterSpanishToken("KENKO_SEAMSTRESS_UTILITY_PARRY_DESCRIPTION", FormatLongSkillText("Prepárate para <style=cIsUtility>desviar</style> un ataque. Al recibir un golpe, entra inmediatamente en estado <color=#9B3737>Insaciable</color> y atraviesa a tus enemigos. Tras un breve retraso, inflige <style=cIsDamage>400% de daño</style> a los enemigos alcanzados y atrae hacia ti a los que no sean jefes."));
             RegisterSpanishToken("KENKO_SEAMSTRESS_SPECIAL_FIRE_DESCRIPTION", FormatLongSkillText("<style=cIsHealth>15% de salud</style>. Lanza unas tijeras <color=#9B3737>simbióticas</color> que infligen <style=cIsDamage>400% de daño</style>. Lanzarlas en el aire te impulsa <style=cIsUtility>en dirección contraria al lanzamiento</style>. Recoge las tijeras <color=#9B3737>simbióticas</color> para atacar con ellas e infligir <style=cIsDamage>200% de daño</style>."));
-            logger?.LogInfo("[LOCALIZATION] Definition activa | SeamstressBody | ES 7 habilidades + 2 pasivas + 4 skins + 2 logros de skins + lore original traducido");
+            // Variante opcional registrada únicamente si Ancient Scepter está instalado.
+            RegisterSpanishToken("KENKO_SEAMSTRESS_SPECIAL_SCEPTER_NAME", "Desenfreno");
+            RegisterSpanishToken("KENKO_SEAMSTRESS_SPECIAL_SCEPTER_DESCRIPTION",
+                "Tu arma <color=#9B3737>simbiótica</color> tiene un tiempo de recogida de solo <style=cIsUtility>1,5 segundos</style>.");
+            VerifiedExtraTooltipLocalization.Register(survivor, logger);
+            UsuLog.Verbose(logger, "[LOCALIZATION] Definition activa | SeamstressBody | ES 7 habilidades + 2 pasivas + 4 skins + 2 logros de skins + Diario I ES/EN (origen autor + continuación USU)");
         }
 
         public override string ResolveSubtitle(SurvivorContentProfile profile, string fallback)
@@ -66,8 +75,11 @@ namespace UniversalSurvivorUnlocks
         }
         public override string ResolveLore(SurvivorContentProfile profile, string fallback)
         {
-            // Full translation of the author-provided original; keep original EN unchanged.
-            return IsSpanish() ? SpanishLore : fallback ?? "";
+            // Diario I curado en español e inglés; otros idiomas preservan el fallback.
+            if (IsSpanish()) return SpanishLore;
+            if ((Language.currentLanguageName ?? "").StartsWith("en", StringComparison.OrdinalIgnoreCase))
+                return EnglishLore;
+            return fallback ?? EnglishLore;
         }
 
         private static bool IsSpanish()

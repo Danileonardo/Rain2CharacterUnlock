@@ -50,40 +50,13 @@ namespace UniversalSurvivorUnlocks
         }
 
 
-        private static readonly string RalseiSpanishDescription =
-            "Las capacidades de apoyo de Ralsei pueden unir a cualquier equipo, ¡amigo o enemigo!\n\n" +
-            "< ! > Elige con cuidado a los enemigos que pacificas; sólo puedes mantener 3 aliados pacificados a la vez. " +
-            "Los enemigos pacificados no otorgarán dinero, así que tenlo en cuenta.\n\n" +
-            "< ! > Lanzar Pacificar sobre los jefes puede ser una buena forma de debilitarlos para que tus aliados obtengan ventaja. " +
-            "No descartes la habilidad sólo porque no pueda perdonar a los jefes.\n\n" +
-            "< ! > Tu primaria es mucho más potente si omites el último golpe del combo, pero no puede aplicar debilitaciones sin él. " +
-            "Decide cuándo completar el combo y cuándo atacar en ráfagas.";
+        private static readonly string RalseiSpanishDescription = RalseiLocalization.RalseiSpanishDescription;
 
 
-        private static readonly string RalseiSpanishLore =
-            "Registro recuperado de una fuente sin correspondencia conocida.\n\n" +
-            "El pequeño príncipe apareció hablando de profecías, fuentes oscuras y un mundo que no figuraba en ningún mapa. " +
-            "No parecía alarmado por encontrarse tan lejos de casa. Si acaso, parecía más preocupado por quienes habían llegado antes que él.\n\n" +
-            "Ralsei insiste en que casi cualquier enfrentamiento puede terminar sin una muerte. Donde otros ven criaturas hostiles, " +
-            "él ve futuros compañeros. Ha sido observado curando heridas, interponiendo barreras y hablando con enemigos hasta que " +
-            "éstos abandonan las armas y, en ocasiones, cambian de bando por completo.\n\n" +
-            "Sus métodos resultan extraños en Petrichor V. La supervivencia aquí rara vez recompensa la misericordia.\n\n" +
-            "Aun así, sus nuevos aliados continúan siguiéndolo.\n\n" +
-            "Quizá porque sabe algo que los demás han olvidado: que ser capaz de destruir a un enemigo no significa que sea necesario hacerlo.\n\n" +
-            "Y mientras exista alguien dispuesto a escuchar, el príncipe del Mundo Oscuro parece decidido a seguir intentándolo.";
+        private static readonly string RalseiSpanishLore = RalseiLore.RalseiSpanishLore;
 
 
-        private static readonly string RalseiEnglishLore =
-            "Record recovered from a source with no known match.\n\n" +
-            "The little prince appeared speaking of prophecies, dark fountains, and a world that did not appear on any map. " +
-            "He did not seem alarmed to find himself so far from home. If anything, he seemed more concerned about those who had arrived before him.\n\n" +
-            "Ralsei insists that almost any confrontation can end without a death. Where others see hostile creatures, he sees future companions. " +
-            "He has been observed healing wounds, raising barriers, and speaking with enemies until they lay down their weapons and, at times, " +
-            "change sides entirely.\n\n" +
-            "His methods are strange on Petrichor V. Survival here rarely rewards mercy.\n\n" +
-            "Even so, his new allies continue to follow him.\n\n" +
-            "Perhaps because he knows something the others have forgotten: being able to destroy an enemy does not mean it is necessary to do so.\n\n" +
-            "And as long as someone is willing to listen, the prince of the Dark World seems determined to keep trying.";
+        private static readonly string RalseiEnglishLore = RalseiLore.RalseiEnglishLore;
 
 
         public override void RegisterInstalledLocalization(
@@ -109,7 +82,7 @@ namespace UniversalSurvivorUnlocks
                 logger
             );
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | " +
                 "RalseiBody | es-419 / es-ES + pasiva + skills + keywords + lore"
             );
@@ -483,7 +456,7 @@ namespace UniversalSurvivorUnlocks
                 );
             }
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Pasiva localizada | " +
                 "RalseiBody | NameToken: " +
                 (nameToken ?? "") +

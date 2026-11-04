@@ -74,6 +74,31 @@ namespace UniversalSurvivorUnlocks
         private static readonly OfficialMissionPresetDescriptor[] Entries =
         {
             new OfficialMissionPresetDescriptor(
+                "DarthVaderBody", "com.PopcornFactory.DarthVaderMod",
+                MissionPresetIds.DarthVaderOfficial, SurvivorLocalizationKeys.DarthVader, 5, true
+            ),
+            new OfficialMissionPresetDescriptor(
+                "KnightBody", "com.fanto.TheKnight",
+                MissionPresetIds.KnightOfficial, SurvivorLocalizationKeys.Knight, 4, true
+            ),
+            new OfficialMissionPresetDescriptor(
+                "ShadowBody", "com.ds_gaming.Shadow",
+                MissionPresetIds.ShadowOfficial, SurvivorLocalizationKeys.Shadow, 4, true
+            ),
+            new OfficialMissionPresetDescriptor(
+                "SonicBody", "com.ds_gaming.Sonic",
+                MissionPresetIds.SonicOfficial, SurvivorLocalizationKeys.Sonic, 4, true
+            ),
+            new OfficialMissionPresetDescriptor(
+                "HornetBody", "com.fanto.HornetSilksong",
+                MissionPresetIds.HornetOfficial, SurvivorLocalizationKeys.Hornet, 4, true
+            ),
+            new OfficialMissionPresetDescriptor(
+                "IreliaBody", "com.slendykray.BladedancerMod",
+                MissionPresetIds.BladedancerOfficial,
+                SurvivorLocalizationKeys.Bladedancer, 0
+            ),
+            new OfficialMissionPresetDescriptor(
                 "SoraBody",
                 "com.Dragonyck.Sora",
                 MissionPresetIds.SoraOfficial,
@@ -121,6 +146,10 @@ namespace UniversalSurvivorUnlocks
                 MissionPresetIds.HunkOfficial,
                 SurvivorLocalizationKeys.Hunk,
                 5
+            ),
+            new OfficialMissionPresetDescriptor(
+                "RobUltronBody", "com.rob.Ultron",
+                MissionPresetIds.HelPOfficial, SurvivorLocalizationKeys.HelP, 3
             ),
             new OfficialMissionPresetDescriptor(
                 "TinkatonBody",
@@ -171,6 +200,13 @@ namespace UniversalSurvivorUnlocks
                 true // alternativa explícita; conservar Original por defecto
             ),
             new OfficialMissionPresetDescriptor(
+                "BayoBody",
+                "com.psyche.BayoMod",
+                MissionPresetIds.BayonettaOfficial,
+                SurvivorLocalizationKeys.Bayonetta,
+                4
+            ),
+            new OfficialMissionPresetDescriptor(
                 "AH64Body",
                 "com.JohnstonStu.AH64",
                 MissionPresetIds.AH64Official,
@@ -187,11 +223,21 @@ namespace UniversalSurvivorUnlocks
             )
         };
 
-        public static int Count => Entries.Length;
+        private static OfficialMissionPresetDescriptor CWTDescriptor =>
+            CWTCampaignIdentity.Detected
+                ? new OfficialMissionPresetDescriptor(CWTCampaignIdentity.BodyName,
+                    CWTCampaignIdentity.ContentPackIdentifier,
+                    MissionPresetIds.CelestialWarTankOfficial,
+                    SurvivorLocalizationKeys.CelestialWarTank, 10)
+                : null;
+
+        public static int Count => Entries.Length + (CWTDescriptor != null ? 1 : 0);
 
         public static List<OfficialMissionPresetDescriptor> GetAll()
         {
-            return new List<OfficialMissionPresetDescriptor>(Entries);
+            var result = new List<OfficialMissionPresetDescriptor>(Entries);
+            if (CWTDescriptor != null) result.Add(CWTDescriptor);
+            return result;
         }
 
         public static bool IsOfficialPresetId(string presetId)
@@ -261,6 +307,13 @@ namespace UniversalSurvivorUnlocks
                 }
             }
 
+            if (CWTDescriptor != null && string.Equals(
+                    CWTDescriptor.PresetId, normalizedPresetId,
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                descriptor = CWTDescriptor;
+                return true;
+            }
             return false;
         }
 
@@ -309,6 +362,35 @@ namespace UniversalSurvivorUnlocks
                 }
             }
 
+            // ContentPackIdentifier is not the Thunderstore package name.
+            // These three characters can therefore resolve their USU preset
+            // using the distinctive body while retaining the detected pack ID.
+            if (string.Equals(normalizedBody, "DarthVaderBody", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(normalizedBody, "KnightBody", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(normalizedBody, "HornetBody", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(normalizedBody, "SonicBody", StringComparison.OrdinalIgnoreCase))
+            {
+                for (int i = 0; i < Entries.Length; i++)
+                {
+                    var candidate = Entries[i];
+                    if (candidate != null && string.Equals(candidate.BodyName,
+                        normalizedBody, StringComparison.OrdinalIgnoreCase))
+                    {
+                        descriptor = new OfficialMissionPresetDescriptor(normalizedBody, normalizedPack,
+                            candidate.PresetId, candidate.LocalizationKey,
+                            candidate.LunarCoinReward, candidate.AllowDirectUsuWithOriginal);
+                        return true;
+                    }
+                }
+            }
+
+            if (CWTDescriptor != null &&
+                string.Equals(CWTDescriptor.BodyName, normalizedBody, StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(CWTDescriptor.ContentPackIdentifier, normalizedPack, StringComparison.OrdinalIgnoreCase))
+            {
+                descriptor = CWTDescriptor;
+                return true;
+            }
             return false;
         }
     }

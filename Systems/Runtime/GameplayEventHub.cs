@@ -52,7 +52,10 @@ namespace UniversalSurvivorUnlocks
             logger = log;
 
             RoR2Application.onFixedUpdate += OnFixedUpdate;
-            GlobalEventManager.onCharacterDeathGlobal += OnCharacterDeathGlobal;
+            // RoR2 1.5.0: onDeathProcServer reproduce la semántica del antiguo
+            // onCharacterDeathGlobal. No sustituir por onCharacterDeathServer:
+            // ese evento puede dispararse en otra fase del procesamiento.
+            GlobalEventManager.onDeathProcServer += OnCharacterDeathGlobal;
             On.RoR2.CharacterMaster.OnInventoryChanged += CharacterMaster_OnInventoryChanged;
             On.RoR2.CharacterBody.OnSkillActivated += CharacterBody_OnSkillActivated;
             On.RoR2.HealthComponent.Heal += HealthComponent_Heal;
@@ -294,9 +297,11 @@ namespace UniversalSurvivorUnlocks
             bool shouldObserve =
                 NetworkServer.active &&
                 Run.instance != null &&
-                MissionRuntimeActivityPlan.IsTypeActive(
+                (MissionRuntimeActivityPlan.IsTypeActive(
                     "InteractWithTarget"
-                ) &&
+                ) || MissionRuntimeActivityPlan.IsTypeActive(
+                    "HelPRepairEmergency"
+                )) &&
                 interactableObject != null;
 
             GameplayInteractionEvent interaction = null;

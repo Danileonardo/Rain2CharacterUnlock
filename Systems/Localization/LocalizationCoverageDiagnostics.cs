@@ -25,7 +25,8 @@ namespace UniversalSurvivorUnlocks
             ManualLogSource logger
         )
         {
-            if (profiles == null || logger == null)
+            if (profiles == null || logger == null ||
+                (!UsuLog.DiagnosticEnabled && !UsuLog.ExtendedAuditEnabled))
             {
                 return;
             }

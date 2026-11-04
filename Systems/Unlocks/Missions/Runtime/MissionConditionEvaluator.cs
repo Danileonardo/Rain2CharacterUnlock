@@ -163,6 +163,16 @@ namespace UniversalSurvivorUnlocks
                         condition.Parameters
                     );
 
+                // =================================================
+                // EXCLUDED STAGE (inverted RequiredStage)
+                // =================================================
+                // Avoids counting Warlock's 500 souls inside either
+                // infernal finale map. Fail closed if no stage is known.
+                case "excludedstage":
+                    return !string.IsNullOrWhiteSpace(
+                        MissionStageRuntimeTracker.CurrentStageName
+                    ) && !IsRequiredStage(condition.Parameters);
+
 
                 // =================================================
                 // REQUIRED SKILL
@@ -251,6 +261,9 @@ namespace UniversalSurvivorUnlocks
                 case "stagesequence":
                     return MissionAdvancedConditionEvaluator
                         .IsStageSequenceSatisfied(condition.Parameters);
+
+                case "nodeath":
+                    return MissionStageDeathTracker.HasNotDied(context);
 
                 case "noitempickup":
                     return MissionAdvancedConditionEvaluator

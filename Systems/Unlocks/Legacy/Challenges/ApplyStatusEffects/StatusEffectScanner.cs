@@ -54,12 +54,14 @@ namespace UniversalSurvivorUnlocks
             positiveBuffs.Clear();
 
 
-            logger.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 "========== STATUS EFFECT SCANNER =========="
             );
 
 
-            logger.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 $"Buffs registrados: {BuffCatalog.buffCount}"
             );
 
@@ -135,17 +137,20 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            logger.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 $"Debuffs de estado válidos: {negativeBuffs.Count}"
             );
 
 
-            logger.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 $"Buffs positivos candidatos: {positiveBuffs.Count}"
             );
 
 
-            logger.LogInfo(
+            UsuLog.Diagnostic(
+                logger,
                 "==========================================="
             );
         }

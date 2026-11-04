@@ -253,7 +253,7 @@ namespace UniversalSurvivorUnlocks
             string missionSource =
                 entry.Challenge?.MissionConfig?.Source ?? "";
 
-            activeLogger?.LogInfo(
+            UsuLog.Diagnostic(activeLogger, 
                 $"[MISSION RUNTIME] Provider aplicado | " +
                 $"Body: {normalizedBodyName} | " +
                 $"{previousProvider} -> {currentProvider} | " +

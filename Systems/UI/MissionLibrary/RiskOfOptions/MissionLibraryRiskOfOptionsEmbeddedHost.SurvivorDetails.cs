@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -397,6 +397,7 @@ namespace UniversalSurvivorUnlocks
 
             survivorDetailsScrollRect.content = textRect;
             CreateAH64CampaignPanel(rowTemplate, scrollObject.transform);
+            CreateCWTCampaignPanel(rowTemplate, scrollObject.transform);
             CreateSurvivorPresetCards(rowTemplate, scrollObject.transform);
 
             // El contenido queda por encima del fondo interno. El borde
@@ -959,6 +960,7 @@ namespace UniversalSurvivorUnlocks
             survivorDetailsText = null;
             survivorDetailsScrollRect = null;
             ClearAH64CampaignPanelReferences();
+            ClearCWTCampaignPanelReferences();
             ClearSurvivorPresetCardReferences();
             survivorProviderControlsRoot = null;
             survivorProviderOriginalButton = null;

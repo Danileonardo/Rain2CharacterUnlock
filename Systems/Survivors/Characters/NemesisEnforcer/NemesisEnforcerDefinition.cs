@@ -138,12 +138,12 @@ namespace UniversalSurvivorUnlocks
             // No se tocan NEMFORCER_NAME, NEMFORCER_DESCRIPTION, skills,
             // keywords, skins ni achievements: el creador ya los publica
             // correctamente en es-419 / es-ES.
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | NemesisEnforcerBody | " +
                 "localización nativa del creador + lore curado USU"
             );
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[NEMESIS ENFORCER] Unlock original preservado | " +
                 "ENFORCER_NEMESIS2UNLOCKABLE_REWARD_ID | Achievement: ??? | " +
                 "Campos del Vacío + Vestigio de Defensor"

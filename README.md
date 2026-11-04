@@ -4,7 +4,8 @@
 
 USU automatically detects compatible modded survivors, normally respects characters that already provide their own unlock requirement, and can give progression challenges to survivors that would otherwise be available immediately. Curated compatibility cases can also expose a separate USU-owned alternative without modifying the creator's Original system.
 
-**Current release:** `0.3.1`
+**Current source version:** `0.4.0`  
+**Previous published release:** `0.3.2`
 
 [Thunderstore](https://thunderstore.io/c/riskofrain2/p/Shleidericks/UniversalSurvivorUnlocks/) · [GitHub / Source Code](https://github.com/Danileonardo/Rain2CharacterUnlock) · [Support development / Donate](https://github.com/sponsors/Danileonardo) · Discord: `@shleiderick`
 
@@ -51,6 +52,31 @@ Main goals:
 - Use a reusable Mission System v2 instead of requiring a unique hardcoded tracker for every future challenge.
 - Localize the official challenge names/descriptions according to the game's active language.
 - Reward official USU challenges with configurable Lunar Coin rewards.
+
+## 0.4.0 development focus — New official missions and unlock modes
+
+Version `0.4.0` is **under development and awaiting gameplay/multiplayer QA**. This section documents the source currently prepared for the next release, not a published or game-validated build.
+
+- **18 official survivor missions** are currently registered: 6 Individual, 7 Cooperative and 5 Mixed. These three unlock modalities describe reward eligibility; they must not be confused with a historical preset's `ProgressScope` label.
+- HUNK has two legitimate unlock routes while continuously carrying the **Volatile Battery** (`QuestVolatileBattery`): escape the Moon or obliterate at the Obelisk. Both yield the same survivor unlock. Only when a new unlock is granted, a localized narrative **medal near the bottom of the screen** distinguishes "Mission accomplished" from "At what cost?"; the normal achievement popup and reward remain unchanged.
+- Sora requires **3 grouped Vengeance Umbra waves** with a Mercenary present. No specific `artifactworld` scene is required; the handler groups detected Umbra kills into waves based on party size. Full-wave detection still needs actual gameplay validation.
+- Ralsei requires 3 Devotion Lemurians recruited by the party and a completed teleporter, without a Captain/Seeker-only performer requirement or a requirement that the Lemurians remain alive.
+- Rocket's 3 successful airborne bombing runs accumulate during a **single game run**, even across stages; incomplete streaks still reset when their encounter ends.
+- AH-64's persistent campaign requires 64 minutes of flight, 6,400 airborne shots, 640 airborne missiles/rockets, 64 airborne teleporter-boss kills and an authorized Monsoon **Moon escape** after the campaign goals.
+- Source, package manifest and assembly metadata move to `0.4.0`; `Survivors.json` schema remains **v2**. Existing Original / USU / Personalizada / Generada provider data should not be reset for a version bump.
+
+**Pending before release:** C# compilation in the user's build environment, all 18 mission outcomes (including negative tests), the HUNK medal's visibility after ending transitions, Sora wave counting with different party sizes, host/client delivery and persistence, and a final Thunderstore release package. Third-party mod initialization failures remain external to USU.
+
+## 0.3.2 release focus — Multiplayer unlock reliability
+
+Version `0.3.2` focuses on multiplayer unlock notifications and safe handling of already-unlocked characters. The shared Mission Library and its AH-64-inspired layout were introduced in `0.3.1` and are retained here.
+
+- Fixed cases where dynamically generated achievement identifiers appeared in chat instead of readable achievement names when host and client had different local mission settings.
+- Added localized unlockable names for English and Spanish to prevent internal `USU_..._UNLOCKABLE_NAME` keys from leaking into native notifications.
+- Avoids awarding a new USU achievement or duplicate Lunar Coin rewards to players who already unlocked the survivor using USU or the original survivor mod.
+- Preserves host-authoritative mission selection, delivery to eligible connected players, profile saving, and existing Original/USU/Custom/Generated provider behavior.
+- A player who dies during a cooperative run can still receive a team-earned unlock. Testing of the popup while spectating is ongoing; no additional death-popup fix is claimed for this release.
+- Third-party survivors that fail to load in the current game build are not fixed by USU; their availability depends on the respective mod authors.
 
 ## 0.3.1 release focus — Universal Survivor Mission Library
 
@@ -187,31 +213,15 @@ A client may have different local values or a different personal configuration, 
 
 The host's session configuration is not intended to permanently overwrite the client's personal `Survivors.json`.
 
-## Shared progress
+## Unlock modalities and progress
 
-A Shared mission can receive valid progress from multiple players/entities according to that mission's rules.
+The active built-in mission catalog distinguishes **three unlock modes**, which control *who receives the reward*:
 
-Current example:
+- **Individual (6 missions):** Jhin, Scout, Rocket, Banshee, Wanderer, HEL-P. The player must satisfy the objective personally; other participants do not inherit their completion.
+- **Cooperative (7 missions):** Spy, HUNK, Ralsei, Sora, Miner, Warlock, Tinkaton. The session can satisfy the required conditions together, and eligible participants receive the unlock through the host's session mechanism.
+- **Mixed (5 missions):** Gwen, Kindred, Wooper, Seamstress, AH-64. Mission counters can be shared, but rewards require the participation criteria tracked for each eligible player; a passive spectator must not receive an unearned reward.
 
-- Sora — `Elegido de la Llave Espada`
-
-## Per-player progress
-
-Per-player challenges keep independent counters, inventories, route state, and other personal requirements for each player.
-
-Current official examples include:
-
-- Ralsei
-- Jhin
-- Spy
-- Scout
-- Rocket
-- HUNK
-- Tinkaton
-- Wooper
-- Miner
-
-Players cannot combine partial personal progress unless the mission is explicitly configured as Shared.
+The host selects the effective mission in multiplayer. Session progression and unlock eligibility are separate mechanisms: legacy `Shared` / `PerPlayer` labels in earlier release notes do **not** override a mission's current explicit unlock mode. The host's mission is not meant to overwrite the client's saved provider preferences permanently.
 
 ## Session completion and unlock delivery
 
@@ -221,210 +231,49 @@ For multiplayer bugs, logs from both host and client are especially useful.
 
 ---
 
-# Current built-in presets
-
-The following **10 official USU presets** are included in USU `0.3.0`.
-
-Official challenge names/descriptions are currently localized for English and Spanish (`es-419` / `es-ES`), with English used as fallback.
-
-## Sora — Elegido de la Llave Espada
-
-> **Abre paso entre mundos en Baluarte de Ambry;**
-> **vence a sombras y completa Venganza - Mercenary**
-
-Current mission:
-
-1. The party must include **Mercenary**.
-2. Enter **Bulwark's Ambry** (`artifactworld`).
-3. Complete the **Artifact of Vengeance** encounter by defeating the required Umbra waves.
-4. Successfully leave the Ambry after the encounter.
-
-USU currently tracks **3 Vengeance Umbra waves** and then the stage exit.
-
-**Progress:** Shared
-**Lunar Coin reward:** `+4`
-
----
-
-## Ralsei — El poder de la bondad
-
-> **Usa Devoción y reúne 3 nuevos amigos Lemurianos;**
-> **completa el portal con ellos - Captain o Seeker**
-
-Current mission:
-
-1. Play as **Captain** or **Seeker**.
-2. Use **Devotion** to recruit **3 Lemurian allies**.
-3. Complete the teleporter while satisfying the mission route.
-
-**Progress:** Per-player
-**Lunar Coin reward:** `+3`
-
-Public feedback for this preset is especially welcome because Devotion/minion behavior can be affected by game-content and mod interactions.
-
----
-
-## Jhin — El Cuarto Acto
-
-> **Convierte a un jefe en tu gran final;**
-> **asesta un crítico mortal de 4.444 de daño o más.**
-
-Current mission:
-
-- Deliver the **fatal hit** to a boss.
-- The hit must be **critical**.
-- The lethal hit must deal at least **4,444 damage**.
-
-**Progress:** Per-player
-**Lunar Coin reward:** `+4`
-
----
-
-## Spy — Sin que me veas venir
-
-> **Que el jefe nunca vea venir tu golpe final;**
-> **remátalo por detrás con Daga serrada - Bandit**
-
-Current mission:
-
-1. Play as **Bandit**.
-2. Use **Serrated Dagger / Daga serrada**.
-3. Deliver a valid **backstab** to a boss.
-4. The backstab must be the **fatal hit**.
-
-**Progress:** Per-player
-**Lunar Coin reward:** `+3`
-
----
-
-## Scout — Sed Termonuclear
-
-> **Sacia tu sed con 8 Bebidas energéticas;**
-> **o completa el primer sector sin objetos en 4 min.**
-
-Complete **either** route:
-
-### Route A — Drink collection
-
-- Hold **8 Energy Drinks** on the same player during the run.
-
-### Route B — Fast and itemless
-
-- Complete the **first stage teleporter** within **4 minutes**.
-- Do not pick up items before completing that route.
-
-The two routes are alternatives (`OR`), not requirements that must both be completed.
-
-**Progress:** Per-player
-**Lunar Coin reward:** `+2`
-
----
-
-## Rocket — La gravedad es opcional
-
-> **Haz llover explosiones desde el cielo;**
-> **derriba 5 antes de caer; haz la hazaña 3 veces.**
-
-Current mission:
-
-- Kill **5 enemies with qualifying explosions before landing**.
-- Land after a successful bombing run.
-- Repeat the successful bombing run **3 times**.
-- Progress is personal to the player; owned minions are not used for this preset's bombing-run count.
-- The bombing-run objective uses **stage-scoped progress**.
-
-**Progress:** Per-player
-**Lunar Coin reward:** `+4`
-
----
-
-## HUNK — La Parca No Falla
-
-> **Protege la batería y sobrevive a toda costa;**
-> **escapa de la Luna o sacrifícate en el Obelisco.**
-
-Complete **either** route while protecting the **Fuel Array**:
-
-### Route A — Escape
-
-- Carry the Fuel Array continuously.
-- Reach and complete the **Moon escape** ending.
-
-### Route B — Obliterate
-
-- Carry the Fuel Array continuously.
-- **Obliterate** at the Obelisk.
-
-Important rules:
-
-- Losing/swapping the required Fuel Array invalidates the continuous-carry requirement.
-- Death invalidates the route.
-- The two endings are alternatives (`OR`).
-
-**Progress:** Per-player
-**Lunar Coin reward:** `+5`
-
----
-
-## Tinkaton — Forjada en Chatarra
-
-> **Haz de 6 chatarras el inicio de tu gran golpe;**
-> **ten Justicia demoledora y vence un Ojo mecánico.**
-
-Current mission uses three objectives in the same route (`AND`):
-
-1. Convert **6 items into Scrap** during the run.
-2. Hold **Shattering Justice / Justicia demoledora**.
-3. Defeat a valid mechanical Eye boss target. The current mission accepts the internal body IDs `SuperRoboBallBossBody` or `RoboBallBossBody`.
-
-The old MUL-T + Blast Canister requirement is no longer part of the current official preset.
-
-**Progress:** Per-player
-**Lunar Coin reward:** `+5`
-
----
-
-## Wooper — De vuelta al agua
-
-> **Haz de los Humedales tu hogar; marca territorio;**
-> **caza y muerde a 20 presas envenenadas - Acrid**
-
-Current mission:
-
-1. Play as **Acrid**.
-2. Be in **Wetland Aspect / Aspecto de los Humedales** (`foggyswamp`).
-3. Poison an enemy **before** the qualifying finishing action.
-4. Kill that poisoned target with **Ravenous Bite / Mordida voraz**.
-5. Repeat until **20** valid poisoned-bite kills are completed in the stage-scoped objective.
-
-A target that was not already poisoned before the qualifying bite does not satisfy the status-before-action requirement.
-
-**Progress:** Per-player
-**Lunar Coin reward:** `+2`
-
----
-
-## Miner — Excavación
-
-> **Desciende a las Profundidades Abisales;**
-> **vence al jefe del portal y despeja el camino.**
-
-Current mission:
-
-1. Reach **Abyssal Depths** (`dampcavesimple`).
-2. Defeat the **real teleporter boss** in that stage with the qualifying final hit.
-3. The route is evaluated by USU Mission System v2 and does not hook MinerUnearthed's `Adrenaline Rush` achievement.
-
-This preset is deliberately **independent** from MinerUnearthed's Original unlock. The creator's Original provider remains available and is still the default until the player explicitly chooses the USU provider/preset.
-
-**Progress:** Per-player
-**Lunar Coin reward:** `+3`
+# Current built-in official missions — 0.4.0
+
+The current source registers **18 official USU missions**. Missions are grouped by their actual 0.4.0 unlock modality (Individual / Cooperative / Mixed). The game keeps the mod creator's Original unlock separate; choosing an official USU mission must not overwrite it. Names and descriptions have localized English/Spanish support where provided by the existing Definitions.
+
+| Mode | Survivor and official mission | Required achievement in the current code |
+|---|---|---|
+| Individual | **Jhin — El Cuarto Acto** | Deliver a fatal critical hit of **4,444+** damage to a valid teleporter boss; Railgunner is excluded. |
+| Individual | **Scout — Sed Termonuclear** | Either collect **8 Energy Drinks** or finish the first teleporter itemless within **4 minutes**. |
+| Individual | **Rocket — La gravedad es opcional** | Complete **3** bombing runs of **5 airborne explosive kills** each, landing between successful runs; finished rounds persist across stages of one run. |
+| Individual | **Banshee — Presagio desde las alturas** | Kill **20** enemies while airborne, then land the qualifying final hit on a teleporter boss from the air. |
+| Individual | **Wanderer — Último aliento** | Deliver the final hit to **3 teleporter bosses while airborne** in one run. |
+| Individual | **HEL-P — Protocolo HEL-P: Reconstrucción** | Scrap **2 healing drones** and **2 gunner drones**, repair **1 emergency drone** and activate its healing. |
+| Cooperative | **Spy — Sin que me veas venir** | With Bandit, land the killing **Serrated Dagger backstab** on a boss. |
+| Cooperative | **HUNK — La Parca No Falla** | Carry the **Volatile Battery** continuously and either **escape the Moon** or **obliterate at the Obelisk**; the carrier's death or loss of equipment invalidates that carrying condition. |
+| Cooperative | **Ralsei — El poder de la bondad** | Recruit **3 Devotion Lemurians** and complete the teleporter; any survivor may contribute and recruited Lemurians do not need to survive. |
+| Cooperative | **Sora — Elegido de la Llave Espada** | Defeat **3 grouped Vengeance Umbra waves** with Mercenary in the party. Umbrae can count in all Ambry variants or outside Ambry if Vengeance is active. Wave grouping requires in-game validation. |
+| Cooperative | **Miner — Excavación** | Deliver the final hit to the teleporter boss in **Abyssal Depths**. |
+| Cooperative | **Warlock — Tributo al trono** | Kill **10 imps**, then defeat an **Imp Overlord**. |
+| Cooperative | **Tinkaton — Forjada en Chatarra** | Scrap **6** items, obtain **Shattering Justice**, and defeat a qualifying mechanical Eye boss. |
+| Mixed | **Gwen — Entre hilos y agujas** | Obtain **2 Ceremonial Daggers** and defeat a teleporter boss while the condition applies. |
+| Mixed | **Kindred — La marca del destino** | Hold **Death Mark** and defeat **4 distinct boss types** in one run. |
+| Mixed | **Wooper — De vuelta al agua** | With Acrid in **Wetland Aspect**, kill **20 already-poisoned enemies** using Ravenous Bite. |
+| Mixed | **Seamstress — Hilo de sangre** | Make **3 sacrifices at the same Shrine of Blood**, then defeat a teleporter boss. |
+| Mixed | **AH-64 — Protocolo 64: Dominio aéreo** | Complete the persistent campaign (**64** flying minutes, **6,400** airborne shots, **640** missiles/rockets, **64** airborne teleporter-boss kills), then escape the **Moon on Monsoon**. |
+
+### HUNK's optional operation medals (introduced in 0.3.3)
+
+HUNK's **normal native unlock notification remains intact**. On a genuine new unlock only, a secondary lower-screen report appears for approximately 5.5 seconds:
+
+- **Moon extraction:** "Misión cumplida" — "Objetivo completado. Extracción exitosa."
+- **Obelisk sacrifice:** "¿A qué costo?" — "Objetivo cumplido. El operativo no regresó."
+
+These medals are **presentational only**: no extra achievement, reward or alternative unlock is created. Their appearance during the end-of-run transition has not been verified in-game yet.
+
+### Current validation status
+
+The 18 mission presets are implemented in source, but **not all have been validated in real multiplayer games**. Especially verify Sora's wave grouping, HUNK's two endings and operation medals, AH-64's campaign ending detection, and per-player participation / unlock ownership before publishing `0.4.0`.
 
 ---
 
 # Challenge systems currently used by presets
 
-The ten official presets now run through **Mission System v2 compositions** instead of being represented as nine independent monolithic challenge scripts.
+The 18 official presets run through **Mission System v2 compositions**, including dedicated runtime trackers where needed, instead of independent monolithic challenge scripts.
 
 Current runtime building blocks used by the official missions include objectives such as:
 
@@ -636,7 +485,7 @@ Using a mod manager is recommended.
 
 # Dependencies
 
-For `0.3.1`, use the current `manifest.json` as the authoritative list. New required package entries include Risk Of Options, ScrollableLobbyUI and SurvivorSortOrder (sort order is a package dependency only).
+For the pending `0.4.0` build, use the current `manifest.json` as the authoritative dependency list. New required package entries include Risk Of Options, ScrollableLobbyUI and SurvivorSortOrder (sort order is a package dependency only).
 
 For reference, the earlier Thunderstore package for `0.3.0` declared:
 

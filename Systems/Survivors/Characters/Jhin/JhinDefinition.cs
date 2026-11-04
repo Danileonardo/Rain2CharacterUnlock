@@ -14,7 +14,7 @@ namespace UniversalSurvivorUnlocks
     ///
     /// El mod creador publica correctamente su contenido inglés, pero no una
     /// localización española. USU aporta es-419 y es-ES para identidad visible,
-    /// Vista general, pasiva, las cuatro habilidades, skins y lore nativo.
+    /// Vista general, pasiva, las cuatro habilidades, skins y lore narrativo USU.
     ///
     /// Los nombres de habilidades y skins usan, cuando existe equivalente,
     /// la terminología regional oficial de Jhin en League of Legends.
@@ -43,45 +43,20 @@ namespace UniversalSurvivorUnlocks
             get { return "Jhin"; }
         }
 
-        private static readonly string JhinSpanishDescriptionEs419 =
-            "Jhin es un superviviente de gran daño explosivo contra un solo objetivo, centrado en disparos " +
-            "contundentes en lugar de una cadencia rápida.<color=#CCD3E0>\r\n\r\n" +
-            "< ! > Jhin sólo puede obtener velocidad de ataque al subir de nivel. Cualquier otra fuente aumenta " +
-            "en su lugar la eficacia de daño de sus demás habilidades.\r\n\r\n" +
-            "< ! > Los golpes críticos de Jhin le otorgan velocidad de movimiento adicional. Usa el crítico " +
-            "garantizado de su cuarto disparo para salir de situaciones peligrosas.\r\n\r\n" +
-            "< ! > Brote Mortal puede interrumpir ataques que de otro modo no podrías evitar; resulta especialmente " +
-            "útil contra enemigos como los gólems.\r\n\r\n" +
-            "< ! > Granada Bailarina y Llamado a Escena ayudan a controlar grupos, uno de los puntos débiles de " +
-            "Jhin durante las primeras etapas.";
+        private static readonly string JhinSpanishDescriptionEs419 = JhinLocalization.JhinSpanishDescriptionEs419;
 
-        private static readonly string JhinSpanishDescriptionEsEs =
-            "Jhin es un superviviente de gran daño explosivo contra un solo objetivo, centrado en disparos " +
-            "contundentes en lugar de una cadencia rápida.<color=#CCD3E0>\r\n\r\n" +
-            "< ! > Jhin sólo puede obtener velocidad de ataque al subir de nivel. Cualquier otra fuente aumenta " +
-            "en su lugar la eficacia de daño de sus demás habilidades.\r\n\r\n" +
-            "< ! > Los golpes críticos de Jhin le otorgan velocidad de movimiento adicional. Usa el crítico " +
-            "garantizado de su cuarto disparo para salir de situaciones peligrosas.\r\n\r\n" +
-            "< ! > Florecer mortal puede interrumpir ataques que de otro modo no podrías evitar; resulta especialmente " +
-            "útil contra enemigos como los gólems.\r\n\r\n" +
-            "< ! > Granada danzante y Abajo el telón ayudan a controlar grupos, uno de los puntos débiles de " +
-            "Jhin durante las primeras etapas.";
+        private static readonly string JhinSpanishDescriptionEsEs = JhinLocalization.JhinSpanishDescriptionEsEs;
 
-        // Traducción fiel del lore que publica el creador del mod.
-        // El original inglés se conserva intacto.
-        private static readonly string JhinSpanishLoreEs419 =
-            "Jhin es un psicópata meticuloso que cree que el asesinato es un arte. Antiguamente fue un prisionero " +
-            "jonio, pero elementos sombríos del consejo gobernante de Jonia lo liberaron y ahora el asesino en serie " +
-            "trabaja como sicario para su camarilla. Utilizando su arma como pincel, Jhin crea obras de brutalidad " +
-            "artística que horrorizan a víctimas y espectadores. Obtiene un placer cruel al montar su macabro teatro, " +
-            "lo que lo convierte en la opción ideal para enviar el más poderoso de los mensajes: terror.";
+        // Relato USU en primera persona: manuscrito del Virtuoso fugitivo.
+        // El espejo, la rivalidad con Railgunner y el seguimiento de la UES son
+        // ficcion narrativa de USU; no son canon de Riot ni del autor del mod.
+        // Railgunner sigue EXCLUIDA de la mision oficial de Jhin.
+        // Seis parrafos paralelos EN y ES-419/ES-ES.
+        private static object JhinEnglishLoreOverlay;
 
-        private static readonly string JhinSpanishLoreEsEs =
-            "Jhin es un meticuloso criminal psicópata que considera el asesinato un arte. Antiguo prisionero jonio, " +
-            "fue liberado por elementos sombríos del consejo gobernante de Jonia y ahora el asesino en serie trabaja " +
-            "como sicario para su camarilla. Utilizando su arma como pincel, Jhin crea obras de brutalidad artística " +
-            "que horrorizan a víctimas y espectadores. Obtiene un placer cruel al escenificar su macabro teatro, " +
-            "lo que lo convierte en la elección ideal para transmitir el más poderoso de los mensajes: terror.";
+        private static readonly string JhinSpanishLore = JhinLore.JhinSpanishLore;
+
+        private static readonly string JhinEnglishLore = JhinLore.JhinEnglishLore;
 
         public override void RegisterInstalledLocalization(
             SurvivorInfo survivor,
@@ -94,11 +69,12 @@ namespace UniversalSurvivorUnlocks
             }
 
             RegisterJhinSpanishTokens();
+            RegisterJhinEnglishLoreOverlay();
             RegisterJhinKeywordTranslations(logger);
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | JhinBody | " +
-                "es-419 / es-ES + pasiva + skills + keywords + skins + lore nativo"
+                "es-419 / es-ES / en + pasiva + skills + keywords + skins + lore narrativo USU"
             );
         }
 
@@ -132,14 +108,17 @@ namespace UniversalSurvivorUnlocks
             string fallback
         )
         {
-            if (!IsSpanishLanguage())
+            if (IsSpanishLanguage())
             {
-                return fallback ?? "";
+                return JhinSpanishLore;
             }
 
-            return IsSpanishSpainLanguage()
-                ? JhinSpanishLoreEsEs
-                : JhinSpanishLoreEs419;
+            if (IsEnglishLanguage())
+            {
+                return JhinEnglishLore;
+            }
+
+            return fallback ?? "";
         }
 
         private static void RegisterJhinSpanishTokens()
@@ -161,8 +140,8 @@ namespace UniversalSurvivorUnlocks
             // SERORONIN_JHIN_BODY_NAME para leer el lore del Logbook.
             RegisterRegionalToken(
                 "SERORONIN_JHIN_BODY_LORE",
-                JhinSpanishLoreEs419,
-                JhinSpanishLoreEsEs
+                JhinSpanishLore,
+                JhinSpanishLore
             );
 
             // Pasiva propia del mod.
@@ -279,6 +258,22 @@ namespace UniversalSurvivorUnlocks
         }
 
 
+        // El mod original incluye un token inglés. El overlay evita que su
+        // valor antiguo prevalezca en el Diario nativo; no se toca su DLL.
+        private static void RegisterJhinEnglishLoreOverlay()
+        {
+            if (JhinEnglishLoreOverlay != null)
+            {
+                return;
+            }
+
+            JhinEnglishLoreOverlay = LanguageAPI.AddOverlay(
+                "SERORONIN_JHIN_BODY_LORE",
+                JhinEnglishLore,
+                "en"
+            );
+        }
+
         /// <summary>
         /// Jhin 1.5.1 mantiene varias explicaciones del panel lateral en
         /// keywordTokens separados de las descripciones principales:
@@ -354,7 +349,7 @@ namespace UniversalSurvivorUnlocks
                 "<style=cIsDamage>inmoviliza</style> durante <style=cIsUtility>2 segundos</style>.</style>"
             );
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[JHIN LOCALIZATION] Tokens exactos de Jhin 1.5.1 registrados | " +
                 "EXECUTING_WHISPER / SCALING_WHISPER / EXECUTING_SPECIAL / RELOAD / CAPTIVATING."
             );
@@ -583,6 +578,12 @@ namespace UniversalSurvivorUnlocks
             {
                 LanguageAPI.Add(token, spanishSpain, "es-ES");
             }
+        }
+
+        private static bool IsEnglishLanguage()
+        {
+            string language = Language.currentLanguageName ?? "";
+            return language.StartsWith("en", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsSpanishLanguage()

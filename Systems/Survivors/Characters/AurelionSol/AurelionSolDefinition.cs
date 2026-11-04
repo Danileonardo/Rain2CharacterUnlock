@@ -52,60 +52,17 @@ namespace UniversalSurvivorUnlocks
                     StringComparer.OrdinalIgnoreCase
                 );
 
-        private static readonly string AurelionSpanishDescription =
-            "Aurelion Sol es un superviviente poco convencional con herramientas para combatir " +
-            "tanto a corta como a larga distancia, aunque prefiere mantenerse a media distancia " +
-            "alrededor del radio expandido de sus estrellas.<style=cSub>\r\n\r\n" +
-            "< ! > El aliento de Llamarada Solar alcanza el radio expandido; una buena posición " +
-            "puede aumentar enormemente tu daño.<style=cSub>\r\n\r\n" +
-            "< ! > Explosión Astral es excelente para frenar enemigos cuerpo a cuerpo mientras " +
-            "te reposicionas, y también funciona como herramienta de combo e iniciación. Su " +
-            "distancia máxima coincide con el radio expandido.<style=cSub>\r\n\r\n" +
-            "< ! > Cometa Legendario sirve tanto para llegar rápido a puntos de interés como " +
-            "para entrar o salir de combate junto a Explosión Astral.<style=cSub>\r\n\r\n" +
-            "< ! > Voz de Luz tiene un enfriamiento alto, pero puede reagrupar enemigos y causar " +
-            "un gran daño a larga distancia.<style=cSub>\r\n\r\n" +
-            "< ! > Aprender cuándo combinar las habilidades de Aurelion Sol con el impacto de " +
-            "una estrella mejora mucho su consistencia.";
+        private static readonly string AurelionSpanishDescription = AurelionSolLocalization.AurelionSpanishDescription;
 
 
         // Lore curado por USU. Aurelion 2.0.10 no aporta una entrada propia,
         // así que usamos un fallback original inspirado en el canon oficial
         // del personaje, con una longitud cercana a la mediana del Logbook
         // Vanilla/DLC medida en runtime.
-        private static readonly string AurelionSpanishLore =
-            "Transcripción recuperada de un registro astronómico sin procedencia verificada.\n\n" +
-            "Durante siglos, algunas culturas observaron estrellas que parecían cambiar de lugar " +
-            "sin seguir ninguna órbita conocida. Los registros más antiguos no las describen como " +
-            "fenómenos, sino como obra: luces encendidas deliberadamente en el vacío por una " +
-            "inteligencia capaz de tratar constelaciones enteras como simples bocetos.\n\n" +
-            "El nombre que acompaña a esas historias es Aurelion Sol.\n\n" +
-            "En Runaterra, el Forjador de Estrellas fue recibido como una divinidad. Los habitantes " +
-            "de Targon le ofrecieron una corona como símbolo de veneración. Cuando la aceptó, " +
-            "descubrió demasiado tarde que aquello no era un regalo, sino una cadena. Su poder quedó " +
-            "ligado a quienes lo habían engañado, obligado a servir a un imperio diminuto bajo un " +
-            "cielo que él mismo podía remodelar.\n\n" +
-            "La distancia no apagó su orgullo. Tampoco su paciencia.\n\n" +
-            "Ahora esas ataduras se debilitan. Cada estrella creada, cada mundo observado y cada era " +
-            "soportada parecen haber alimentado una única certeza: algún día será libre.\n\n" +
-            "Y cuando llegue ese día, quizá Targon descubra cuánto pesa una estrella al caer.";
+        private static readonly string AurelionSpanishLore = AurelionSolLore.AurelionSpanishLore;
 
 
-        private static readonly string AurelionEnglishLore =
-            "Transcript recovered from an astronomical record of unverified origin.\n\n" +
-            "For centuries, some cultures observed stars that seemed to change position without " +
-            "following any known orbit. The oldest records describe them not as phenomena, but as " +
-            "craftsmanship: lights deliberately kindled in the void by an intelligence capable of " +
-            "treating entire constellations as little more than sketches.\n\n" +
-            "The name attached to those stories is Aurelion Sol.\n\n" +
-            "On Runeterra, the Star Forger was welcomed as a divinity. The people of Targon offered " +
-            "him a crown as a symbol of reverence. When he accepted it, he discovered too late that " +
-            "it was not a gift, but a chain. His power became bound to those who had deceived him, " +
-            "forcing him to serve a tiny empire beneath a sky he himself could reshape.\n\n" +
-            "Distance did not diminish his pride. Nor his patience.\n\n" +
-            "Now those bindings are weakening. Every star forged, every world observed, and every " +
-            "age endured seems to have fed a single certainty: one day, he will be free.\n\n" +
-            "And when that day comes, perhaps Targon will learn how heavy a falling star can be.";
+        private static readonly string AurelionEnglishLore = AurelionSolLore.AurelionEnglishLore;
 
 
         private static readonly string AurelionSpanishPassiveKeyword =
@@ -135,7 +92,7 @@ namespace UniversalSurvivorUnlocks
             );
             RegisterAurelionSkinAchievementsSpanish();
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | " +
                 "AurelionSolBody | es-419 / es-ES + EN repair + lore"
             );

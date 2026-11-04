@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using R2API;
 
 namespace UniversalSurvivorUnlocks
@@ -8,11 +8,13 @@ namespace UniversalSurvivorUnlocks
         public const string Sora = "official.sora";
         public const string Ralsei = "official.ralsei";
         public const string Jhin = "official.jhin";
+        public const string Bladedancer = "official.bladedancer";
         public const string Scout = "official.scout";
         public const string Spy = "official.spy";
         public const string Rocket = "official.rocket";
         public const string Hunk = "official.hunk";
         public const string Tinkaton = "official.tinkaton";
+        public const string HelP = "official.help";
         public const string Wooper = "official.wooper";
         public const string Miner = "official.miner";
         public const string Gwen = "official.gwen";
@@ -22,6 +24,13 @@ namespace UniversalSurvivorUnlocks
         public const string Wanderer = "official.wanderer";
         public const string Warlock = "official.warlock";
         public const string AH64 = "official.ah64";
+        public const string CelestialWarTank = "official.celestial_war_tank";
+        public const string Bayonetta = "official.bayonetta";
+        public const string DarthVader = "official.darthvader";
+        public const string Knight = "official.knight";
+        public const string Hornet = "official.hornet";
+        public const string Sonic = "official.sonic";
+        public const string Shadow = "official.shadow";
     }
 
 
@@ -33,6 +42,31 @@ namespace UniversalSurvivorUnlocks
     {
         public const string ExcludedSurvivorsNoticeToken =
             "USU_MISSION_NOTICE_EXCLUDED_SURVIVORS";
+        // Character Select: requisitos de la mision V2 en el tooltip.
+        public const string CharacterSelectRequiredSurvivorToken =
+            "USU_CHARACTER_SELECT_REQUIRED_SURVIVOR";
+        public const string CharacterSelectObjectiveAsSurvivorToken =
+            "USU_CHARACTER_SELECT_OBJECTIVE_SURVIVOR";
+        public const string CharacterSelectOneTeamMemberToken =
+            "USU_CHARACTER_SELECT_ONE_TEAM_MEMBER";
+        public const string CharacterSelectTeamOneSuffixToken =
+            "USU_CHARACTER_SELECT_TEAM_ONE_SUFFIX";
+        public const string CharacterSelectTeamChoicesToken =
+            "USU_CHARACTER_SELECT_TEAM_CHOICES";
+        public const string CharacterSelectMixedModeToken =
+            "USU_CHARACTER_SELECT_MIXED_MODE";
+        public const string CharacterSelectWooperContributionToken =
+            "USU_CHARACTER_SELECT_WOOPER_CONTRIBUTION";
+        public const string CharacterSelectRequiredWetlandsStageToken =
+            "USU_CHARACTER_SELECT_REQUIRED_WETLANDS_STAGE";
+        public const string CharacterSelectRequiredStageToken =
+            "USU_CHARACTER_SELECT_REQUIRED_STAGE";
+        public const string CharacterSelectWetlandsNameToken =
+            "USU_CHARACTER_SELECT_STAGE_WETLANDS";
+        public const string CharacterSelectAbyssalNameToken =
+            "USU_CHARACTER_SELECT_STAGE_ABYSSAL";
+        public const string CharacterSelectBulwarksAmbryNameToken =
+            "USU_CHARACTER_SELECT_STAGE_BULWARKS_AMBRY";
 
         public const string MissionLibraryButtonToken =
             "USU_LIBRARY_BUTTON";
@@ -130,6 +164,10 @@ namespace UniversalSurvivorUnlocks
             "USU_LIBRARY_IN_USE";
         public const string MissionLibraryUseThisMissionToken =
             "USU_LIBRARY_USE_THIS_MISSION";
+        public const string MissionLibraryRequiredSurvivorToken =
+            "USU_LIBRARY_REQUIRED_SURVIVOR";
+        public const string MissionLibraryAnySurvivorToken =
+            "USU_LIBRARY_ANY_SURVIVOR";
         public const string MissionLibraryNotValidWithToken =
             "USU_LIBRARY_NOT_VALID_WITH";
 
@@ -294,16 +332,79 @@ namespace UniversalSurvivorUnlocks
         {
             new OfficialText
             {
+                BodyName = "DarthVaderBody", LocalizationKey = SurvivorLocalizationKeys.DarthVader,
+                SpanishName = "Contraorden 66",
+                SpanishDescription = "Con la FUERZA de atracción del Cubo Primordial;\n" +
+                    "acaba con 66 usando 10 Cristales de enfoque Kyber.",
+                EnglishName = "Counterorder 66",
+                EnglishDescription = "With the pull of the Primordial Cube's FORCE;\n" +
+                    "defeat 66 using 10 Kyber Focus Crystals."
+            },
+            new OfficialText
+            {
+                BodyName = "KnightBody", LocalizationKey = SurvivorLocalizationKeys.Knight,
+                SpanishName = "Más allá del caparazón",
+                SpanishDescription = "Cuatro fragmentos dan vida a una máscara;\n" +
+                    "con 4 Infusiones, lanza 40 cráneos de N'kuhana.",
+                EnglishName = "Beyond the Shell",
+                EnglishDescription = "Four fragments give a mask new life;\n" +
+                    "with 4 Infusions, fire 40 N'kuhana skulls."
+            },
+            new OfficialText
+            {
+                BodyName = "ShadowBody", LocalizationKey = SurvivorLocalizationKeys.Shadow,
+                SpanishName = "Protocolo Omega",
+                SpanishDescription = "Un arsenal digno de Omega requiere control;\n" +
+                    "en Modo de Poder, alcanza 30 con clavos y 10 con barras.",
+                EnglishName = "Omega Protocol",
+                EnglishDescription = "Omega-worthy firepower demands control;\n" +
+                    "in Power Mode, hit 30 with nails and 10 with rebar."
+            },
+            new OfficialText
+            {
+                BodyName = "SonicBody", LocalizationKey = SurvivorLocalizationKeys.Sonic,
+                SpanishName = "Rolling Around at the Speed of Sound",
+                SpanishDescription = "Ni siquiera los robots de Eggman podrían seguirle el ritmo.\n" +
+                    "Arrolla a 30 enemigos con Modo Transporte en una partida.",
+                EnglishName = "Rolling Around at the Speed of Sound",
+                EnglishDescription = "Not even Eggman's robots could keep up with him.\n" +
+                    "Ram into 30 enemies with Transport Mode in one run."
+            },
+            new OfficialText
+            {
+                BodyName = "HornetBody", LocalizationKey = SurvivorLocalizationKeys.Hornet,
+                SpanishName = "El telar del viento",
+                SpanishDescription = "Que nueve hilos dibujen rutas por el cielo;\n" +
+                    "tras el Gancho, vence a 9 enemigos voladores.",
+                EnglishName = "The Loom of the Wind",
+                EnglishDescription = "Let nine threads draw paths across the sky;\n" +
+                    "after grappling, defeat 9 flying enemies."
+            },
+            new OfficialText
+            {
+                BodyName = "BayoBody",
+                LocalizationKey = SurvivorLocalizationKeys.Bayonetta,
+                SpanishName = "Un baile sin heridas",
+                SpanishDescription =
+                    "Que tus pistolas marquen el ritmo de la danza;\n" +
+                    "tras esquivar, vence a 40; cada golpe resta 2.",
+                EnglishName = "A Dance Without Wounds",
+                EnglishDescription =
+                    "Let your pistols set the rhythm of the dance;\n" +
+                    "after a dodge, defeat 40; each hit costs 2."
+            },
+            new OfficialText
+            {
                 BodyName = "SoraBody",
                 LocalizationKey = SurvivorLocalizationKeys.Sora,
                 SpanishName = "Elegido de la Llave Espada",
                 SpanishDescription =
-                    "Abre paso entre mundos en Baluarte de Ambry;\n" +
-                    "vence a sombras y completa Venganza - Mercenary",
+                    "Cruza la oscuridad del Baluarte de Ambry;\n" +
+                    "vence 3 oleadas de sombras de Venganza.",
                 EnglishName = "Chosen of the Keyblade",
                 EnglishDescription =
-                    "Cross worlds through Bulwark's Ambry;\n" +
-                    "defeat shadows; complete Vengeance - Mercenary"
+                    "Cross the darkness of Bulwark's Ambry;\n" +
+                    "defeat 3 waves of Vengeance shadows."
             },
 
             new OfficialText
@@ -312,12 +413,24 @@ namespace UniversalSurvivorUnlocks
                 LocalizationKey = SurvivorLocalizationKeys.Ralsei,
                 SpanishName = "El poder de la bondad",
                 SpanishDescription =
-                    "Usa Devoción y reúne 3 nuevos amigos Lemurianos;\n" +
-                    "completa el portal con ellos - Captain o Seeker",
+                    "La Devoción reúne a los extraviados;\n" +
+                    "recluta 3 Lemurianos y completa el portal.",
                 EnglishName = "The Power of Kindness",
                 EnglishDescription =
-                    "Use Devotion; recruit 3 Lemurian friends;\n" +
-                    "complete the teleporter - Captain or Seeker"
+                    "Devotion gathers the lost;\n" +
+                    "recruit 3 Lemurians and complete the teleporter."
+            },
+
+            new OfficialText
+            {
+                BodyName = "IreliaBody",
+                LocalizationKey = SurvivorLocalizationKeys.Bladedancer,
+                SpanishName = "El filo de los olvidados",
+                SpanishDescription = "Que la Daga ceremonial acompañe tu danza;\n" +
+                                     "usa Asalto cegador en 12 enemigos expuestos.",
+                EnglishName = "The Edge of the Forgotten",
+                EnglishDescription = "Let the Ceremonial Dagger accompany your dance;\n" +
+                                     "use Blinding Assault on 12 Exposed enemies."
             },
 
             new OfficialText
@@ -326,12 +439,12 @@ namespace UniversalSurvivorUnlocks
                 LocalizationKey = SurvivorLocalizationKeys.Jhin,
                 SpanishName = "El Cuarto Acto",
                 SpanishDescription =
-                    "Convierte a un jefe en tu gran final;\n" +
-                    "asesta un crítico mortal de 4.444 de daño o más.",
+                    "Que el cuarto acto sea una obra maestra;\n" +
+                    "abate a un jefe con un crítico de 4.444+.",
                 EnglishName = "The Fourth Act",
                 EnglishDescription =
-                    "Turn a boss into your grand finale;\n" +
-                    "land a lethal critical hit for 4,444+ damage."
+                    "Let the fourth act be a masterpiece;\n" +
+                    "slay a boss with a lethal critical hit of 4,444+."
             },
 
             new OfficialText
@@ -340,12 +453,12 @@ namespace UniversalSurvivorUnlocks
                 LocalizationKey = SurvivorLocalizationKeys.Scout,
                 SpanishName = "Sed Termonuclear",
                 SpanishDescription =
-                    "Sacia tu sed con 8 Bebidas energéticas;\n" +
-                    "o completa el primer sector sin objetos en 4 min.",
+                    "La radiación da sed: ten 8 Bebidas energéticas;\n" +
+                    "o supera el portal 1 en 4 min sin ítems.",
                 EnglishName = "Thermonuclear Thirst",
                 EnglishDescription =
-                    "Quench your thirst with 8 Energy Drinks;\n" +
-                    "or clear the first stage itemless in 4 min."
+                    "Radiation brings thirst: hold 8 Energy Drinks;\n" +
+                    "or clear teleporter 1 in 4 min without items."
             },
 
             new OfficialText
@@ -354,12 +467,12 @@ namespace UniversalSurvivorUnlocks
                 LocalizationKey = SurvivorLocalizationKeys.Spy,
                 SpanishName = "Sin que me veas venir",
                 SpanishDescription =
-                    "Que el jefe nunca vea venir tu golpe final;\n" +
-                    "remátalo por detrás con Daga serrada - Bandit",
+                    "Caballeros, la discreción tiene su precio;\n" +
+                    "remata a un jefe por la espalda con Daga serrada.",
                 EnglishName = "Never Saw Me Coming",
                 EnglishDescription =
-                    "Make sure the boss never sees the final blow;\n" +
-                    "backstab the boss with Serrated Dagger - Bandit"
+                    "Gentlemen, discretion comes at a price;\n" +
+                    "finish a boss from behind with Serrated Dagger."
             },
 
             new OfficialText
@@ -382,25 +495,34 @@ namespace UniversalSurvivorUnlocks
                 LocalizationKey = SurvivorLocalizationKeys.Hunk,
                 SpanishName = "La Parca No Falla",
                 SpanishDescription =
-                    "Protege la batería y sobrevive a toda costa;\n" +
+                    "Una orden: protege la Matriz de combustible;\n" +
                     "escapa de la Luna o sacrifícate en el Obelisco.",
                 EnglishName = "The Reaper Never Fails",
                 EnglishDescription =
-                    "Protect the Fuel Array; survive at all costs;\n" +
+                    "One order: protect the Fuel Array at all costs;\n" +
                     "escape the Moon or sacrifice at the Obelisk."
             },
 
+            new OfficialText
+            {
+                BodyName = "RobUltronBody",
+                LocalizationKey = SurvivorLocalizationKeys.HelP,
+                SpanishName = "Protocolo HEL-P: Reconstrucción",
+                SpanishDescription = "Renace: desguaza 2 drones médicos y 2 artilleros;\nrepara un dron de emergencia y activa su cura.",
+                EnglishName = "HEL-P Protocol: Reconstruction",
+                EnglishDescription = "Rebirth: scrap 2 healing and 2 gunner drones;\nrepair an Emergency Drone and trigger its heal."
+            },
             new OfficialText
             {
                 BodyName = "TinkatonBody",
                 LocalizationKey = SurvivorLocalizationKeys.Tinkaton,
                 SpanishName = "Forjada en Chatarra",
                 SpanishDescription =
-                    "Haz de 6 chatarras el inicio de tu gran golpe;\n" +
+                    "De 6 objetos reciclados nace tu gran martillo;\n" +
                     "ten Justicia demoledora y vence un Ojo mecánico.",
                 EnglishName = "Forged in Scrap",
                 EnglishDescription =
-                    "Scrap 6 items to prepare your crushing blow;\n" +
+                    "From 6 scrapped items, your mighty hammer is born;\n" +
                     "hold Shattering Justice; defeat a mech Eye."
             },
 
@@ -410,12 +532,12 @@ namespace UniversalSurvivorUnlocks
                 LocalizationKey = SurvivorLocalizationKeys.Wooper,
                 SpanishName = "De vuelta al agua",
                 SpanishDescription =
-                    "Haz de los Humedales tu hogar; marca territorio;\n" +
-                    "caza y muerde a 20 presas envenenadas - Acrid",
+                    "Defiende a la manada en los Humedales;\n" +
+                    "remata 20 presas envenenadas con Mordida voraz.",
                 EnglishName = "Back to the Water",
                 EnglishDescription =
-                    "Make the Wetlands your home; mark your territory;\n" +
-                    "hunt and bite 20 poisoned prey - Acrid"
+                    "Defend the pack in the Wetlands;\n" +
+                    "finish 20 poisoned prey with Ravenous Bite."
             },
 
             new OfficialText
@@ -423,9 +545,9 @@ namespace UniversalSurvivorUnlocks
                 BodyName = "GwenBody",
                 LocalizationKey = SurvivorLocalizationKeys.Gwen,
                 SpanishName = "Entre hilos y agujas",
-                SpanishDescription = "Consigue 2 Dagas ceremoniales;\nvence a un jefe de teletransportador con ellas.",
+                SpanishDescription = "Dos Dagas ceremoniales, una última puntada;\nvence al Caminante de arcilla del portal.",
                 EnglishName = "Between Threads and Needles",
-                EnglishDescription = "Collect 2 Ceremonial Daggers;\ndefeat a teleporter boss while holding them."
+                EnglishDescription = "Two Ceremonial Daggers, one final stitch;\ndefeat the teleporter Clay Dunestrider."
             },
             new OfficialText
             {
@@ -440,39 +562,39 @@ namespace UniversalSurvivorUnlocks
             {
                 BodyName = "SeamstressBody",
                 LocalizationKey = SurvivorLocalizationKeys.Seamstress,
-                SpanishName = "Hilo de sangre",
-                SpanishDescription = "Agota un Santuario de sangre con 3 sacrificios;\ndespués vence a un jefe de teletransportador.",
-                EnglishName = "Crimson Thread",
-                EnglishDescription = "Exhaust a Shrine of Blood with all 3 sacrifices;\nthen defeat a teleporter boss."
+                SpanishName = "Pulso crítico",
+                SpanishDescription = "Un pulso prestado resiste las Profundidades;\ngasta vida, cura 1.000 PV y vence al jefe.",
+                EnglishName = "Critical Pulse",
+                EnglishDescription = "A borrowed heartbeat defies the abyss;\nspend health, heal 1,000 HP, defeat the boss."
             },
             new OfficialText
             {
                 BodyName = "BansheeBody",
                 LocalizationKey = SurvivorLocalizationKeys.Banshee,
                 SpanishName = "Presagio desde las alturas",
-                SpanishDescription = "Derriba a 20 enemigos mientras estás en el aire;\ndespués vence en el aire a un jefe de teletransportador.",
+                SpanishDescription = "Que el cielo sea presagio: 20 bajas aéreas;\ndespués vence en el aire a un jefe del portal.",
                 EnglishName = "Omen from Above",
-                EnglishDescription = "Defeat 20 enemies while airborne;\nthen defeat a teleporter boss while airborne."
+                EnglishDescription = "Let the sky foretell: 20 airborne kills;\nthen defeat a teleporter boss while airborne."
             },
             new OfficialText
             {
                 BodyName = "UnforgivenBody",
                 LocalizationKey = SurvivorLocalizationKeys.Wanderer,
                 SpanishName = "Último aliento",
-                SpanishDescription = "Derrota a 3 jefes de teletransportador\nsiendo tú quien aseste el golpe desde el aire.",
+                SpanishDescription = "El viento reclama tres últimos alientos;\nremata a 3 jefes del portal desde el aire.",
                 EnglishName = "Last Breath",
-                EnglishDescription = "Defeat 3 teleporter bosses;\nyou must land each final blow while airborne."
+                EnglishDescription = "The wind demands three final breaths;\nfinish 3 teleporter bosses while airborne."
             },
             new OfficialText
             {
                 BodyName = "WarlockBody",
                 LocalizationKey = SurvivorLocalizationKeys.Warlock,
-                SpanishName = "Tributo al trono",
-                SpanishDescription = "Arrebata 10 almas de diablillos;\n" +
-                                     "después vence a un Señor de los diablillos.",
-                EnglishName = "Tribute to the Throne",
-                EnglishDescription = "Claim 10 imp souls;\n" +
-                                     "then defeat an Imp Overlord."
+                SpanishName = "Bajo tres miradas",
+                SpanishDescription = "Antes del infierno, reúne 500 almas;\n" +
+                                     "allí vence a un Señor de los diablillos.",
+                EnglishName = "Under Three Gazes",
+                EnglishDescription = "Before the inferno, gather 500 souls;\n" +
+                                     "there defeat an Imp Overlord."
             },
             new OfficialText
             {
@@ -541,6 +663,13 @@ namespace UniversalSurvivorUnlocks
                     StringComparison.OrdinalIgnoreCase))
                 return true;
 
+            if (CWTCampaignIdentity.IsBody(bodyName) &&
+                challenge.MissionConfig != null &&
+                string.Equals(challenge.MissionConfig.Source, "Preset", StringComparison.OrdinalIgnoreCase) &&
+                string.Equals(challenge.MissionConfig.BasePresetId,
+                    MissionPresetIds.CelestialWarTankOfficial, StringComparison.OrdinalIgnoreCase))
+                return true;
+
             if (string.IsNullOrWhiteSpace(challenge.LocalizationKey))
                 return false;
 
@@ -581,6 +710,14 @@ namespace UniversalSurvivorUnlocks
             if (string.IsNullOrWhiteSpace(bodyName))
             {
                 return false;
+            }
+
+            if (CWTCampaignIdentity.IsBody(bodyName))
+            {
+                string p = GetOfficialTokenPrefix(bodyName);
+                nameToken = p + "_ACHIEVEMENT_NAME";
+                descriptionToken = p + "_ACHIEVEMENT_DESCRIPTION";
+                return true;
             }
 
             for (int i = 0; i < OfficialTexts.Length; i++)
@@ -709,6 +846,42 @@ namespace UniversalSurvivorUnlocks
             RegisterUiText(MissionLibraryInUseToken, "In use", "En uso");
             RegisterUiText(MissionLibraryUseThisMissionToken, "Use this mission", "Usar esta misión");
             RegisterUiText(MissionLibraryNotValidWithToken, "Notice: Not valid with: {0}", "Aviso: No válido con: {0}");
+            RegisterUiText(CharacterSelectRequiredSurvivorToken,
+                "<style=cIsUtility>Required survivor:</style> {0}",
+                "<style=cIsUtility>Superviviente requerido:</style> {0}");
+            RegisterUiText(CharacterSelectObjectiveAsSurvivorToken,
+                "<style=cIsUtility>Required survivor:</style> {0}",
+                "<style=cIsUtility>Superviviente requerido:</style> {0}");
+            RegisterUiText(CharacterSelectOneTeamMemberToken,
+                "<style=cIsUtility>Team requirement:</style> at least 1 of {0}",
+                "<style=cIsUtility>Requisito de equipo:</style> al menos 1 de {0}");
+            RegisterUiText(CharacterSelectTeamOneSuffixToken,
+                " (at least one on the team)", " (al menos 1 en el equipo)");
+            RegisterUiText(CharacterSelectTeamChoicesToken,
+                "At least one of these on the team:",
+                "Al menos 1 de estas opciones en el equipo:");
+            RegisterUiText(CharacterSelectMixedModeToken,
+                "<style=cIsUtility>Mission type:</style> Mixed (verified contributors unlock)",
+                "<style=cIsUtility>Modalidad:</style> Mixta (desbloquean quienes contribuyan)");
+            RegisterUiText(CharacterSelectWooperContributionToken,
+                "<style=cIsUtility>Contributions:</style> Poison and Bite may come from different players",
+                "<style=cIsUtility>Contribución:</style> Veneno y Mordida pueden ser de jugadores distintos");
+            RegisterUiText(CharacterSelectRequiredWetlandsStageToken,
+                "<style=cIsUtility>Required stage:</style> Wetland Aspect",
+                "<style=cIsUtility>Escenario requerido:</style> Humedales");
+            RegisterUiText(CharacterSelectRequiredStageToken,
+                "<style=cIsUtility>Required stage:</style> {0}",
+                "<style=cIsUtility>Escenario requerido:</style> {0}");
+            RegisterUiText(CharacterSelectWetlandsNameToken,
+                "Wetland Aspect", "Humedales");
+            RegisterUiText(CharacterSelectAbyssalNameToken,
+                "Abyssal Depths", "Profundidades Abisales");
+            RegisterUiText(CharacterSelectBulwarksAmbryNameToken,
+                "Bulwark's Ambry (any variant)", "Baluarte de Ambry (cualquier variante)");
+            RegisterUiText(MissionLibraryRequiredSurvivorToken,
+                "<style=cIsUtility>Required survivor:</style> {0}",
+                "<style=cIsUtility>Superviviente requerido:</style> {0}");
+            RegisterUiText(MissionLibraryAnySurvivorToken, "Any", "Cualquiera");
 
             // 5G.2C - Risk of Options / Mod Options (tokens legacy/fallback).
             RegisterUiText(MissionLibrarySettingsOptionNameToken, "Mission Library", "Biblioteca de misiones");

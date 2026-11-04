@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 using BepInEx.Logging;
@@ -63,15 +63,25 @@ namespace UniversalSurvivorUnlocks
             bool ah64 = string.Equals(profile.BodyName, "AH64Body",
                 StringComparison.OrdinalIgnoreCase);
             RectTransform detailsTextRect;
+            bool cwt = CWTCampaignIdentity.IsBody(profile.BodyName);
             if (ah64)
             {
                 HideSurvivorPresetCards();
+                HideCWTCampaignPanel();
                 UpdateAH64CampaignPanel(profile);
                 detailsTextRect = ah64CampaignContentRoot;
+            }
+            else if (cwt)
+            {
+                HideSurvivorPresetCards();
+                HideAH64CampaignPanel();
+                UpdateCWTCampaignPanel(profile);
+                detailsTextRect = cwtCampaignContentRoot;
             }
             else
             {
                 HideAH64CampaignPanel();
+                HideCWTCampaignPanel();
                 UpdateSurvivorPresetCards(profile);
                 detailsTextRect = survivorPresetContentRoot;
             }
@@ -292,7 +302,7 @@ namespace UniversalSurvivorUnlocks
                 );
 
                 builder.Append("\n");
-                builder.Append(ResolveNotesText(profile, hidden));
+                builder.Append(USUAdditionalDiaries.AppendToNotes(profile, hidden, ResolveNotesText(profile, hidden)));
             }
 
             return builder.ToString();
@@ -631,96 +641,47 @@ namespace UniversalSurvivorUnlocks
         }
 
 
-        private static string ResolveMissionRestrictions(
-            MissionDefinition mission
-        )
+        private static string ResolveMissionRestrictions(MissionDefinition mission)
         {
-            if (
-                mission == null ||
-                mission.Routes == null ||
-                mission.Routes.Count == 0
-            )
-            {
+            if (mission?.Routes == null || mission.Routes.Count == 0)
                 return "";
-            }
 
-            List<string> excludedBodies =
-                new List<string>();
+            var notices = new List<string>();
+            var allowed = new List<string>();
+            foreach (string body in MissionRequiredSurvivorDisplay.GetCommonRequiredBodies(mission))
+                AddExcludedBodyLabel(allowed, body);
+            var team = new List<string>();
+            foreach (string body in MissionRequiredSurvivorDisplay.GetCommonRequiredTeamBodies(mission))
+                AddExcludedBodyLabel(team, body);
 
-            for (int routeIndex = 0;
-                routeIndex < mission.Routes.Count;
-                routeIndex++)
-            {
-                MissionRoute route = mission.Routes[routeIndex];
+            if (allowed.Count > 0)
+                notices.Add(string.Format(
+                    L(SurvivorLocalization.MissionLibraryRequiredSurvivorToken),
+                    string.Join(" / ", allowed.ToArray())));
+            if (team.Count > 0)
+                notices.Add(string.Format(
+                    L(SurvivorLocalization.CharacterSelectOneTeamMemberToken),
+                    string.Join(" / ", team.ToArray())));
+            if (allowed.Count == 0 && team.Count == 0 &&
+                MissionRequiredSurvivorDisplay.ShowAnySurvivorForApprovedMissions(mission))
+                notices.Add(string.Format(
+                    L(SurvivorLocalization.MissionLibraryRequiredSurvivorToken),
+                    L(SurvivorLocalization.MissionLibraryAnySurvivorToken)));
 
-                if (
-                    route == null ||
-                    route.Conditions == null
-                )
-                {
-                    continue;
-                }
+            string stages = MissionRequiredSurvivorDisplay.GetCommonRequiredStageNames(mission);
+            if (!string.IsNullOrWhiteSpace(stages))
+                notices.Add(string.Format(
+                    L(SurvivorLocalization.CharacterSelectRequiredStageToken), stages));
 
-                for (int conditionIndex = 0;
-                    conditionIndex < route.Conditions.Count;
-                    conditionIndex++)
-                {
-                    MissionCondition condition =
-                        route.Conditions[conditionIndex];
-
-                    if (
-                        condition == null ||
-                        !string.Equals(
-                            condition.Type,
-                            "ExcludedSurvivor",
-                            StringComparison.OrdinalIgnoreCase
-                        ) ||
-                        condition.Parameters == null
-                    )
-                    {
-                        continue;
-                    }
-
-                    JToken bodiesToken =
-                        condition.Parameters["bodies"];
-
-                    if (bodiesToken is JArray bodies)
-                    {
-                        for (int i = 0; i < bodies.Count; i++)
-                        {
-                            AddExcludedBodyLabel(
-                                excludedBodies,
-                                bodies[i]?.ToString()
-                            );
-                        }
-                    }
-                    else
-                    {
-                        AddExcludedBodyLabel(
-                            excludedBodies,
-                            condition.Parameters["body"]?.ToString()
-                        );
-                    }
-                }
-            }
-
-            if (excludedBodies.Count == 0)
-            {
-                return "";
-            }
-
-            string format =
-                L(
-                    SurvivorLocalization
-                        .MissionLibraryNotValidWithToken
-                );
-
-            return string.Format(
-                format,
-                string.Join(" / ", excludedBodies)
-            );
+            var excluded = new List<string>();
+            foreach (string body in MissionRequiredSurvivorDisplay.GetCommonExcludedBodies(mission))
+                AddExcludedBodyLabel(excluded, body);
+            if (excluded.Count > 0)
+                notices.Add(string.Format(
+                    L(SurvivorLocalization.MissionLibraryNotValidWithToken),
+                    string.Join(" / ", excluded.ToArray())));
+            return string.Join("\n", notices.ToArray());
         }
-
 
         private static void AddExcludedBodyLabel(
             List<string> labels,
@@ -736,6 +697,25 @@ namespace UniversalSurvivorUnlocks
             }
 
             string label = bodyName;
+            // Vanilla survivors are not necessarily in the modded content profiles.
+            // Resolve the names used by the mission selector, not raw Body IDs.
+            switch (bodyName)
+            {
+                case "CommandoBody": label = "Commando"; break;
+                case "HuntressBody": label = "Huntress"; break;
+                case "Bandit2Body": label = "Bandit"; break;
+                case "ToolbotBody": label = "MUL-T"; break;
+                case "EngiBody": label = "Engineer"; break;
+                case "MageBody": label = "Artificer"; break;
+                case "MercBody": label = "Mercenary"; break;
+                case "TreebotBody": label = "REX"; break;
+                case "LoaderBody": label = "Loader"; break;
+                case "CrocoBody": label = "Acrid"; break;
+                case "CaptainBody": label = "Captain"; break;
+                case "RailgunnerBody": label = "Railgunner"; break;
+                case "VoidSurvivorBody": label = "Void Fiend"; break;
+                case "SeekerBody": label = "Seeker"; break;
+            }
 
             if (
                 SurvivorContentProfileService.TryGetByBodyName(

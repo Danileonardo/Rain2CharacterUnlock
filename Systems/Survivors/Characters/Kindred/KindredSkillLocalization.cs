@@ -139,7 +139,7 @@ namespace UniversalSurvivorUnlocks
                     string original = (Language.GetString(token) ?? "").Replace('’', '\u0027').Trim();
                     if (!Names.TryGetValue(original, out string spanish))
                     {
-                        logger?.LogInfo("[KINDRED AUDIT] Skill sin coincidencia | " + token + " | " + original);
+                        UsuLog.Verbose(logger, "[KINDRED AUDIT] Skill sin coincidencia | " + token + " | " + original);
                         continue;
                     }
                     AddSpanish(token, spanish);
@@ -157,7 +157,7 @@ namespace UniversalSurvivorUnlocks
                                     "sobrescribe el texto original: " + skill.skillDescriptionToken);
                         }
                         else
-                            logger?.LogInfo("[KINDRED AUDIT] Descripción no curada | " +
+                            UsuLog.Verbose(logger, "[KINDRED AUDIT] Descripción no curada | " +
                                 skill.skillDescriptionToken + " | EN=" + englishDescription);
                         if (!string.IsNullOrWhiteSpace(translated))
                         {
@@ -167,7 +167,7 @@ namespace UniversalSurvivorUnlocks
                         RegisterSkillKeywords(skill, logger);
                     }
                 }
-                logger?.LogInfo("[Kindred LOCALIZATION] ES: " + translatedNames +
+                UsuLog.Verbose(logger, "[Kindred LOCALIZATION] ES: " + translatedNames +
                     " nombres, " + translatedDescriptions + " descripciones completas verificadas contra estadísticas.");
             }
             catch (Exception ex)
@@ -189,7 +189,7 @@ namespace UniversalSurvivorUnlocks
                 AddSpanish(descriptionToken, SpanishPassive);
             else
                 logger?.LogWarning("[KINDRED LOCALIZATION] Pasiva cambió; revisar texto nativo antes de traducir: " + original);
-            logger?.LogInfo("[KINDRED LOCALIZATION] Pasiva detectada | " + nameToken + " / " + descriptionToken);
+            UsuLog.Verbose(logger, "[KINDRED LOCALIZATION] Pasiva detectada | " + nameToken + " / " + descriptionToken);
         }
 
         // La explicación que aparece a la derecha se expone mediante keywordTokens
@@ -249,10 +249,10 @@ namespace UniversalSurvivorUnlocks
                 english.Contains("5%"))
             {
                 AddSpanish(token, SpanishMarkKeyword);
-                logger?.LogInfo("[KINDRED KEYWORD] Traducción completa | " + token);
+                UsuLog.Verbose(logger, "[KINDRED KEYWORD] Traducción completa | " + token);
             }
             else
-                logger?.LogInfo("[KINDRED AUDIT] Keyword pendiente | " + token + " | " + english);
+                UsuLog.Verbose(logger, "[KINDRED AUDIT] Keyword pendiente | " + token + " | " + english);
         }
 
         private static void AddSpanish(string token, string translation)
@@ -301,7 +301,7 @@ namespace UniversalSurvivorUnlocks
                 string original = Language.GetString(skin.nameToken) ?? "";
                 if (!TryTranslateSkin(original, out string localized))
                 {
-                    logger?.LogInfo("[KINDRED AUDIT] Skin sin traducción | " + skin.nameToken + " | " + original);
+                    UsuLog.Verbose(logger, "[KINDRED AUDIT] Skin sin traducción | " + skin.nameToken + " | " + original);
                     continue;
                 }
                 // Evitamos tokens literales compartidos por otros survivors.
@@ -309,7 +309,7 @@ namespace UniversalSurvivorUnlocks
                 AddSpanish(skin.nameToken, localized);
                 translated++;
             }
-            logger?.LogInfo("[KINDRED SKINS] Encontrados: " + skins.Count + "; traducidos: " + translated);
+            UsuLog.Verbose(logger, "[KINDRED SKINS] Encontrados: " + skins.Count + "; traducidos: " + translated);
         }
 
         private static bool TryTranslateSkin(string name, out string spanish)

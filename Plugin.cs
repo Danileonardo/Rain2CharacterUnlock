@@ -42,7 +42,7 @@ namespace UniversalSurvivorUnlocks
 
 
         public const string PluginVersion =
-            "0.3.1";
+            "0.4.0";
 
 
         public static List<SurvivorInfo> Survivors
@@ -63,6 +63,8 @@ namespace UniversalSurvivorUnlocks
             TemporaryGeneratedTestOptions.Initialize(
                 Config
             );
+
+            NetworkingAPI.RegisterMessageType<USUVanillaDiaryVictoryMessage>();
 
 
             NetworkingAPI
@@ -214,11 +216,15 @@ namespace UniversalSurvivorUnlocks
              * oficial para identificar patrones reutilizables en Mission V2.
              * Es diagnóstico solamente: no altera autoridad ni progreso.
              */
-            VanillaUnlockMethodCatalogService
-                .Audit(
-                    Survivors,
-                    Logger
-                );
+            // Auditoría sólo diagnóstica (reflexión); opt-in para cargar más rápido.
+            if (UsuLog.DiagnosticEnabled)
+            {
+                VanillaUnlockMethodCatalogService
+                    .Audit(
+                        Survivors,
+                        Logger
+                    );
+            }
 
 
             /*
@@ -229,11 +235,15 @@ namespace UniversalSurvivorUnlocks
              * Sólo diagnóstico: los casos dudosos quedan como LikelyCovered o
              * Unmapped para revisión con el log real.
              */
-            VanillaUnlockCoverageService
-                .Audit(
-                    Survivors,
-                    Logger
-                );
+            // Auditoría sólo diagnóstica (reflexión); opt-in para cargar más rápido.
+            if (UsuLog.DiagnosticEnabled)
+            {
+                VanillaUnlockCoverageService
+                    .Audit(
+                        Survivors,
+                        Logger
+                    );
+            }
 
 
             /*
@@ -244,11 +254,15 @@ namespace UniversalSurvivorUnlocks
              * mecánicas Mission V2 faltan usando evidencia del runtime actual,
              * sin modificar achievements ni autoridad.
              */
-            VanillaUnlockSemanticInspectionService
-                .Audit(
-                    Survivors,
-                    Logger
-                );
+            // Auditoría sólo diagnóstica (reflexión); opt-in para cargar más rápido.
+            if (UsuLog.DiagnosticEnabled)
+            {
+                VanillaUnlockSemanticInspectionService
+                    .Audit(
+                        Survivors,
+                        Logger
+                    );
+            }
 
 
             /*
@@ -512,10 +526,14 @@ namespace UniversalSurvivorUnlocks
              * comprueba coherencia Provider/Source, snapshot Generated y si
              * el nonce necesario para reroll sigue presente.
              */
-            ProviderCoexistenceAuditService
-                .Audit(
-                    Logger
-                );
+            // Auditoría de snapshots/clones de JSON: solo cuando se solicite diagnóstico.
+            if (UsuLog.DiagnosticEnabled)
+            {
+                ProviderCoexistenceAuditService
+                    .Audit(
+                        Logger
+                    );
+            }
 
             UsuLog.Verbose(
                 Logger,

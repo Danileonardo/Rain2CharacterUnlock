@@ -325,6 +325,8 @@ namespace UniversalSurvivorUnlocks
         // =========================================================
 
         // ID canónico actual de El Cuarto Acto.
+        public const string BladedancerOfficial = "creator.official.bladedancer.edge_of_navori";
+
         public const string JhinOfficial =
             "creator.official.jhin.fourth_act";
 
@@ -362,6 +364,17 @@ namespace UniversalSurvivorUnlocks
         public const string WandererOfficial = "creator.official.wanderer.last_breath";
         public const string WarlockOfficial = "creator.official.warlock.tribute_to_throne";
         public const string AH64Official = "creator.official.ah64.air_supremacy";
+        public const string CelestialWarTankOfficial = "creator.official.celestialwar_tank.steel_campaign";
+        public const string BayonettaOfficial = "creator.official.bayonetta.dance_without_wounds";
+        public const string DarthVaderOfficial = "creator.official.darthvader.counterorder_66";
+        public const string KnightOfficial = "creator.official.knight.beyond_the_shell";
+        public const string HornetOfficial = "creator.official.hornet.wind_loom";
+        public const string ShadowOfficial = "creator.official.shadow.omega_protocol";
+        public const string SonicOfficial = "creator.official.sonic.rolling_at_speed_of_sound";
+
+        // Identidad NUEVA: nunca reactivar assistance_protocol.
+        public const string HelPOfficial =
+            "creator.official.help.reconstruction_clean_v2";
 
         public const string MinerOfficial =
             "creator.official.miner.excavation";

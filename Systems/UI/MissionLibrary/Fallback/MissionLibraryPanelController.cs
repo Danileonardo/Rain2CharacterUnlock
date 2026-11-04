@@ -1116,10 +1116,71 @@ namespace UniversalSurvivorUnlocks
             MissionDefinition mission
         )
         {
-            List<string> excludedBodies =
-                GetGloballyExcludedSurvivors(
-                    mission
+            List<string> requiredBodies =
+                MissionRequiredSurvivorDisplay.GetCommonRequiredBodies(mission);
+            if (requiredBodies.Count > 0)
+            {
+                List<string> requiredLabels = new List<string>();
+                foreach (string body in requiredBodies)
+                {
+                    string label = ResolveDisplayName(body);
+                    if (!string.IsNullOrWhiteSpace(label)) requiredLabels.Add(label);
+                }
+                if (requiredLabels.Count > 0)
+                {
+                    GUILayout.Space(4f);
+                    GUILayout.Label(
+                        Language.GetStringFormatted(
+                            SurvivorLocalization.MissionLibraryRequiredSurvivorToken,
+                            string.Join(" / ", requiredLabels.ToArray())
+                        ),
+                        warningStyle
+                    );
+                }
+            }
+
+            List<string> teamBodies =
+                MissionRequiredSurvivorDisplay.GetCommonRequiredTeamBodies(mission);
+            if (teamBodies.Count > 0)
+            {
+                var teamNames = new List<string>();
+                foreach (string body in teamBodies)
+                {
+                    string label = ResolveDisplayName(body);
+                    if (!string.IsNullOrWhiteSpace(label)) teamNames.Add(label);
+                }
+                if (teamNames.Count > 0)
+                {
+                    GUILayout.Space(4f);
+                    GUILayout.Label(Language.GetStringFormatted(
+                        SurvivorLocalization.CharacterSelectOneTeamMemberToken,
+                        string.Join(" / ", teamNames.ToArray())), warningStyle);
+                }
+            }
+
+            if (requiredBodies.Count == 0 && teamBodies.Count == 0 &&
+                MissionRequiredSurvivorDisplay.ShowAnySurvivorForApprovedMissions(mission))
+            {
+                GUILayout.Space(4f);
+                GUILayout.Label(
+                    Language.GetStringFormatted(
+                        SurvivorLocalization.MissionLibraryRequiredSurvivorToken,
+                        Language.GetString(SurvivorLocalization.MissionLibraryAnySurvivorToken)
+                    ),
+                    warningStyle
                 );
+            }
+
+            string requiredStages = MissionRequiredSurvivorDisplay.GetCommonRequiredStageNames(mission);
+            if (!string.IsNullOrWhiteSpace(requiredStages))
+            {
+                GUILayout.Space(4f);
+                GUILayout.Label(Language.GetStringFormatted(
+                    SurvivorLocalization.CharacterSelectRequiredStageToken, requiredStages), warningStyle);
+            }
+
+            List<string> excludedBodies =
+                MissionRequiredSurvivorDisplay.GetCommonExcludedBodies(mission);
 
             if (
                 excludedBodies == null ||

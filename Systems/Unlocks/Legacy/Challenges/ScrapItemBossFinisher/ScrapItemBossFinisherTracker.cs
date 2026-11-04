@@ -156,7 +156,8 @@ namespace UniversalSurvivorUnlocks
 
             if (MissionRuntimeActivityPlan.IsTypeActive("ScrapItemBossFinisher"))
             {
-                logger?.LogInfo(
+                UsuLog.Verbose(
+                    logger,
                     "[TINKATON] Nueva run | Contadores reiniciados."
                 );
             }
@@ -222,28 +223,31 @@ namespace UniversalSurvivorUnlocks
             ] =
                 newTotal;
 
-            string playerName =
-                GetPlayerName(
-                    playerMaster
-                );
-
-            ItemDef itemDef =
-                ItemCatalog.GetItemDef(
-                    itemIndex
-                );
-
-            string itemName =
-                itemDef != null
+            // El progreso siempre se registra. La información técnica se
+            // imprime únicamente en Diagnóstico y cada dos chatarras.
+            if (
+                UsuLog.DiagnosticEnabled &&
+                MissionLogLimiter.ShouldLogMilestone(
+                    "legacy-scrap:" + playerMaster.GetInstanceID(),
+                    newTotal,
+                    2d
+                )
+            )
+            {
+                string playerName = GetPlayerName(playerMaster);
+                ItemDef itemDef = ItemCatalog.GetItemDef(itemIndex);
+                string itemName = itemDef != null
                     ? itemDef.name
                     : itemIndex.ToString();
-
-            logger?.LogInfo(
-                "[TINKATON] CHATARRA CONVERTIDA | " +
-                $"Jugador: {playerName} | " +
-                $"Objeto: {itemName} | " +
-                $"Esta operación: {amountConverted} | " +
-                $"Total run: {newTotal}"
-            );
+                UsuLog.Diagnostic(
+                    logger,
+                    "[TINKATON] CHATARRA CONVERTIDA | " +
+                    $"Jugador: {playerName} | " +
+                    $"Objeto: {itemName} | " +
+                    $"Esta operación: {amountConverted} | " +
+                    $"Total run: {newTotal}"
+                );
+            }
         }
 
 

@@ -23,6 +23,8 @@ namespace UniversalSurvivorUnlocks
             public readonly Dictionary<ItemIndex, int> Counts =
                 new Dictionary<ItemIndex, int>();
             public bool HasPickedAnyItem;
+            public bool BaselineCaptured;
+            public EquipmentIndex Equipment = EquipmentIndex.None;
         }
 
         private static readonly Dictionary<CharacterMaster, InventoryState>
@@ -105,16 +107,24 @@ namespace UniversalSurvivorUnlocks
 
             // Primera observación = baseline. Evita considerar como pickup
             // los items internos con los que un survivor aparece al spawn.
-            if (state.Counts.Count == 0 && state.TotalPermanentItems == 0)
+            if (!state.BaselineCaptured)
             {
                 Snapshot(self, state, resetPickupFlag: false);
                 return;
             }
 
             int newTotal = CountTotalPermanentItems(self.inventory);
-            if (newTotal > state.TotalPermanentItems)
+            EquipmentIndex nextEquipment = self.inventory.currentEquipmentIndex;
+            bool tookEquipment = nextEquipment != EquipmentIndex.None &&
+                nextEquipment != state.Equipment;
+            if (newTotal > state.TotalPermanentItems || tookEquipment)
             {
                 state.HasPickedAnyItem = true;
+                if (UsuLog.VerboseEnabled)
+                    UsuLog.Verbose(logger, "[MISSION SCOUT AUDIT] Objeto recibido | " +
+                    "Jugador: " + (MissionPlayerIdentity.GetNetworkUser(self)?.userName ?? "unknown") +
+                    " | Antes: " + state.TotalPermanentItems + " | Despues: " + newTotal +
+                    " | EquipoCambiado: " + tookEquipment);
             }
 
             if (
@@ -223,6 +233,8 @@ namespace UniversalSurvivorUnlocks
             }
 
             state.TotalPermanentItems = CountTotalPermanentItems(master.inventory);
+            state.Equipment = master.inventory.currentEquipmentIndex;
+            state.BaselineCaptured = true;
 
             if (resetPickupFlag)
             {

@@ -103,6 +103,11 @@ namespace UniversalSurvivorUnlocks
             string normalized = required.Trim().ToLowerInvariant();
             string actual = (endingName ?? "").ToLowerInvariant();
 
+            if (normalized == "moonescape" || normalized == "moon_escape")
+            {
+                return MoonEscapeEndingMatcher.IsMoonEscape(endingDef);
+            }
+
             if (normalized == "escape" || normalized == "main")
             {
                 return endingDef.isWin && !actual.Contains("obliter");

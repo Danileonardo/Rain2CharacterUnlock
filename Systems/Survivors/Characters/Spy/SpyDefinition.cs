@@ -9,12 +9,12 @@ namespace UniversalSurvivorUnlocks
     /// <summary>
     /// Integración curada de Spy 1.3.3 / SpyMod.
     ///
-    /// Localiza únicamente contenido visible publicado por Spy:
+    /// Localiza las habilidades publicadas por Spy y el lore propio de USU:
     /// identidad, Vista general, lore nativo, pasiva, habilidades,
     /// skin de Maestría, achievement y keywords del panel lateral.
     ///
     /// El survivor no expone un desbloqueo original propio en el audit;
-    /// USU conserva la misión legacy "Sin que me veas venir" sin
+    /// USU conserva el comportamiento original de la misión "Sin que me veas venir" sin
     /// modificarla desde esta Definition.
     ///
     /// Spy pasa Agile, Espionage, Opportunist y Backstab a
@@ -39,69 +39,33 @@ namespace UniversalSurvivorUnlocks
             get { return "Spy"; }
         }
 
-        private const string SpyAgileKeywordEnglish =
-            "<style=cKeywordName>Agile</style><style=cSub>The skill can be used while sprinting.</style>";
+        private const string SpyAgileKeywordEnglish = SpyLocalization.SpyAgileKeywordEnglish;
 
-        private const string SpyEspionageKeywordEnglish =
-            "<style=cKeywordName>Espionage</style><style=cSub>Your next shot has <style=cIsDamage>100% Crit Chance</style>. " +
-            "Rolling a <style=cIsDamage>Critical Strike</style> with <color=#62746f>Espionage</color> stacks increases " +
-            "<style=cIsDamage>damage by 2x</style> instead. <style=cIsHealth>Backstabs</style> will always grant " +
-            "<color=#62746f>Espionage</color> stacks on champion enemies.</style>";
+        private const string SpyEspionageKeywordEnglish = SpyLocalization.SpyEspionageKeywordEnglish;
 
         // Valor por defecto publicado por Spy 1.3.3. Si el jugador modifica
         // esta opción, el texto de la habilidad principal sigue traducido;
         // esta cadena sólo corresponde al tooltip lateral generado por el mod.
-        private const string SpyOpportunistKeywordEnglish =
-            "<style=cKeywordName>Opportunist</style><style=cSub>Your <style=cIsHealth>HP</style> and " +
-            "<style=cIsHealing>health regneration</style> are <style=cDeath>permanently reduced by 25%</style>. " +
-            "<style=cIsHealth>Backstabs</style> that don't kill champion enemies grant " +
-            "<style=cIsUtility>movement speed</style> and <style=cIsHealing>barrier</style>. </style>";
+        private const string SpyOpportunistKeywordEnglish = SpyLocalization.SpyOpportunistKeywordEnglish;
 
-        private const string SpyBackstabKeywordEnglish =
-            "<style=cKeywordName>Backstab</style><style=cSub>Deals <style=cIsDamage>2x damage</style> against champion enemies " +
-            "and <style=cIsHealth>30% HP</style> or more to elites.</style>";
+        private const string SpyBackstabKeywordEnglish = SpyLocalization.SpyBackstabKeywordEnglish;
 
-        private const string SpyAgileKeywordSpanish =
-            "<style=cKeywordName>Ágil</style><style=cSub>La habilidad puede usarse mientras corres.</style>";
+        private const string SpyAgileKeywordSpanish = SpyLocalization.SpyAgileKeywordSpanish;
 
-        private const string SpyEspionageKeywordSpanish =
-            "<style=cKeywordName>Espionaje</style><style=cSub>Tu siguiente disparo tiene un " +
-            "<style=cIsDamage>100% de probabilidad de crítico</style>. Obtener un " +
-            "<style=cIsDamage>golpe crítico</style> con acumulaciones de <color=#62746f>Espionaje</color> " +
-            "aumenta el <style=cIsDamage>daño a 2x</style> en su lugar. Las " +
-            "<style=cIsHealth>puñaladas por la espalda</style> siempre otorgan acumulaciones de " +
-            "<color=#62746f>Espionaje</color> contra enemigos campeones.</style>";
+        private const string SpyEspionageKeywordSpanish = SpyLocalization.SpyEspionageKeywordSpanish;
 
-        private const string SpyOpportunistKeywordSpanish =
-            "<style=cKeywordName>Oportunista</style><style=cSub>Tu <style=cIsHealth>salud</style> y tu " +
-            "<style=cIsHealing>regeneración de salud</style> se reducen " +
-            "<style=cDeath>permanentemente un 25%</style>. Las <style=cIsHealth>puñaladas por la espalda</style> " +
-            "que no maten a enemigos campeones otorgan <style=cIsUtility>velocidad de movimiento</style> y " +
-            "<style=cIsHealing>barrera</style>.</style>";
+        private const string SpyOpportunistKeywordSpanish = SpyLocalization.SpyOpportunistKeywordSpanish;
 
-        private const string SpyBackstabKeywordSpanish =
-            "<style=cKeywordName>Puñalada por la espalda</style><style=cSub>Inflige " +
-            "<style=cIsDamage>2x de daño</style> contra enemigos campeones y al menos un " +
-            "<style=cIsHealth>30% de la salud</style> a los élites.</style>";
+        private const string SpyBackstabKeywordSpanish = SpyLocalization.SpyBackstabKeywordSpanish;
 
-        private static readonly string SpySpanishDescription =
-            "Spy es un asesino cuerpo a cuerpo frágil que destaca al eliminar con facilidad objetivos de alta prioridad." +
-            "<color=#CCD3E0>\r\n\r\n" +
-            "< ! > Acumula Espionaje con el cuchillo de Spy y desata golpes críticos con Diamondback.\r\n\r\n" +
-            "< ! > Puñalada es una habilidad devastadora capaz de matar al instante a los enemigos más débiles.\r\n\r\n" +
-            "< ! > Sabotaje puede ser una gran herramienta para colocarte a alcance de una Puñalada por la espalda mientras aturdes a los enemigos cercanos.\r\n\r\n" +
-            "< ! > Camuflaje sirve tanto para iniciar un enfrentamiento como para escapar, pero exige administrar correctamente el recurso.\r\n\r\n";
+        private static readonly string SpySpanishDescription = SpyLocalization.SpySpanishDescription;
 
-        // Traducción íntegra del lore nativo auditado de Spy.
-        private static readonly string SpySpanishLore =
-            "A medida que el rápido desarrollo de los imperios espaciales se extendía por las estrellas, también lo hacían las guerras silenciosas que ardían entre ellos. " +
-            "Las fachadas diplomáticas ocultaban la tensión, pero bajo la superficie se escondían feroces disputas políticas, alianzas que se fracturaban e ideologías que chocaban en el silencio del espacio.\r\n\r\n" +
-            "En esta era de ambición interestelar, un conflicto abierto corría el riesgo de provocar la aniquilación total. En su lugar, los líderes recurrieron a las sombras para ejecutar su voluntad. " +
-            "El espionaje se convirtió en el arma predilecta: una guerra silenciosa librada mediante flujos de datos, códigos susurrados y secretos robados. Civilizaciones enteras fueron inclinadas no por flotas ni por potencia de fuego, sino por un susurro bien colocado, un protocolo corrompido o un funcionario desaparecido.\r\n\r\n" +
-            "Los espías se convirtieron en fantasmas dentro de la maquinaria de los imperios. Maestros del engaño, la infiltración y la subversión, cruzaban fronteras sin ser detectados y penetraban en los imperios con precisión quirúrgica. " +
-            "Algunos servían a soberanos. Otros servían a ideales. Unos pocos sólo se servían a sí mismos.\r\n\r\n" +
-            "Sus victorias nunca desfilan ante el público. Sus nombres nunca se pronuncian. Sus misiones son enterradas por diseño. Y, aun así, el ascenso y la caída de naciones estelares enteras han dependido de las acciones de unos pocos agentes invisibles.\r\n\r\n" +
-            "A un buen espía nunca lo atrapan. La huella que deja en la historia no puede rastrearse, pero en el silencioso cambio del poder, en el instante en que un imperio surge o se derrumba, su mano siempre está allí, invisible... pero innegable.";
+        // Diario curado USU «The Professional's Fee» — declaración privada en primera persona, seis párrafos por idioma.
+        // Audio original TF2: Gentlemen., Right behind you., Magnificent!, You got blood on my suit.
+        // Frases originales en inglés en EN y ES-419/ES-ES; solo lore, no toca lógica de misiones.
+        private static readonly string SpySpanishLore = "[USU] Diario I — consultar progreso del superviviente.";
+
+        private static readonly string SpyEnglishLore = "[USU] Diary I — check survivor progress.";
 
         public override void RegisterInstalledLocalization(
             SurvivorInfo survivor,
@@ -115,15 +79,15 @@ namespace UniversalSurvivorUnlocks
 
             RegisterSpySpanishTokens();
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | SpyBody | " +
-                "es-419 / es-ES + vista general + lore nativo + pasiva + skills + keywords + skin + achievement"
+                "es-419 / es-ES + en + vista general + lore USU bilingüe + pasiva + skills + keywords + skin + achievement"
             );
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[SPY LOCALIZATION] Tokens registrados | identidad + skills + " +
                 "Agile/Espionage/Opportunist/Backstab literales + encabezado Passive. " +
-                "Sin que me veas venir legacy sin cambios."
+                "Sin que me veas venir: texto narrativo revisado, mecánica intacta."
             );
         }
 
@@ -152,9 +116,9 @@ namespace UniversalSurvivorUnlocks
             string fallback
         )
         {
-            return IsSpanishLanguage()
-                ? SpySpanishLore
-                : fallback ?? "";
+            if (IsSpanishLanguage()) return USUSpyBanditEncounterGate.ResolveSpyLore(true);
+            if (IsEnglishLanguage()) return USUSpyBanditEncounterGate.ResolveSpyLore(false);
+            return fallback ?? "";
         }
 
         private static void RegisterSpySpanishTokens()
@@ -165,9 +129,10 @@ namespace UniversalSurvivorUnlocks
             RegisterSpanishToken("KENKO_SPY_DESCRIPTION", SpySpanishDescription);
 
             // El audit expone LoreToken vacío, por lo que el lore se sirve
-            // mediante ResolveLore. Se registra también el token convencional
-            // por compatibilidad si una versión futura del mod lo publica.
+            // mediante ResolveLore. Registramos también el token de respaldo
+            // en es-419, es-ES y en, sin modificar la DLL del creador.
             RegisterSpanishToken("KENKO_SPY_LORE", SpySpanishLore);
+            LanguageAPI.Add("KENKO_SPY_LORE", SpyEnglishLore, "en");
 
             // Pasiva.
             RegisterSpanishToken("KENKO_SPY_PASSIVE_NAME", "Puñalada por la espalda");
@@ -289,6 +254,12 @@ namespace UniversalSurvivorUnlocks
 
             LanguageAPI.Add(token, spanish, "es-419");
             LanguageAPI.Add(token, spanish, "es-ES");
+        }
+
+        private static bool IsEnglishLanguage()
+        {
+            string language = Language.currentLanguageName ?? "";
+            return language.StartsWith("en", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsSpanishLanguage()

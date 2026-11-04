@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using RoR2;
+using UnityEngine.Networking;
 
 namespace UniversalSurvivorUnlocks
 {
@@ -76,6 +77,9 @@ namespace UniversalSurvivorUnlocks
             private set;
         }
 
+        // Distinto de la clave temporal netId. AH-64 lo guarda entre partidas.
+        public string PersistentKey { get; private set; }
+
 
         public bool HasStableId =>
             !string.IsNullOrWhiteSpace(
@@ -111,11 +115,20 @@ namespace UniversalSurvivorUnlocks
                 networkUser.userName ?? "";
 
 
-            string stableId =
-                TryResolveStableId(
-                    networkUser,
-                    out string source
-                );
+            string platformId = TryResolveStableId(networkUser, out string platformSource);
+            uint networkId = networkUser.netId.Value;
+            // NetworkUser.id.ToString() puede devolver el nombre del tipo,
+            // creando la misma clave para todos los jugadores.
+            string stableId = networkId != 0
+                ? "netuser:" + networkId.ToString()
+                : platformId;
+            string source = networkId != 0
+                ? "NetworkUser.netId"
+                : platformSource;
+            string persistentKey = !string.IsNullOrWhiteSpace(platformId)
+                ? "id:" + NormalizeKeyPart(platformId)
+                : (string.IsNullOrWhiteSpace(nickname) ? "" :
+                    "nick:" + NormalizeKeyPart(nickname));
 
 
             if (
@@ -135,6 +148,8 @@ namespace UniversalSurvivorUnlocks
 
                         IdentitySource =
                             source,
+
+                        PersistentKey = persistentKey,
 
                         Key =
                             "id:" +
@@ -169,6 +184,8 @@ namespace UniversalSurvivorUnlocks
 
                     IdentitySource =
                         "NicknameFallback",
+
+                    PersistentKey = persistentKey,
 
                     Key =
                         "nick:" +
@@ -245,19 +262,16 @@ namespace UniversalSurvivorUnlocks
             CharacterMaster master
         )
         {
-            if (
-                master == null ||
-                master
-                    .playerCharacterMasterController == null
-            )
-            {
-                return null;
-            }
+            if (master == null) return null;
 
+            NetworkUser linked = master.playerCharacterMasterController?.networkUser;
+            if (linked != null) return linked;
 
-            return master
-                .playerCharacterMasterController
-                .networkUser;
+            // Durante transiciones multiplayer, la lista de controllers
+            // puede estar incompleta mientras NetworkUser ya existe.
+            // La búsqueda alternativa no concede logros: sólo identifica
+            // el dueño real de un CharacterMaster conectado.
+            return MissionConnectedPlayerEnumerator.FindNetworkUser(master);
         }
 
 
@@ -411,14 +425,31 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            string text =
-                value.ToString();
-
-
-            return
-                text != null
-                    ? text.Trim()
-                    : "";
+            // No convertir IDs opacos a cadena: .ToString() sin override
+            // devuelve, por ejemplo, "RoR2.NetworkUserId" para TODOS.
+            Type valueType = value.GetType();
+            if (!(value is string) && !valueType.IsPrimitive &&
+                !(value is decimal) && !(value is Guid))
+            {
+                const BindingFlags flags = BindingFlags.Instance |
+                    BindingFlags.Public | BindingFlags.NonPublic;
+                foreach (string name in new[] { "value", "Value" })
+                {
+                    try
+                    {
+                        FieldInfo field = valueType.GetField(name, flags);
+                        if (field != null && field.FieldType != valueType)
+                            return ConvertIdentityValueToString(field.GetValue(value));
+                        PropertyInfo prop = valueType.GetProperty(name, flags);
+                        if (prop != null && prop.PropertyType != valueType &&
+                            prop.GetIndexParameters().Length == 0)
+                            return ConvertIdentityValueToString(prop.GetValue(value, null));
+                    }
+                    catch { }
+                }
+                return "";
+            }
+            return (value.ToString() ?? "").Trim();
         }
 
 
@@ -439,7 +470,8 @@ namespace UniversalSurvivorUnlocks
             if (
                 value == "0" ||
                 value == "null" ||
-                value == "None"
+                value == "None" ||
+                value.StartsWith("RoR2.", StringComparison.OrdinalIgnoreCase)
             )
             {
                 return false;
@@ -494,7 +526,8 @@ namespace UniversalSurvivorUnlocks
                     Nickname,
 
                 IdentitySource =
-                    IdentitySource
+                    IdentitySource,
+                PersistentKey = PersistentKey
             };
         }
     }

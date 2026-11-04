@@ -100,7 +100,8 @@ namespace UniversalSurvivorUnlocks
             PlayerKillCounts.Clear();
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[KillEnemies] Nueva run | " +
                 "Contadores reiniciados."
             );
@@ -258,6 +259,7 @@ namespace UniversalSurvivorUnlocks
 
 
             if (
+                UsuLog.DiagnosticEnabled &&
                 MissionLogLimiter.ShouldLogMilestone(
                     "legacy-kills:" + playerMaster.GetInstanceID(),
                     currentCount,
@@ -265,7 +267,8 @@ namespace UniversalSurvivorUnlocks
                 )
             )
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(
+                    logger,
                     "[KillEnemies] PROGRESO | " +
                     $"Jugador: {GetPlayerName(playerMaster)} | " +
                     $"Contador: {currentCount}"

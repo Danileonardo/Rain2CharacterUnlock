@@ -18,69 +18,10 @@ namespace UniversalSurvivorUnlocks
         public override string BodyName { get { return "KindredBody"; } }
         public override string DefinitionName { get { return "Kindred"; } }
 
-        private static readonly string SpanishDescription =
-            "Kindred combina la precisión de Cordero con la persecución incansable de Lobo. Marca presas y aprovecha sus habilidades para sobrevivir a la cacería.<style=cSub>\n\n" +
-            "< ! > La Marca de Kindred recompensa la eliminación de presas designadas.\n\n" +
-            "< ! > Alterna Danza de flechas con la presión de Lobo sobre enemigos cercanos.\n\n" +
-            "< ! > Tregua de Cordero permite retrasar la muerte en un área durante un breve período.";
-        private static readonly string EnglishDescription =
-            "Kindred embodies two inseparable aspects of death. Lamb offers a swift end to those who accept their fate, while Wolf hunts those who try to escape.";
-        private static readonly string SpanishLore =
-            "Transcripción parcial recuperada de una baliza de emergencia. Se desconoce quién realizó la grabación.\n" +
-            "\n" +
-            "—Corren muy deprisa —dijo una voz suave.\n" +
-            "\n" +
-            "—No lo bastante —contestó otra, grave y hambrienta.\n" +
-            "\n" +
-            "La señal apareció justo después de que un grupo de exploradores abandonara un campamento. No había rastros de pasos, aunque los sensores registraron dos siluetas superpuestas entre los árboles: una figura blanca que aguardaba inmóvil y otra oscura que no dejaba de moverse.\n" +
-            "\n" +
-            "—Aquí vuelven una y otra vez —dijo la primera voz—. Abren caminos, regresan de heridas imposibles y creen que cada victoria les concede un día más.\n" +
-            "\n" +
-            "—Entonces tendré mucho que perseguir.\n" +
-            "\n" +
-            "—A veces se detienen por los demás.\n" +
-            "\n" +
-            "—A veces los demás los dejan atrás.\n" +
-            "\n" +
-            "Se oyó tensarse una cuerda.\n" +
-            "\n" +
-            "La segunda voz soltó una carcajada, tan cerca del micrófono que hizo vibrar la grabación.\n" +
-            "\n" +
-            "—¿Cuál de ellos es nuestro?\n" +
-            "\n" +
-            "—Todos, algún día.\n" +
-            "\n" +
-            "La baliza dejó de transmitir antes de que comenzara el ataque. Cuando el equipo de rescate llegó, no encontró cuerpos ni señales de lucha: solamente una flecha clavada en la tierra y marcas de garras que desaparecían al borde del bosque.\n" +
-            "\n" +
-            "La grabación termina con un susurro imposible de atribuir a cualquiera de las dos voces: «Elige».";
-        private static readonly string EnglishLore =
-            "Partial transcript recovered from an emergency beacon. The recorder is unknown.\n" +
-            "\n" +
-            "“They run so quickly,” said a gentle voice.\n" +
-            "\n" +
-            "“Not quickly enough,” answered another, deep and hungry.\n" +
-            "\n" +
-            "The signal appeared shortly after a group of explorers abandoned a camp. There were no footprints, though sensors registered two overlapping shapes among the trees: a white figure standing still and a dark one that would not stop moving.\n" +
-            "\n" +
-            "“They return here again and again,” said the first voice. “They open paths, recover from impossible wounds, and believe every victory grants them one more day.”\n" +
-            "\n" +
-            "“Then I shall have plenty to chase.”\n" +
-            "\n" +
-            "“Sometimes they stop for one another.”\n" +
-            "\n" +
-            "“Sometimes they leave one another behind.”\n" +
-            "\n" +
-            "A bowstring tightened.\n" +
-            "\n" +
-            "The second voice laughed, so close to the microphone that the recording crackled.\n" +
-            "\n" +
-            "“Which one belongs to us?”\n" +
-            "\n" +
-            "“All of them, someday.”\n" +
-            "\n" +
-            "The beacon stopped transmitting before any attack began. When the rescue team arrived, they found no bodies and no signs of struggle: only an arrow buried in the earth and claw marks fading at the forest's edge.\n" +
-            "\n" +
-            "The recording ends with a whisper that cannot be attributed to either voice: “Choose.”";
+        private static readonly string SpanishDescription = KindredLocalization.SpanishDescription;
+        private static readonly string EnglishDescription = KindredLocalization.EnglishDescription;
+        private static readonly string SpanishLore = LoreDialogueLineFormatter.Format(KindredLore.SpanishLore);
+        private static readonly string EnglishLore = LoreDialogueLineFormatter.Format(KindredLore.EnglishLore);
 
         public override void RegisterInstalledLocalization(SurvivorInfo survivor, ManualLogSource logger)
         {
@@ -147,7 +88,7 @@ namespace UniversalSurvivorUnlocks
                 AddNative(token, SpanishLore, "es-ES");
                 AddNative(token, EnglishLore, "en");
             }
-            logger?.LogInfo("[KINDRED NATIVE] Tokens de ficha: " +
+            UsuLog.Verbose(logger, "[KINDRED NATIVE] Tokens de ficha: " +
                 descriptionToken + " | " + subtitleToken +
                 " | lore: " + string.Join(",", loreTokens));
         }

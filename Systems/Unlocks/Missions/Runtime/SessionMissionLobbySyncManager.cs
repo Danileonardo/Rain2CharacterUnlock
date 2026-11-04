@@ -114,7 +114,7 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
-                logger?.LogInfo(
+                UsuLog.Diagnostic(logger, 
                     "[MISSION LOBBY] Cliente solicitó snapshot al host."
                 );
             }
@@ -137,7 +137,7 @@ namespace UniversalSurvivorUnlocks
 
             if (Run.instance != null)
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(logger, 
                     "[MISSION LOBBY] Petición de cliente ignorada: " +
                     "la run ya comenzó."
                 );
@@ -146,7 +146,7 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 "[MISSION LOBBY] Petición de snapshot recibida desde cliente."
             );
 
@@ -235,7 +235,7 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
-                logger?.LogInfo(
+                UsuLog.Diagnostic(logger, 
                     $"[MISSION UI] Iconos de selección refrescados | " +
                     $"Cantidad: {refreshed}"
                 );

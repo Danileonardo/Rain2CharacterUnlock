@@ -16,7 +16,9 @@ namespace UniversalSurvivorUnlocks
     /// </summary>
     public static class MissionAuthorityIntegrityValidator
     {
-        private const int ExpectedOfficialCount = 17;
+        // 23 descriptores estáticos (20 previos + 3 nuevos). CWT se añade sólo
+        // cuando su mod está detectado: no declarar un total fijo incorrecto.
+        private const int ExpectedOfficialCount = 23;
         private const int ExpectedLegacyCount = 12;
 
         public static bool Validate(
@@ -31,25 +33,27 @@ namespace UniversalSurvivorUnlocks
             }
 
             bool valid = true;
+            int expectedOfficialCount = ExpectedOfficialCount +
+                (CWTCampaignIdentity.Detected ? 1 : 0);
 
             List<OfficialMissionPresetDescriptor> descriptors =
                 OfficialMissionPresetRegistry.GetAll();
 
-            if (descriptors.Count != ExpectedOfficialCount)
+            if (descriptors.Count != expectedOfficialCount)
             {
                 valid = false;
                 logger.LogWarning(
                     "[MISSION AUTHORITY] Cantidad oficial inesperada | " +
-                    $"Esperada: {ExpectedOfficialCount} | Registry: {descriptors.Count}"
+                    $"Esperada: {expectedOfficialCount} | Registry: {descriptors.Count}"
                 );
             }
 
-            if (official == null || official.Count != ExpectedOfficialCount)
+            if (official == null || official.Count != expectedOfficialCount)
             {
                 valid = false;
                 logger.LogWarning(
                     "[MISSION AUTHORITY] Biblioteca oficial incompleta | " +
-                    $"Esperada: {ExpectedOfficialCount} | Visible: {official?.Count ?? 0}"
+                    $"Esperada: {expectedOfficialCount} | Visible: {official?.Count ?? 0}"
                 );
             }
 
@@ -230,7 +234,7 @@ namespace UniversalSurvivorUnlocks
             {
                 logger.LogInfo(
                     "[MISSION AUTHORITY] Integridad final OK | " +
-                    $"Oficiales: {ExpectedOfficialCount} | " +
+                    $"Oficiales: {expectedOfficialCount} | " +
                     $"Legacy: {ExpectedLegacyCount} | " +
                     "Original ↔ USU directo: Miner, Warlock"
                 );

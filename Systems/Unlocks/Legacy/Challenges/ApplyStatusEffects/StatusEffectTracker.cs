@@ -943,6 +943,7 @@ namespace UniversalSurvivorUnlocks
             // =====================================================
 
             if (
+                UsuLog.DiagnosticEnabled &&
                 MissionLogLimiter.ShouldLogMilestone(
                     "legacy-status-effects",
                     CurrentTotalCount,
@@ -950,7 +951,8 @@ namespace UniversalSurvivorUnlocks
                 )
             )
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(
+                    logger,
                     $"ESTADOS ACTIVOS | " +
                     $"Negativos: {CurrentNegativeCount} | " +
                     $"Positivos: {CurrentPositiveCount} | " +

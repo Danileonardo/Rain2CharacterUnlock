@@ -4,6 +4,7 @@ using R2API.Networking;
 using R2API.Networking.Interfaces;
 
 using RoR2;
+using UnityEngine;
 
 using UnityEngine.Networking;
 
@@ -20,6 +21,12 @@ namespace UniversalSurvivorUnlocks
         : INetMessage
     {
         public string BodyName;
+        // null = difusión cooperativa antigua (sin cambio).
+        public GameObject RecipientNetworkUserObject;
+        public bool IsIndividual;
+        public string RecipientIdentityKey;
+        // Solo se usa para notificación local de HUNK. El host valida la ruta.
+        public string HunkMedalOutcome;
 
 
         public SessionUnlockGrantMessage()
@@ -35,6 +42,32 @@ namespace UniversalSurvivorUnlocks
                 bodyName;
         }
 
+        public SessionUnlockGrantMessage(string bodyName, string hunkMedalOutcome)
+        {
+            BodyName = bodyName;
+            HunkMedalOutcome = hunkMedalOutcome;
+        }
+
+        public SessionUnlockGrantMessage(string bodyName, GameObject recipient)
+        {
+            BodyName = bodyName;
+            RecipientNetworkUserObject = recipient;
+            IsIndividual = true;
+            NetworkUser user = recipient == null ? null : recipient.GetComponent<NetworkUser>();
+            MissionPlayerIdentity identity;
+            if (MissionPlayerIdentity.TryCreate(user, out identity))
+                RecipientIdentityKey = identity.Key;
+        }
+
+
+        // Permite conservar las medallas de HUNK incluso cuando la entrega
+        // es selectiva por jugador (Mixed) y no un broadcast de sesión.
+        public SessionUnlockGrantMessage(
+            string bodyName, GameObject recipient, string hunkMedalOutcome)
+            : this(bodyName, recipient)
+        {
+            HunkMedalOutcome = hunkMedalOutcome;
+        }
 
         public void Serialize(
             NetworkWriter writer
@@ -44,6 +77,10 @@ namespace UniversalSurvivorUnlocks
                 BodyName ??
                 string.Empty
             );
+            writer.Write(IsIndividual);
+            writer.Write(RecipientNetworkUserObject);
+            writer.Write(RecipientIdentityKey ?? string.Empty);
+            writer.Write(HunkMedalOutcome ?? string.Empty);
         }
 
 
@@ -53,6 +90,10 @@ namespace UniversalSurvivorUnlocks
         {
             BodyName =
                 reader.ReadString();
+            IsIndividual = reader.ReadBoolean();
+            RecipientNetworkUserObject = reader.ReadGameObject();
+            RecipientIdentityKey = reader.ReadString();
+            HunkMedalOutcome = reader.ReadString();
         }
 
 
@@ -71,10 +112,20 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            if (IsIndividual && RecipientNetworkUserObject == null &&
+                string.IsNullOrWhiteSpace(RecipientIdentityKey))
+            {
+                // Nunca degradar una recompensa personal a broadcast.
+                return;
+            }
+
             List<SessionUnlockGrantResult> results =
                 SessionUnlockManager
                     .GrantLocally(
-                        BodyName
+                        BodyName,
+                        RecipientNetworkUserObject,
+                        HunkMedalOutcome,
+                        IsIndividual ? RecipientIdentityKey : null
                     );
 
 

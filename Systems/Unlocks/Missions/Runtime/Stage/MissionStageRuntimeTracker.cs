@@ -257,7 +257,7 @@ namespace UniversalSurvivorUnlocks
                 );
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 "[MISSION STAGE] START | " +
                 $"Stage: {currentStageName} | " +
                 $"SceneHandle: {currentSceneHandle} | " +
@@ -346,7 +346,7 @@ namespace UniversalSurvivorUnlocks
                 );
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 "[MISSION STAGE] COMPLETE | " +
                 $"Stage: {currentStageName} | " +
                 $"SceneHandle: {currentSceneHandle} | " +

@@ -787,7 +787,8 @@ namespace UniversalSurvivorUnlocks
                 check;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[HUNK] Bandit cliente | " +
                 "Lights Out disparado | " +
                 $"Stock después del disparo: " +
@@ -973,7 +974,8 @@ namespace UniversalSurvivorUnlocks
                     : -1;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[HUNK] Bandit cliente | " +
                 $"Resultado local: {success} | " +
                 $"Stock inicial: {check.StockAfterShot} | " +
@@ -1052,7 +1054,8 @@ namespace UniversalSurvivorUnlocks
                     TrackedShotType.RailgunnerM99
                 )
                 {
-                    logger?.LogInfo(
+                    UsuLog.Verbose(
+                        logger,
                         "[HUNK] Railgunner cliente | " +
                         $"Weak Point enviado al servidor: " +
                         $"{context.Success}"
@@ -1289,7 +1292,8 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[HUNK] Railgunner remoto | " +
                 $"Weak Point recibido: {success}"
             );
@@ -1384,7 +1388,8 @@ namespace UniversalSurvivorUnlocks
             }
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[HUNK] Bandit remoto | " +
                 "Resultado recibido por servidor | " +
                 $"Baja: {success}"
@@ -1510,7 +1515,8 @@ namespace UniversalSurvivorUnlocks
                 streak;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[HUNK] Railgunner M99 | " +
                 $"Weak Point: {context.Success} | " +
                 $"Racha: {streak}"
@@ -1570,7 +1576,8 @@ namespace UniversalSurvivorUnlocks
                 streak;
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[HUNK] Bandit Lights Out | " +
                 $"Baja: {context.Success} | " +
                 $"Racha: {streak}"

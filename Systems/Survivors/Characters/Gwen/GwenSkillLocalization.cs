@@ -133,7 +133,7 @@ namespace UniversalSurvivorUnlocks
                     string original = (Language.GetString(token) ?? "").Replace('’', '\u0027').Trim();
                     if (!Names.TryGetValue(original, out string spanish))
                     {
-                        logger?.LogInfo("[GWEN AUDIT] Skill sin coincidencia | " + token + " | " + original);
+                        UsuLog.Verbose(logger, "[GWEN AUDIT] Skill sin coincidencia | " + token + " | " + original);
                         continue;
                     }
                     AddSpanish(token, spanish);
@@ -153,11 +153,11 @@ namespace UniversalSurvivorUnlocks
                                     "no se sobrescribe el texto original: " + skill.skillDescriptionToken);
                         }
                         else
-                            logger?.LogInfo("[GWEN AUDIT] Descripción no curada | " +
+                            UsuLog.Verbose(logger, "[GWEN AUDIT] Descripción no curada | " +
                                 skill.skillDescriptionToken + " | EN=" + englishDescription);
                     }
                 }
-                logger?.LogInfo("[Gwen LOCALIZATION] ES: " + translatedNames +
+                UsuLog.Verbose(logger, "[Gwen LOCALIZATION] ES: " + translatedNames +
                     " nombres, " + translatedDescriptions + " descripciones completas verificadas contra estadísticas.");
             }
             catch (Exception ex)
@@ -178,7 +178,7 @@ namespace UniversalSurvivorUnlocks
                 AddSpanish(descriptionToken, SpanishPassive);
             else
                 logger?.LogWarning("[GWEN LOCALIZATION] Pasiva cambió; conservar original: " + original);
-            logger?.LogInfo("[GWEN LOCALIZATION] Pasiva detectada | " + nameToken + " / " + descriptionToken);
+            UsuLog.Verbose(logger, "[GWEN LOCALIZATION] Pasiva detectada | " + nameToken + " / " + descriptionToken);
         }
 
         private static void AddSpanish(string token, string translation)
@@ -227,7 +227,7 @@ namespace UniversalSurvivorUnlocks
                 string original = Language.GetString(skin.nameToken) ?? "";
                 if (!TryTranslateSkin(original, out string localized))
                 {
-                    logger?.LogInfo("[GWEN AUDIT] Skin sin traducción | " + skin.nameToken + " | " + original);
+                    UsuLog.Verbose(logger, "[GWEN AUDIT] Skin sin traducción | " + skin.nameToken + " | " + original);
                     continue;
                 }
                 // Evitamos tokens literales compartidos por otros survivors.
@@ -235,7 +235,7 @@ namespace UniversalSurvivorUnlocks
                 AddSpanish(skin.nameToken, localized);
                 translated++;
             }
-            logger?.LogInfo("[GWEN SKINS] Encontrados: " + skins.Count + "; traducidos: " + translated);
+            UsuLog.Verbose(logger, "[GWEN SKINS] Encontrados: " + skins.Count + "; traducidos: " + translated);
         }
 
         private static bool TryTranslateSkin(string name, out string spanish)

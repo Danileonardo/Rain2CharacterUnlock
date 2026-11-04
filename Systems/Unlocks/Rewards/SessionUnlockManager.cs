@@ -38,6 +38,12 @@ namespace UniversalSurvivorUnlocks
          * Evita repetir el mensaje de chat si una confirmación
          * llega más de una vez.
          */
+        // Destinatarios de cualquier misión Individual (validada por el host).
+        private static readonly HashSet<string> IndividualGrantKeysThisRun =
+            new HashSet<string>(StringComparer.Ordinal);
+        private static readonly HashSet<string> IndividualBodiesThisRun =
+            new HashSet<string>(StringComparer.Ordinal);
+
         private static readonly HashSet<string>
             AnnouncedAchievementsThisRun =
                 new HashSet<string>(
@@ -87,6 +93,8 @@ namespace UniversalSurvivorUnlocks
         )
         {
             CompletedBodiesThisRun.Clear();
+            IndividualGrantKeysThisRun.Clear();
+            IndividualBodiesThisRun.Clear();
             AnnouncedAchievementsThisRun.Clear();
         }
 
@@ -96,6 +104,8 @@ namespace UniversalSurvivorUnlocks
         )
         {
             CompletedBodiesThisRun.Clear();
+            IndividualGrantKeysThisRun.Clear();
+            IndividualBodiesThisRun.Clear();
             AnnouncedAchievementsThisRun.Clear();
         }
 
@@ -188,7 +198,8 @@ namespace UniversalSurvivorUnlocks
 
             if (achievementDef.lunarCoinReward != effectiveReward)
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(
+                    logger,
                     "[SESSION UNLOCK] Recompensa lunar sincronizada | " +
                     $"Body: {bodyName} | Antes: " +
                     $"{achievementDef.lunarCoinReward} | " +
@@ -214,7 +225,8 @@ namespace UniversalSurvivorUnlocks
         // =========================================================
 
         public static void CompleteMission(
-            string bodyName
+            string bodyName,
+            string completedRouteId = null
         )
         {
             if (
@@ -276,13 +288,20 @@ namespace UniversalSurvivorUnlocks
             }
 
 
+            // Solo HUNK: el host transmite la ruta completada.
+            // Nunca modifica AchievementDef ni concede otra recompensa.
+            string hunkMedalOutcome = HunkMissionMedalReporter.ResolveOutcome(
+                bodyName, completedRouteId);
+
             // -----------------------------------------------------
             // HOST / JUGADORES LOCALES
             // -----------------------------------------------------
 
             List<SessionUnlockGrantResult> localResults =
                 GrantLocally(
-                    bodyName
+                    bodyName,
+                    null,
+                    hunkMedalOutcome
                 );
 
 
@@ -314,7 +333,8 @@ namespace UniversalSurvivorUnlocks
             // -----------------------------------------------------
 
             new SessionUnlockGrantMessage(
-                bodyName
+                bodyName,
+                hunkMedalOutcome
             )
             .Send(
                 NetworkDestination.Clients
@@ -332,9 +352,81 @@ namespace UniversalSurvivorUnlocks
         //
         // =========================================================
 
+        /// <summary>
+        /// Desbloqueo por jugador para cualquier misión RewardScope=Individual.
+        /// El servidor recibe un NetworkUser autenticado por el evaluador;
+        /// los clientes nunca pueden solicitar un desbloqueo arbitrario.
+        /// </summary>
+        // Debe ser IDENTICO en la solicitud del HOST y el ACK del cliente.
+        // GameObject.GetInstanceID() no equivale a MissionPlayerIdentity.Key.
+        private static string IndividualRecipientKey(NetworkUser user, string bodyName)
+        {
+            MissionPlayerIdentity identity;
+            string userKey = MissionPlayerIdentity.TryCreate(user, out identity) &&
+                !string.IsNullOrWhiteSpace(identity.Key)
+                ? identity.Key
+                : "netobj:" + (user?.gameObject != null
+                    ? user.gameObject.GetInstanceID().ToString() : "missing");
+            return userKey + "|" + (bodyName ?? "");
+        }
+
+        public static void CompleteMissionForPlayer(
+            string bodyName,
+            NetworkUser recipient,
+            string completedRouteId = null)
+        {
+            if (!NetworkServer.active || recipient == null ||
+                recipient.gameObject == null || string.IsNullOrWhiteSpace(bodyName))
+            {
+                return;
+            }
+
+            if (!SurvivorUnlockManager.TryGetCustomUnlockable(
+                bodyName, out UnlockableDef unlockable) || unlockable == null)
+            {
+                logger?.LogWarning("[MISSION INDIVIDUAL] No existe Unlockable para entrega individual.");
+                return;
+            }
+
+            string key = IndividualRecipientKey(recipient, bodyName);
+            string playerKey = key.Substring(0, key.Length - bodyName.Length - 1);
+            if (!IndividualGrantKeysThisRun.Add(key))
+            {
+                UsuLog.Diagnostic(logger, "[MISSION CREDIT AUDIT] Entrega duplicada evitada | " +
+                    "Body: " + bodyName + " | User: " + recipient.userName +
+                    " | Identity: " + playerKey);
+                return;
+            }
+
+            CompletedBodiesThisRun.Add(bodyName);
+            IndividualBodiesThisRun.Add(bodyName);
+            logger?.LogInfo("[MISSION INDIVIDUAL] Completada | Body: " + bodyName +
+                " | Jugador: " + recipient.userName + " | Identidad: " + key);
+
+            // La entrega selectiva Mixta debe preservar la medalla HUNK:
+            // la ruta de Luna y la de Obelisco tienen textos distintos.
+            string hunkMedalOutcome = HunkMissionMedalReporter.ResolveOutcome(
+                bodyName, completedRouteId);
+            foreach (SessionUnlockGrantResult result in
+                GrantLocally(bodyName, recipient.gameObject, hunkMedalOutcome))
+            {
+                HandleGrantResult(
+                    result.LocalUser?.currentNetworkUser,
+                    result.BodyName, result.AchievementBefore,
+                    result.UnlockableBefore, result.AchievementAfter,
+                    result.UnlockableAfter, "HOST INDIVIDUAL");
+            }
+
+            new SessionUnlockGrantMessage(bodyName, recipient.gameObject,
+                hunkMedalOutcome).Send(NetworkDestination.Clients);
+        }
+
         public static List<SessionUnlockGrantResult>
             GrantLocally(
-                string bodyName
+                string bodyName,
+                GameObject recipientNetworkUserObject = null,
+                string hunkMedalOutcome = null,
+                string recipientIdentityKey = null
             )
         {
             List<SessionUnlockGrantResult> results =
@@ -403,12 +495,32 @@ namespace UniversalSurvivorUnlocks
             );
 
 
+            // La medalla solo corresponde a un logro NUEVO en este cliente.
+            // Los perfiles ya desbloqueados no deben volver a verla.
+            bool showNewHunkMedal = false;
+
+            int matchedLocalProfiles = 0;
             foreach (
                 LocalUser localUser
                 in LocalUserManager
                     .readOnlyLocalUsersList
             )
             {
+                // Recompensa filtrada por NetworkUser para evitar que la
+                // misión individual desbloquee a otros perfiles locales.
+                if (recipientNetworkUserObject != null ||
+                    !string.IsNullOrWhiteSpace(recipientIdentityKey))
+                {
+                    NetworkUser current = localUser?.currentNetworkUser;
+                    bool matchesObject = recipientNetworkUserObject != null &&
+                        current?.gameObject == recipientNetworkUserObject;
+                    MissionPlayerIdentity candidate;
+                    bool matchesIdentity = !string.IsNullOrWhiteSpace(recipientIdentityKey) &&
+                        MissionPlayerIdentity.TryCreate(current, out candidate) &&
+                        string.Equals(candidate.Key, recipientIdentityKey, StringComparison.Ordinal);
+                    if (!matchesObject && !matchesIdentity) continue;
+                }
+
                 UserProfile profile =
                     localUser?.userProfile;
 
@@ -418,6 +530,7 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
+                matchedLocalProfiles++;
 
                 bool achievementBefore =
                     profile.HasAchievement(
@@ -444,7 +557,8 @@ namespace UniversalSurvivorUnlocks
 
                 if (!wasAlreadyUnlocked)
                 {
-                    logger?.LogInfo(
+                    UsuLog.Diagnostic(
+                        logger,
                         "[SESSION UNLOCK LOCAL] ANTES | " +
                         $"Body: {bodyName} | " +
                         $"Achievement: {achievementBefore} | " +
@@ -568,6 +682,19 @@ namespace UniversalSurvivorUnlocks
                 }
 
 
+                // Mostrar el desenlace SOLO a un receptor que realmente haya
+                // desbloqueado HUNK por primera vez con esta misión.
+                if (!wasAlreadyUnlocked && !achievementBefore &&
+                    achievementAfter && unlockableAfter)
+                {
+                    // Guardar solo el desenlace que otorgó HUNK por primera
+                    // vez a ESTE UserProfile. Si logra la otra ruta después,
+                    // ni el diario ni este dato vuelven a cambiar.
+                    if (string.Equals(bodyName, "RobHunkBody", StringComparison.Ordinal))
+                        HunkLoreRouteStore.RecordFirstUnlock(profile, hunkMedalOutcome);
+                    showNewHunkMedal = true;
+                }
+
                 results.Add(
                     new SessionUnlockGrantResult(
                         bodyName,
@@ -580,6 +707,23 @@ namespace UniversalSurvivorUnlocks
                 );
             }
 
+            // El componente UI se crea únicamente en el cliente que recibió
+            // un desbloqueo real. El host dedicado nunca muestra medallas.
+            if (showNewHunkMedal)
+            {
+                HunkMissionMedalReporter.ShowIfApplicable(
+                    bodyName, hunkMedalOutcome, logger);
+            }
+
+            if (matchedLocalProfiles == 0 &&
+                (recipientNetworkUserObject != null ||
+                 !string.IsNullOrWhiteSpace(recipientIdentityKey)))
+            {
+                logger?.LogWarning("[MISSION CREDIT AUDIT] Destinatario no localizado en " +
+                    "perfiles locales | Body: " + bodyName +
+                    " | Identity: " + (recipientIdentityKey ?? "") +
+                    " | NetworkObject: " + (recipientNetworkUserObject != null));
+            }
 
             return results;
         }
@@ -656,6 +800,19 @@ namespace UniversalSurvivorUnlocks
                 return;
             }
 
+
+            // Rechazar ACK para cualquier jugador distinto de los
+            // destinatarios autorizados por el servidor en esta run.
+            if (IndividualBodiesThisRun.Contains(bodyName))
+            {
+                string recipientKey = IndividualRecipientKey(networkUser, bodyName);
+                if (!IndividualGrantKeysThisRun.Contains(recipientKey))
+                {
+                    logger?.LogWarning("[MISSION INDIVIDUAL] ACK no autorizado | " +
+                        "Jugador: " + networkUser.userName + " | Clave: " + recipientKey);
+                    return;
+                }
+            }
 
             HandleGrantResult(
                 networkUser,
@@ -746,7 +903,8 @@ namespace UniversalSurvivorUnlocks
             {
                 if (unlockableWasNew)
                 {
-                    logger?.LogInfo(
+                    UsuLog.Diagnostic(
+                        logger,
                         "[SESSION UNLOCK HOST] Unlockable reparado sin " +
                         "nuevo achievement; no se anuncia en chat | " +
                         $"Jugador: {playerName} | " +
@@ -779,7 +937,8 @@ namespace UniversalSurvivorUnlocks
                 )
             )
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(
+                    logger,
                     "[SESSION UNLOCK HOST] Anuncio duplicado ignorado | " +
                     $"Jugador: {playerName} | " +
                     $"Body: {bodyName}"

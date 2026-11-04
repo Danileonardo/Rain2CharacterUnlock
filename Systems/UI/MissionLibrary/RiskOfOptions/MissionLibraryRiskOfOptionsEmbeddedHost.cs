@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 using BepInEx.Logging;
@@ -320,6 +320,7 @@ namespace UniversalSurvivorUnlocks
             }
 
             RefreshAH64CampaignBarsIfVisible();
+            RefreshCWTCampaignBarsIfVisible();
         }
 
 

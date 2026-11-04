@@ -36,35 +36,10 @@ namespace UniversalSurvivorUnlocks
             get { return "Rocket"; }
         }
 
-        private static readonly string RocketSpanishDescription =
-            "Rocket es un experto en explosivos extremadamente móvil que inflige un daño de área devastador." +
-            "<style=cSub>\r\n\r\n" +
-            "< ! > Usa saltos explosivos con frecuencia para recorrer el mapa rápidamente y escapar del peligro.\r\n\r\n" +
-            "< ! > Tu Lanzacohetes HG4 tiene un gran retroceso contra los enemigos. Úsalo para arrojarlos por los bordes.\r\n\r\n" +
-            "< ! > Detonador remoto es útil para golpear enemigos voladores y también puede usarse para moverte.\r\n\r\n" +
-            "< ! > Carga de nitro es excelente tanto para daño de área como para movilidad.\r\n\r\n" +
-            "< ! > Rearme rápido puede usarse para saltarte el largo tiempo de recarga de tu lanzacohetes.";
+        private static object RocketEnglishLoreOverlay;
 
-        // Traducción íntegra del lore nativo publicado por RocketSurvivor.
-        private static readonly string RocketSpanishLore =
-            "Registro - Día 432\n\n" +
-            "¿Sabes qué es mejor que un lanzacohetes? NADA.\n\n" +
-            "Llevo más de un año volando por los aires alienígenas, rocas y Dios sabe qué más por este " +
-            "planeta olvidado, y déjame decirte algo: no hay problema que una explosión bien sincronizada " +
-            "no pueda arreglar. ¿Se te viene encima un enjambre de bichos? BOOM. ¿Necesitas cruzar un hueco? " +
-            "BAM. Diablos, hasta he hecho explotar la cena un par de veces. La carne carbonizada sabe mejor " +
-            "cuando está crujiente, ¿vale?\n\n" +
-            "Me mandaron aquí por mi \"comportamiento imprudente\". A ver, ¿de verdad es imprudencia si da " +
-            "resultados? Sí, puede que haya arrasado un par de bases por accidente. ¿Quién no? Intenta mantener " +
-            "tranquilo el dedo del gatillo cuando cargas con 60 libras de diversión explosiva.\n\n" +
-            "Ahora estoy atrapado luchando contra cosas-lagarto y bichos espaciales. Pero ¿sabes qué? Me lo " +
-            "estoy pasando bomba (literalmente).\n\n" +
-            "Cada vez que oigo ese dulce fuuush de un cohete surcando el aire, sé que va a ser un buen día. " +
-            "¿Y cuando impacta? Bueno, nunca he sido muy de fijarme en los detalles, pero las vistas siempre " +
-            "son espectaculares.\n\n" +
-            "Claro, puede que algún día me haga volar por los aires. Pero hasta entonces, voy a agarrar este " +
-            "lanzador y cabalgar la explosión hasta casa.\n\n" +
-            "Fin del registro. Y sí, también hice explotar la grabadora. Ups.";
+        private static readonly string RocketSpanishDescription = RocketLocalization.RocketSpanishDescription;
+        // El diario activo de Rocketer se resuelve en USULoaderRocketerEncounterGate.
 
         public override void RegisterInstalledLocalization(
             SurvivorInfo survivor,
@@ -77,14 +52,15 @@ namespace UniversalSurvivorUnlocks
             }
 
             RegisterRocketSpanishTokens();
+            RegisterRocketEnglishLore();
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | RocketSurvivorBody | " +
-                "es-419 / es-ES + vista general + lore nativo + pasiva + skills + " +
+                "es-419 / es-ES / en + vista general + lore USU + pasiva + skills + " +
                 "desbloqueos de skills + skin de Maestría"
             );
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[ROCKET LOCALIZATION] Tokens registrados | identidad + skills + " +
                 "achievements + Bombardier + finales. Misión USU legacy sin cambios."
             );
@@ -115,9 +91,19 @@ namespace UniversalSurvivorUnlocks
             string fallback
         )
         {
-            return IsSpanishLanguage()
-                ? RocketSpanishLore
-                : fallback ?? "";
+            if (IsSpanishLanguage()) return USULoaderRocketerEncounterGate.ResolveRocketerLore(true);
+            if (IsEnglishLanguage()) return USULoaderRocketerEncounterGate.ResolveRocketerLore(false);
+            return fallback ?? "";
+        }
+
+        private static void RegisterRocketEnglishLore()
+        {
+            // El Logbook nativo usa el puente de consulta dinámica para actualizar
+            // el bloqueo; este overlay sólo proporciona un valor inicial.
+            if (RocketEnglishLoreOverlay != null) return;
+            RocketEnglishLoreOverlay = LanguageAPI.AddOverlay(
+                "MOFFEIN_ROCKET_BODY_LORE", USULoaderRocketerEncounterGate.ResolveRocketerLore(false), "en"
+            );
         }
 
         private static void RegisterRocketSpanishTokens()
@@ -126,7 +112,7 @@ namespace UniversalSurvivorUnlocks
             RegisterSpanishToken("MOFFEIN_ROCKET_BODY_NAME", "Rocket");
             RegisterSpanishToken("MOFFEIN_ROCKET_BODY_SUBTITLE", "Conmoción y pavor");
             RegisterSpanishToken("MOFFEIN_ROCKET_BODY_DESCRIPTION", RocketSpanishDescription);
-            RegisterSpanishToken("MOFFEIN_ROCKET_BODY_LORE", RocketSpanishLore);
+            RegisterSpanishToken("MOFFEIN_ROCKET_BODY_LORE", USULoaderRocketerEncounterGate.ResolveRocketerLore(true));
 
             // Textos de final del survivor.
             RegisterSpanishToken(
@@ -256,6 +242,12 @@ namespace UniversalSurvivorUnlocks
 
             LanguageAPI.Add(token, spanish, "es-419");
             LanguageAPI.Add(token, spanish, "es-ES");
+        }
+
+        private static bool IsEnglishLanguage()
+        {
+            string language = Language.currentLanguageName ?? "";
+            return language.StartsWith("en", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsSpanishLanguage()

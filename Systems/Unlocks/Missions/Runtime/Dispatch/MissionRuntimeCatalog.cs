@@ -462,7 +462,8 @@ namespace UniversalSurvivorUnlocks
 
             if (ObjectiveTypeCount > 0)
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(
+                    logger,
                     "[MISSION V2] Tipos activos | " +
                     string.Join(
                         ", ",

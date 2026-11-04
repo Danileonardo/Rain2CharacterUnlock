@@ -18,6 +18,11 @@ namespace UniversalSurvivorUnlocks
         private static readonly Dictionary<string, int> KillsInWave =
             new Dictionary<string, int>(StringComparer.Ordinal);
 
+        // Autores reales de las bajas que integran la oleada en curso.
+        // Nunca se emplea FirstPlayerMaster para otorgar contribuciones.
+        private static readonly Dictionary<string, HashSet<string>> ContributorsInWave =
+            new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+
         private static ManualLogSource logger;
         private static bool initialized;
         private static ItemIndex invadingDoppelganger = ItemIndex.None;
@@ -41,16 +46,19 @@ namespace UniversalSurvivorUnlocks
         private static void OnRunStarted(Run run)
         {
             KillsInWave.Clear();
+            ContributorsInWave.Clear();
         }
 
         private static void OnRunDestroyed(Run run)
         {
             KillsInWave.Clear();
+            ContributorsInWave.Clear();
         }
 
         private static void OnStageStarted(MissionStageEventContext context)
         {
             KillsInWave.Clear();
+            ContributorsInWave.Clear();
         }
 
         public static void ResetMission(
@@ -88,6 +96,7 @@ namespace UniversalSurvivorUnlocks
             foreach (string key in keysToRemove)
             {
                 KillsInWave.Remove(key);
+                ContributorsInWave.Remove(key);
             }
         }
 
@@ -142,18 +151,42 @@ namespace UniversalSurvivorUnlocks
                     continue;
                 }
 
-                string key = binding.MissionId + "|" + binding.StorageObjectiveId;
-                int current = KillsInWave.TryGetValue(key, out int stored) ? stored + 1 : 1;
-                KillsInWave[key] = current;
+                // Modo específico para Venganza: cada Umbra válida cuenta como una baja.
+                // Los otros presets siguen usando la agrupación original por oleadas.
+                bool countIndividualUmbrae =
+                    binding.Objective?.Parameters?.Value<bool?>("countIndividualUmbrae") == true;
 
-                if (current < expectedInWave)
+                HashSet<string> completedWaveContributors = null;
+                CharacterMaster actualKiller = ResolvePlayerMaster(report);
+                if (!countIndividualUmbrae)
                 {
-                    continue;
+                    string key = binding.MissionId + "|" + binding.StorageObjectiveId;
+                    HashSet<string> currentContributors;
+                    if (!ContributorsInWave.TryGetValue(key, out currentContributors))
+                    {
+                        currentContributors = new HashSet<string>(StringComparer.Ordinal);
+                        ContributorsInWave[key] = currentContributors;
+                    }
+                    // Las muertes sin autor humano siguen siendo parte de
+                    // la oleada, pero no otorgan elegibilidad a espectadores.
+                    NetworkUser killerUser = actualKiller == null ? null :
+                        MissionPlayerIdentity.GetNetworkUser(actualKiller);
+                    MissionPlayerIdentity killerIdentity;
+                    if (killerUser != null &&
+                        MissionPlayerIdentity.TryCreate(killerUser, out killerIdentity) &&
+                        !string.IsNullOrWhiteSpace(killerIdentity.Key))
+                        currentContributors.Add(killerIdentity.Key);
+
+                    int current = KillsInWave.TryGetValue(key, out int stored) ? stored + 1 : 1;
+                    KillsInWave[key] = current;
+                    if (current < expectedInWave) continue;
+
+                    completedWaveContributors = currentContributors;
+                    ContributorsInWave.Remove(key);
+                    KillsInWave[key] = 0;
                 }
 
-                KillsInWave[key] = 0;
-
-                CharacterMaster actorMaster = ResolvePlayerMaster(report) ?? FirstPlayerMaster();
+                CharacterMaster actorMaster = actualKiller ?? FirstPlayerMaster();
                 if (actorMaster == null) continue;
 
                 CharacterBody actorBody = actorMaster.GetBody();
@@ -178,10 +211,16 @@ namespace UniversalSurvivorUnlocks
                         1d
             );
 
+                if (completedWaveContributors != null)
+                    MixedMissionParticipationTracker.RecordSoraWave(
+                        binding, result, completedWaveContributors);
+
                 GenericMissionDispatcher.HandleProgressResult(
                     binding,
                     result,
-                    $"Oleada de sombras completada ({expectedInWave} Umbrae)"
+                    countIndividualUmbrae
+                        ? "Umbra de Venganza derrotada"
+                        : $"Oleada de sombras completada ({expectedInWave} Umbrae)"
                 );
             }
         }

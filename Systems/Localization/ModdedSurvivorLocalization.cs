@@ -45,20 +45,6 @@ namespace UniversalSurvivorUnlocks
                 // y revisada por USU. Si un texto no está cubierto aquí, se
                 // conserva el original entregado por el mod creador.
                 {
-                    "EnforcerBody",
-                    new Translation
-                    {
-                        BodyName = "EnforcerBody",
-                        SpanishSubtitle = "Agente antidisturbios",
-                        SpanishDescription =
-                            "Enforcer es un superviviente resistente de corto alcance que combina " +
-                            "escopeta, control de masas y un escudo frontal.\n\n" +
-                            "< ! > Protect and Serve bloquea el daño que llega de frente, pero limita tu movilidad.\n\n" +
-                            "< ! > Riot Shotgun es especialmente eficaz a corta distancia y puede atravesar enemigos.\n\n" +
-                            "< ! > Usa tus habilidades de control para mantener a los enemigos delante de tu escudo."
-                    }
-                },
-                {
                     "NemesisEnforcerBody",
                     new Translation
                     {
@@ -245,6 +231,9 @@ namespace UniversalSurvivorUnlocks
                     logger
                 );
             }
+            // Localización global compartida: TheEnd añade la misma skin
+            // y el mismo logro a múltiples survivors. No altera el requisito.
+            TheEndAchievementLocalization.Register(logger);
         }
 
 

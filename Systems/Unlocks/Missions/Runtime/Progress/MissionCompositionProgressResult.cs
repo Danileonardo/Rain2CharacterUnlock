@@ -1,3 +1,5 @@
+using RoR2;
+
 namespace UniversalSurvivorUnlocks
 {
     /*
@@ -117,6 +119,15 @@ namespace UniversalSurvivorUnlocks
 
 
         public bool MissionJustCompleted
+        {
+            get;
+            internal set;
+        }
+
+
+        // Destinatario autoritativo asociado al progreso PerPlayer.
+        // Se resuelve en MissionCompositionProgressEvaluator, no en UI.
+        public NetworkUser CompletingNetworkUser
         {
             get;
             internal set;

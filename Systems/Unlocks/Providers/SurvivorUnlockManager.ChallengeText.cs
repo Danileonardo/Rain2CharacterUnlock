@@ -425,78 +425,343 @@ namespace UniversalSurvivorUnlocks
 
 
         // =========================================================
-        // AVISOS DE RESTRICCIONES
+        // REQUISITOS INFORMATIVOS DEL TOOLTIP (Character Select)
         // =========================================================
+        // No son requisitos adicionales: sólo expresan las condiciones
+        // realmente definidas en la misión EFECTIVA de USU.
         //
-        // La descripción de la misión se mantiene temática. Las
-        // restricciones estructurales se muestran debajo como metadata.
+        // * ExcludedSurvivor  -> mantener el aviso vanilla de Jhin.
+        // * RequiredSurvivor  -> el jugador que ejecuta el objetivo
+        //                        debe usar ese survivor.
+        // * PartyHasSurvivor  -> basta UNO en todo el equipo (no cada uno).
+        // * Sin restricción   -> Cualquiera.
         //
-        // Para ExcludedSurvivor sólo mostramos cuerpos excluidos en TODAS
-        // las rutas de la misión. Así evitamos afirmar que un survivor no
-        // es válido cuando otra ruta OR sí permitiría completarla.
+        // Se recalcula desde la entrada activa, incluyendo rutas OR,
+        // personalizaciones y configuración del host. No cambia el unlock.
         // =========================================================
 
-        private static string BuildRestrictionNotice(
-            SurvivorJsonEntry entry
-        )
+        private static string BuildRestrictionNotice(SurvivorJsonEntry entry)
         {
-            List<string> excludedBodies =
-                GetMissionWideExcludedBodies(
-                    entry
-                );
+            List<string> excludedBodies = GetMissionWideExcludedBodies(entry);
+            string except = FormatSurvivorNames(excludedBodies);
 
-
-            if (excludedBodies.Count == 0)
+            // Conservar exactamente el aviso especial aprobado de Jhin.
+            if (string.Equals(entry?.BodyName, "JhinBody", StringComparison.OrdinalIgnoreCase) &&
+                !string.IsNullOrWhiteSpace(except))
             {
-                return "";
+                return Language.GetStringFormatted(
+                    SurvivorLocalization.ExcludedSurvivorsNoticeToken, except);
             }
 
-
-            List<string> displayNames =
-                new List<string>();
-
-
-            for (int i = 0; i < excludedBodies.Count; i++)
+            MissionDefinition mission = entry?.Challenge?.Mission;
+            if (mission?.Routes == null || mission.Routes.Count == 0)
             {
-                string displayName =
-                    ResolveSurvivorDisplayName(
-                        excludedBodies[i]
-                    );
+                // Sin una misión V2 no debemos inventar condiciones.
+                return string.IsNullOrWhiteSpace(except)
+                    ? ""
+                    : Language.GetStringFormatted(
+                        SurvivorLocalization.ExcludedSurvivorsNoticeToken, except);
+            }
 
+            HashSet<string> allowedBodies = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            HashSet<string> teamBodies = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            bool anyAllowedRoute = false;
+            bool anyTeamFreeRoute = false;
+            bool foundRoute = false;
 
-                if (
-                    !string.IsNullOrWhiteSpace(
-                        displayName
-                    )
-                )
+            foreach (MissionRoute route in mission.Routes)
+            {
+                if (route == null) continue;
+                foundRoute = true;
+
+                HashSet<string> routeAllowed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                HashSet<string> routeTeam = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                CollectSurvivorConditionBodies(route.Conditions, "RequiredSurvivor", routeAllowed);
+                CollectSurvivorConditionBodies(route.Conditions, "PartyHasSurvivor", routeTeam);
+
+                IReadOnlyList<MissionObjective> objectives = route.GetEffectiveObjectives();
+                if (objectives != null)
                 {
-                    displayNames.Add(
-                        displayName
-                    );
+                    foreach (MissionObjective objective in objectives)
+                    {
+                        CollectSurvivorConditionBodies(objective?.Conditions, "RequiredSurvivor", routeAllowed);
+                        CollectSurvivorConditionBodies(objective?.Conditions, "PartyHasSurvivor", routeTeam);
+                    }
+                }
+
+                // Rutas alternativas: una ruta sin la condición no la exige a todas.
+                if (routeAllowed.Count == 0) anyAllowedRoute = true;
+                else allowedBodies.UnionWith(routeAllowed);
+                if (routeTeam.Count == 0) anyTeamFreeRoute = true;
+                else teamBodies.UnionWith(routeTeam);
+            }
+            if (!foundRoute) return "";
+
+            bool requiresPerformer = !anyAllowedRoute && allowedBodies.Count > 0;
+            bool requiresTeamMember = !anyTeamFreeRoute && teamBodies.Count > 0;
+            List<string> lines = new List<string>();
+
+            // Misma etiqueta azul para TODAS las misiones: individuales,
+            // mixtas y cooperativas. Solo cambia el valor semántico.
+            if (requiresPerformer)
+            {
+                lines.Add(Language.GetStringFormatted(
+                    SurvivorLocalization.CharacterSelectRequiredSurvivorToken,
+                    FormatSurvivorChoices(allowedBodies)));
+            }
+            else if (requiresTeamMember)
+            {
+                string teamValue = teamBodies.Count == 1
+                    ? FormatSurvivorNames(teamBodies) + Language.GetString(
+                        SurvivorLocalization.CharacterSelectTeamOneSuffixToken)
+                    : Language.GetString(SurvivorLocalization.CharacterSelectTeamChoicesToken) +
+                        "\n" + FormatSurvivorChoices(teamBodies);
+                lines.Add(Language.GetStringFormatted(
+                    SurvivorLocalization.CharacterSelectRequiredSurvivorToken,
+                    teamValue));
+            }
+            else
+            {
+                lines.Add(Language.GetStringFormatted(
+                    SurvivorLocalization.CharacterSelectRequiredSurvivorToken,
+                    Language.GetString(SurvivorLocalization.MissionLibraryAnySurvivorToken)));
+            }
+
+            // Una misión puede exigir un ejecutor específico Y otro integrante.
+            // No se oculta ninguna de las dos restricciones si coexisten.
+            if (requiresPerformer && requiresTeamMember)
+            {
+                lines.Add(Language.GetStringFormatted(
+                    SurvivorLocalization.CharacterSelectOneTeamMemberToken,
+                    FormatSurvivorChoices(teamBodies)));
+            }
+
+            string requiredStages = GetRequiredStageDisplayNames(mission);
+            if (!string.IsNullOrWhiteSpace(requiredStages))
+            {
+                lines.Add(Language.GetStringFormatted(
+                    SurvivorLocalization.CharacterSelectRequiredStageToken,
+                    requiredStages));
+            }
+
+            if (!string.IsNullOrWhiteSpace(except))
+            {
+                lines.Add(Language.GetStringFormatted(
+                    SurvivorLocalization.ExcludedSurvivorsNoticeToken, except));
+            }
+
+            if (MissionModeConfiguration.GetMode(mission) == MissionUnlockMode.Mixed)
+            {
+                if (string.Equals(entry?.BodyName, "WooperBody", StringComparison.OrdinalIgnoreCase) &&
+                    HasWooperBiteObjective(mission))
+                {
+                    lines.Add(Language.GetString(
+                        SurvivorLocalization.CharacterSelectWooperContributionToken));
+                }
+                // El host acredita solo aportes verificados. No prometer la
+                // recompensa a todos por estar presentes en la partida.
+                lines.Add(Language.GetString(
+                    SurvivorLocalization.CharacterSelectMixedModeToken));
+            }
+
+            return string.Join("\n", lines.ToArray());
+        }
+
+        // Cuando hay varias opciones, dar a cada personaje su propia línea.
+        // El renderizado del tooltip de RoR2 acepta saltos de línea y TMP.
+        private static string FormatSurvivorChoices(IEnumerable<string> bodyNames)
+        {
+            List<string> names = new List<string>();
+            if (bodyNames == null) return "";
+            foreach (string body in bodyNames)
+            {
+                string name = ResolveSurvivorDisplayName(body);
+                if (!string.IsNullOrWhiteSpace(name) && !names.Contains(name))
+                    names.Add(name);
+            }
+            names.Sort(StringComparer.OrdinalIgnoreCase);
+            if (names.Count <= 1) return names.Count == 1 ? names[0] : "";
+            return "\n  • " + string.Join("\n  • ", names.ToArray());
+        }
+
+        private static bool HasWooperBiteObjective(MissionDefinition mission)
+        {
+            if (mission?.Routes == null) return false;
+            foreach (MissionRoute route in mission.Routes)
+            {
+                IReadOnlyList<MissionObjective> objectives = route?.GetEffectiveObjectives();
+                if (objectives == null) continue;
+                foreach (MissionObjective objective in objectives)
+                {
+                    if (string.Equals(objective?.Id, "poisoned_bite_20",
+                        StringComparison.OrdinalIgnoreCase)) return true;
                 }
             }
+            return false;
+        }
 
-
-            if (displayNames.Count == 0)
-            {
+        // Escenarios de rutas V2. Cada ruta es alternativa (OR); dentro
+        // de una ruta, las condiciones RequiredStage son restricciones AND.
+        // Si existe una ruta libre, NO indicamos un escenario obligatorio.
+        // El resultado enumera las posibilidades reales sin alterar el unlock.
+        private static string GetRequiredStageDisplayNames(MissionDefinition mission)
+        {
+            if (mission?.Routes == null || mission.Routes.Count == 0)
                 return "";
+
+            HashSet<string> possibleStages = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            bool sawRoute = false;
+
+            foreach (MissionRoute route in mission.Routes)
+            {
+                if (route == null) return "";
+                sawRoute = true;
+                HashSet<string> routeStages = null;
+
+                // La mayoría de los presets oficiales (Wooper/Miner)
+                // especifican RequiredStage en condiciones de ruta.
+                if (!IntersectStageConditions(route.Conditions, ref routeStages))
+                    return "";
+
+                // Una condición RequiredStage también puede estar asociada
+                // a un objetivo de esa ruta en misiones CUSTOM.
+                IReadOnlyList<MissionObjective> objectives = route.GetEffectiveObjectives();
+                if (objectives != null)
+                {
+                    foreach (MissionObjective objective in objectives)
+                    {
+                        if (!IntersectStageConditions(objective?.Conditions, ref routeStages))
+                            return "";
+                    }
+                }
+
+                if (routeStages == null || routeStages.Count == 0)
+                    return ""; // Una alternativa sin escenario fijo: no inventarlo.
+
+                possibleStages.UnionWith(routeStages);
             }
 
+            if (!sawRoute || possibleStages.Count == 0) return "";
 
-            string joinedNames =
-                string.Join(
-                    " / ",
-                    displayNames.ToArray()
-                );
+            // Las cuatro variantes comparten nombre base. El listado largo
+            // de SceneCatalog desbordaría Character Select sin aportar nada.
+            // Sólo agrupamos si la misión EFECTIVA admite las cuatro;
+            // un CUSTOM que exija una sola variante mantiene su precisión.
+            if (possibleStages.Count == 4 &&
+                possibleStages.Contains("artifactworld") &&
+                possibleStages.Contains("artifactworld01") &&
+                possibleStages.Contains("artifactworld02") &&
+                possibleStages.Contains("artifactworld03"))
+            {
+                return Language.GetString(
+                    SurvivorLocalization.CharacterSelectBulwarksAmbryNameToken);
+            }
 
+            List<string> display = new List<string>();
+            foreach (string stage in possibleStages)
+            {
+                string name = ResolveStageDisplayName(stage);
+                if (!string.IsNullOrWhiteSpace(name) && !display.Contains(name))
+                    display.Add(name);
+            }
+            display.Sort(StringComparer.OrdinalIgnoreCase);
+            return string.Join(" / ", display.ToArray());
+        }
 
-            return Language.GetStringFormatted(
-                SurvivorLocalization.ExcludedSurvivorsNoticeToken,
-                new object[]
+        // false = datos inconsistentes o una intersección vacía;
+        // jamás anunciar un requisito de escenario inventado.
+        private static bool IntersectStageConditions(
+            IList<MissionCondition> conditions,
+            ref HashSet<string> allowed)
+        {
+            if (conditions == null) return true;
+            foreach (MissionCondition condition in conditions)
+            {
+                if (condition == null ||
+                    !string.Equals(condition.Type, "RequiredStage", StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                JObject parameters = condition.Parameters;
+                if (parameters == null) return false;
+                HashSet<string> current = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                string single = parameters.Value<string>("stage");
+                if (!string.IsNullOrWhiteSpace(single)) current.Add(single.Trim());
+                if (parameters["stages"] is JArray stages)
                 {
-                    joinedNames
+                    foreach (JToken token in stages)
+                    {
+                        string stage = token?.ToString().Trim();
+                        if (!string.IsNullOrWhiteSpace(stage)) current.Add(stage);
+                    }
                 }
-            );
+                if (current.Count == 0) return false;
+                if (allowed == null) allowed = current;
+                else allowed.IntersectWith(current);
+                if (allowed.Count == 0) return false;
+            }
+            return true;
+        }
+
+        private static string ResolveStageDisplayName(string stageName)
+        {
+            if (string.IsNullOrWhiteSpace(stageName)) return "";
+
+            // Estos dos nombres ya se aprobaron para ES/EN en USU.
+            if (string.Equals(stageName, "foggyswamp", StringComparison.OrdinalIgnoreCase))
+                return Language.GetString(SurvivorLocalization.CharacterSelectWetlandsNameToken);
+            if (string.Equals(stageName, "dampcavesimple", StringComparison.OrdinalIgnoreCase))
+                return Language.GetString(SurvivorLocalization.CharacterSelectAbyssalNameToken);
+
+            try
+            {
+                SceneDef sceneDef = SceneCatalog.GetSceneDefFromSceneName(stageName);
+                if (sceneDef != null && !string.IsNullOrWhiteSpace(sceneDef.nameToken))
+                {
+                    string name = Language.GetString(sceneDef.nameToken);
+                    if (!string.IsNullOrWhiteSpace(name) &&
+                        !string.Equals(name, sceneDef.nameToken, StringComparison.OrdinalIgnoreCase))
+                        return name;
+                }
+            }
+            catch
+            {
+                // El catálogo puede no estar disponible al abrir Character Select.
+            }
+            // CUSTOM o escena de mod desconocida: mostrar el identificador
+            // real, sin inventar su traducción.
+            return stageName;
+        }
+
+        private static void CollectSurvivorConditionBodies(
+            IList<MissionCondition> conditions,
+            string conditionType,
+            HashSet<string> destination)
+        {
+            if (conditions == null || destination == null) return;
+            foreach (MissionCondition condition in conditions)
+            {
+                if (condition == null ||
+                    !string.Equals(condition.Type, conditionType, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                JObject parameters = condition.Parameters;
+                if (parameters == null) continue;
+                AddExcludedBodiesFromToken(parameters["bodies"], destination);
+                AddExcludedBodiesFromToken(parameters["body"], destination);
+            }
+        }
+
+        private static string FormatSurvivorNames(IEnumerable<string> bodyNames)
+        {
+            List<string> names = new List<string>();
+            if (bodyNames == null) return "";
+            foreach (string body in bodyNames)
+            {
+                string name = ResolveSurvivorDisplayName(body);
+                if (!string.IsNullOrWhiteSpace(name)) names.Add(name);
+            }
+            names.Sort(StringComparer.OrdinalIgnoreCase);
+            return string.Join(" / ", names.ToArray());
         }
 
 

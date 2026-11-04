@@ -9,7 +9,8 @@ namespace UniversalSurvivorUnlocks
     /// Wanderer (internal Unforgiven), com.kenko.Unforgiven.
     /// Los tokens exactos de habilidades/pasiva/maestría proceden de la
     /// auditoría de localización USU del mod instalado (2026-10-11).
-    /// No cambia mecánicas, desbloqueos, rewards, providers ni EN original.
+    /// No cambia mecánicas, desbloqueos, rewards, providers ni DLL del autor.
+    /// El lore visible en EN/ES es una adaptación narrativa de USU.
     /// </summary>
     public sealed class WandererDefinition : SurvivorDefinition
     {
@@ -18,11 +19,14 @@ namespace UniversalSurvivorUnlocks
         public override string DefinitionName { get { return "Wanderer"; } }
 
         // Vista general: traducción fiel de consejos registrados en los tokens nativos.
-        private static readonly string SpanishOverview = "Wanderer es un superviviente fácil de comenzar a usar, pero difícil de dominar. Sus cancelaciones de animación permiten encadenar ataques y mantener un daño constante.<color=#CCD3E0>\n\n< ! > Intercala Tempestad de acero entre Golpes veloces para maximizar el daño.\n\n< ! > Vigila las acumulaciones de Tempestad de acero: su tornado puede acabar con grupos enteros de enemigos.\n\n< ! > Usar Tempestad de acero durante Hoja envolvente hace que el ataque gire y cause daño en área.\n\n< ! > Hoja aérea: prepara Tempestad de acero durante Hoja envolvente y ejecuta Último aliento antes de que termine el giro. El giro viajará contigo hasta el objetivo. Si impacta, también proporciona una acumulación de Tormenta creciente.\n\n";
+        private static readonly string SpanishOverview = WandererLocalization.SpanishOverview;
 
-        // Lore del creador EN: texto humorístico sobre Yasuo; no se borra.
-        // Esta narración ES es una ADAPTACIÓN DE USU, no canon nuevo del autor.
-        private static readonly string SpanishLore = "EXPEDIENTE RECUPERADO — SUJETO SIN IDENTIFICAR\nProcedencia: desconocida\nClasificación: anomalía cinética / armamento de filo\nEstado del informe: inconcluso\n\nLa patrulla encontró los cuerpos antes que las huellas. Ninguna señal de explosivos, ninguna munición abandonada. Solo cortes: uno en cada punto vulnerable, como si alguien hubiera calculado de antemano el lugar exacto en que caerían sus enemigos.\n\nLa primera explicación fue una emboscada. La segunda, un fallo en los equipos de vigilancia. La tercera no llegó a presentarse: el viento había borrado los rastros antes de que terminara el reconocimiento.\n\nUn testigo aseguró que vio a un viajero armado con una espada. Otro afirmó que eran dos. El registro de una cámara recogió una figura en el borde del desfiladero; en el fotograma siguiente ya estaba detrás de su adversario. No se detectó ningún dispositivo de teletransporte.\n\nLos informes de combate describen un patrón imposible de reproducir. El sujeto avanzaba con golpes veloces, interrumpía sus propios movimientos para enlazar nuevas estocadas y reunía corrientes de aire en torno a la hoja. Cuando la presión alcanzaba su límite, un tornado atravesaba el terreno y levantaba del suelo a cuanto encontraba a su paso.\n\nSin embargo, la observación más extraña no fue el ataque. Fue su defensa. Mientras continuó moviéndose, una fuerza invisible parecía protegerlo; al recibir un golpe directo, aquella protección se quebró y otra barrera ocupó su lugar. La patrulla anotó que detenerse habría sido su única debilidad. Nunca logró comprobarlo.\n\nEl enfrentamiento terminó en el extremo oriental del desfiladero. La última criatura fue elevada por una corriente repentina. El viajero alzó la vista y desapareció. Un instante después, ambos estaban suspendidos sobre el vacío. Hubo un destello de acero. La criatura cayó sola.\n\nCuando la patrulla regresó, encontró una empuñadura rota envuelta en tela y una inscripción que nadie supo atribuir a idioma conocido. La traducción más aceptada decía: «El último aliento no siempre es el final».\n\nUna cuarta versión del testimonio menciona que el viajero se detuvo, miró hacia la cámara y esperó a que cambiara el viento. No se incluyó en el informe oficial.\n\nANOTACIÓN FINAL: se deniega la persecución. Los instrumentos continúan indicando una dirección de viento distinta en cada lectura.\n\n[FIN DEL REGISTRO]";
+        // Diario I (USU): monólogo narrativo ES/EN, inspirado en las técnicas del
+        // mod original de tsuyoikenko, pero sin afirmar que Wanderer sea Yasuo.
+        // No se modifica la DLL del creador ni sus otros recursos originales.
+        private static readonly string SpanishLore = WandererLore.SpanishLore;
+
+        private static readonly string EnglishLore = WandererLore.EnglishLore;
 
         public override void RegisterInstalledLocalization(SurvivorInfo survivor, ManualLogSource logger)
         {
@@ -35,6 +39,7 @@ namespace UniversalSurvivorUnlocks
             // El catálogo de RoR2 deriva *_LORE desde KENKO_UNFORGIVEN_NAME.
             // Resolver solo cubre Notas dentro del browser de USU.
             RegisterSpanishToken("KENKO_UNFORGIVEN_LORE", SpanishLore);
+            RegisterEnglishToken("KENKO_UNFORGIVEN_LORE", EnglishLore);
 
             // Pasiva: Way of the Wind.
             RegisterSpanishToken("KENKO_UNFORGIVEN_PASSIVE_NAME", "Senda del viento");
@@ -80,8 +85,8 @@ namespace UniversalSurvivorUnlocks
             RegisterSpanishToken("ACHIEVEMENT_KENKO_UNFORGIVEN_MASTERYACHIEVEMENT_DESCRIPTION",
                 "Como Wanderer, termina el juego o sacrifícate en el Obelisco en dificultad Monzón.");
 
-            logger?.LogInfo("[LOCALIZATION] Definition activa | UnforgivenBody | " +
-                "ES Vista general + pasiva + 4 habilidades + skin Torbellino + Maestría + lore nativo y Notas USU; EN original preservado");
+            UsuLog.Verbose(logger, "[LOCALIZATION] Definition activa | UnforgivenBody | " +
+                "ES Vista general + pasiva + 4 habilidades + skin Torbellino + Maestría + Diario I USU ES/EN y Notas");
         }
 
         public override string ResolveSubtitle(SurvivorContentProfile profile, string fallback)
@@ -96,8 +101,8 @@ namespace UniversalSurvivorUnlocks
 
         public override string ResolveLore(SurvivorContentProfile profile, string fallback)
         {
-            // No tocar el texto humorístico original publicado en inglés.
-            return IsSpanish() ? SpanishLore : fallback ?? "";
+            // El Diario I USU se presenta en los dos idiomas admitidos.
+            return IsSpanish() ? SpanishLore : EnglishLore;
         }
 
         private static bool IsSpanish()
@@ -116,6 +121,12 @@ namespace UniversalSurvivorUnlocks
             if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(translation)) return;
             LanguageAPI.Add(token, translation, "es-419");
             LanguageAPI.Add(token, translation, "es-ES");
+        }
+
+        private static void RegisterEnglishToken(string token, string translation)
+        {
+            if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(translation)) return;
+            LanguageAPI.Add(token, translation, "en");
         }
     }
 }

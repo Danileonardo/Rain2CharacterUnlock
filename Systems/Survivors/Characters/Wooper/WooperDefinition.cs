@@ -35,61 +35,16 @@ namespace UniversalSurvivorUnlocks
         }
 
         private static object WooperEnglishDescriptionOverlay;
+        private static object WooperExtraKeywordOverlayEs419;
+        private static object WooperExtraKeywordOverlayEsEs;
 
-        private static readonly string WooperSpanishDescription =
-            "Wooper es un superviviente flexible que alterna movimientos de <color=#55b8e2>Agua</color> " +
-            "y <color=#9b5f41>Tierra</color> para controlar el ritmo del combate.<style=cSub>\r\n\r\n" +
-            "< ! > Absorbe Agua hace que las habilidades de Agua apliquen <style=cIsUtility>Empapado</style> " +
-            "al golpear durante <style=cIsUtility>4 s</style>.<style=cSub>\r\n\r\n" +
-            "< ! > Las habilidades de Tierra consumen Empapado al golpear, <style=cIsUtility>ralentizan</style>, " +
-            "infligen <style=cIsDamage>120% de daño</style> y <style=cIsHealth>curan</style> a Wooper un " +
-            "<style=cIsHealth>2% de salud</style>.<style=cSub>\r\n\r\n" +
-            "< ! > Acua Cola puede acumular Empapado hasta <style=cIsUtility>3</style> veces y repite el ataque " +
-            "contra objetivos que todavía tengan menos de 3 acumulaciones.<style=cSub>\r\n\r\n" +
-            "< ! > Protección y Excavar ofrecen dos formas distintas de sobrevivir, mientras Surf y Torbellino " +
-            "permiten controlar zonas amplias.";
+        private static readonly string WooperSpanishDescription = WooperLocalization.WooperSpanishDescription;
 
-        private static readonly string WooperEnglishDescription =
-            "Wooper is a flexible survivor that alternates <color=#55b8e2>Water</color> and " +
-            "<color=#9b5f41>Ground</color> moves to control the pace of combat.<style=cSub>\r\n\r\n" +
-            "< ! > Water Absorb causes Water skills to inflict <style=cIsUtility>Soaked</style> on hit for " +
-            "<style=cIsUtility>4s</style>.<style=cSub>\r\n\r\n" +
-            "< ! > Ground skills consume Soaked on hit, <style=cIsUtility>slowing</style>, inflicting " +
-            "<style=cIsDamage>120% damage</style> and <style=cIsHealth>healing</style> Wooper for " +
-            "<style=cIsHealth>2% health</style>.<style=cSub>\r\n\r\n" +
-            "< ! > Aqua Tail can stack Soaked up to <style=cIsUtility>3</style> times and repeats against targets " +
-            "that still have fewer than 3 stacks.<style=cSub>\r\n\r\n" +
-            "< ! > Protect and Dig provide two different ways to survive, while Surf and Whirlpool help control " +
-            "large areas.";
+        private static readonly string WooperEnglishDescription = WooperLocalization.WooperEnglishDescription;
 
-        private static readonly string WooperSpanishLore =
-            "Registro de campo recuperado de una zona pantanosa de Petrichor V.\n\n" +
-            "Las primeras huellas parecían demasiado pequeñas para pertenecer a algo peligroso. Terminaban junto " +
-            "a una poza poco profunda donde una criatura azul observaba el agua con una sonrisa imposible de " +
-            "interpretar. No huyó cuando se acercó el equipo de reconocimiento. Tampoco atacó. Simplemente esperó.\n\n" +
-            "La calma terminó cuando aparecieron las criaturas locales. Wooper respondió inundando el terreno, " +
-            "levantando barro y desapareciendo bajo el suelo antes de surgir entre sus perseguidores. Cada charco " +
-            "que dejaba atrás convertía el lugar en algo que parecía conocer de toda la vida.\n\n" +
-            "Lo más extraño era su tranquilidad. Entre explosiones, golpes y tierra removida, seguía mostrando la " +
-            "misma expresión alegre, como si sobrevivir en un planeta hostil fuese otra tarde jugando junto al agua.\n\n" +
-            "Cuando el combate terminó, regresó a la poza. Durante unos segundos no hubo disparos ni alarmas: sólo " +
-            "ondas pequeñas extendiéndose sobre la superficie.\n\n" +
-            "Después siguió al grupo. Nadie recuerda haberlo invitado.";
+        private static readonly string WooperSpanishLore = WooperLore.WooperSpanishLore;
 
-        private static readonly string WooperEnglishLore =
-            "Field record recovered from a marshland region of Petrichor V.\n\n" +
-            "The first tracks seemed far too small to belong to anything dangerous. They ended beside a shallow " +
-            "pool where a blue creature watched the water with a smile that was impossible to interpret. It did " +
-            "not flee when the survey team approached. It did not attack either. It simply waited.\n\n" +
-            "The calm ended when the local creatures arrived. Wooper answered by flooding the ground, throwing up " +
-            "mud, and vanishing beneath the soil before surfacing among its pursuers. Every puddle it left behind " +
-            "made the area look like somewhere it had known all its life.\n\n" +
-            "The strangest part was its composure. Between explosions, impacts, and torn earth, it kept the same " +
-            "cheerful expression, as though surviving on a hostile planet were simply another afternoon spent by " +
-            "the water.\n\n" +
-            "When the fighting ended, it returned to the pool. For a few seconds there were no gunshots or alarms, " +
-            "only small ripples spreading across the surface.\n\n" +
-            "Then it followed the group. No one remembers inviting it.";
+        private static readonly string WooperEnglishLore = WooperLore.WooperEnglishLore;
 
         public override void RegisterInstalledLocalization(
             SurvivorInfo survivor,
@@ -106,7 +61,11 @@ namespace UniversalSurvivorUnlocks
             RegisterWooperSpanishTokens();
             RegisterWooperPassiveSpanish(survivor, logger);
 
-            logger?.LogInfo(
+            // Este SkillDef publica UN SOLO keywordToken para las tres
+            // entradas de Reserva / Tragar / Escupir. El traductor genérico
+            // intentaba reemplazar el bloque por únicamente la primera.
+            RegisterWooperExtraKeyword();
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | WooperBody | " +
                 "es-419 / es-ES + vista general USU + pasiva + skills + skins + lore"
             );
@@ -150,7 +109,7 @@ namespace UniversalSurvivorUnlocks
                 return WooperSpanishLore;
             }
 
-            if (IsEnglishLanguage() && IsMissingLoreText(fallback))
+            if (IsEnglishLanguage())
             {
                 return WooperEnglishLore;
             }
@@ -317,6 +276,39 @@ namespace UniversalSurvivorUnlocks
             RegisterSpanishToken("WOOPERBODY_SKIN03_NAME", "Paldeano variocolor");
         }
 
+        /// <summary>
+        /// La DLL genera el token del panel concatenando WOOPER_,
+        /// _SPEC_ALT2 y _KEYWORD. Una sola traducción debe contener
+        /// las tres opciones; nunca sustituirlo por un único segmento.
+        /// </summary>
+        private static void RegisterWooperExtraKeyword()
+        {
+            const string token = "WOOPER__SPEC_ALT2_KEYWORD";
+            string spanish =
+                "<style=cKeywordName>【Pulsar】 Reserva</style><style=cSub> Wooper almacena poder y " +
+                "aumenta su <style=cIsDamage>armadura</style> en <style=cIsDamage>5</style>. " +
+                "Puede usar este movimiento hasta <style=cIsUtility>3</style> veces.</style>" +
+                Environment.NewLine + Environment.NewLine +
+                "<style=cKeywordName>【Mantener】 Tragar</style><style=cSub> El poder almacenado " +
+                "con Reserva se absorbe para <style=cIsHealing>curarse</style> entre " +
+                "un <style=cIsHealing>25% y un 100%</style>.</style>" +
+                Environment.NewLine + Environment.NewLine +
+                "<style=cKeywordName>【Pulsación doble】 Escupir</style><style=cSub> El poder " +
+                "almacenado con Reserva se libera de una vez en un ataque que inflige " +
+                "entre <style=cIsDamage>450% y 1350%</style> de daño.</style>";
+
+            if (WooperExtraKeywordOverlayEs419 == null)
+            {
+                WooperExtraKeywordOverlayEs419 =
+                    LanguageAPI.AddOverlay(token, spanish, "es-419");
+            }
+            if (WooperExtraKeywordOverlayEsEs == null)
+            {
+                WooperExtraKeywordOverlayEsEs =
+                    LanguageAPI.AddOverlay(token, spanish, "es-ES");
+            }
+        }
+
         private static void RegisterWooperPassiveSpanish(
             SurvivorInfo survivor,
             ManualLogSource logger
@@ -348,7 +340,7 @@ namespace UniversalSurvivorUnlocks
                 );
             }
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Pasiva localizada | WooperBody | " +
                 "NameToken: " + (nameToken ?? "") +
                 " | DescriptionToken: " + (descriptionToken ?? "")

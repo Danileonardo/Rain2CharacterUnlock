@@ -29,15 +29,24 @@ namespace UniversalSurvivorUnlocks
                     new WandererDefinition(),
                     new WarlockDefinition(),
                     new AH64Definition(),
+                    new CelestialWarTankDefinition(),
+                    new BayonettaDefinition(),
+                    new DarthVaderDefinition(),
+                    new KnightDefinition(),
+                    new HornetDefinition(),
+                    new SonicDefinition(),
+                    new ShadowDefinition(),
                     new AurielDefinition(),
                     new RalseiDefinition(),
                     new SoraDefinition(),
                     new WooperDefinition(),
                     new TinkatonDefinition(),
-                    new EnforcerDefinition(),
                     new HunkDefinition(),
                     new JhinDefinition(),
+                    new BladedancerDefinition(),
                     new MinerDefinition(),
+                    new SniperClassicDefinition(),
+                    new HelPDefinition(),
                     new RocketDefinition(),
                     new ScoutDefinition(),
                     new SpyDefinition(),
@@ -147,7 +156,8 @@ namespace UniversalSurvivorUnlocks
                 SurvivorDefinition definition =
                     ActiveDefinitions[i];
 
-                logger.LogInfo(
+                UsuLog.Diagnostic(
+                    logger,
                     "[SURVIVOR DEFINITIONS] Activa | " +
                     $"{definition.BodyName} | " +
                     definition.SourceIdentifier

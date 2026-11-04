@@ -234,6 +234,17 @@ namespace UniversalSurvivorUnlocks
             string details
         )
         {
+            // En progreso compartido, un inventario ajeno sin batería
+            // no debe anular a un compañero que sí la transporta.
+            // No fusionamos estados de los portadores: quien haya perdido
+            // la batería o haya muerto sigue invalidado individualmente.
+            if (binding?.Mission != null &&
+                MissionProgressKeyBuilder.GetProgressScope(binding.Mission) ==
+                    MissionProgressScope.Shared)
+            {
+                value = HasValidSharedCarrier(binding) ? 1d : 0d;
+            }
+
             CharacterBody body = master?.GetBody();
             MissionEventContext context = new MissionEventContext
             {
@@ -254,6 +265,59 @@ namespace UniversalSurvivorUnlocks
             );
 
             GenericMissionDispatcher.HandleProgressResult(binding, result, details);
+        }
+
+        // Un objetivo Shared de transporte existe mientras AL MENOS UNO
+        // de los jugadores lleve el equipo sin haber invalidado su intento.
+        // Las muertes y pérdidas siguen siendo personales, no del equipo.
+        private static bool HasValidSharedCarrier(
+            MissionObjectiveRuntimeBinding binding
+        )
+        {
+            if (binding?.Objective == null) return false;
+
+            foreach (PlayerCharacterMasterController controller in
+                PlayerCharacterMasterController.instances)
+            {
+                CharacterMaster candidate = controller?.master;
+                if (candidate?.inventory == null ||
+                    MissionPlayerIdentity.GetNetworkUser(candidate) == null)
+                {
+                    continue;
+                }
+
+                if (IsValidCarrier(binding, candidate)) return true;
+            }
+
+            return false;
+        }
+
+        // Disponible para la política Mixta de HUNK. Verifica la misma
+        // condición que el objetivo Shared, pero por jugador y por ruta.
+        internal static bool IsValidCarrier(
+            MissionObjectiveRuntimeBinding binding,
+            CharacterMaster master)
+        {
+            if (binding?.Objective == null || master?.inventory == null ||
+                MissionPlayerIdentity.GetNetworkUser(master) == null ||
+                !TryGetEquipmentIndex(
+                    ReadEquipment(binding.Objective.Parameters),
+                    out EquipmentIndex equipment))
+                return false;
+
+            CarryState state = GetState(binding, master);
+            if (state.Invalidated ||
+                master.inventory.currentEquipmentIndex != equipment)
+                return false;
+
+            CharacterBody body = master.GetBody();
+            if (body?.healthComponent != null && !body.healthComponent.alive)
+                return false;
+
+            // Equipamiento detectado inicialmente por un stage start es válido,
+            // pero un portador invalidado nunca recupera su elegibilidad.
+            state.Acquired = true;
+            return true;
         }
 
         private static CarryState GetState(

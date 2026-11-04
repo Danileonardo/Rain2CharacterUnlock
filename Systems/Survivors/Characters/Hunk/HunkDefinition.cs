@@ -17,8 +17,8 @@ namespace UniversalSurvivorUnlocks
     /// por lo que USU aporta ES-419 / es-ES para la superficie visible que el
     /// juego expone a través de SurvivorDef, SkillDef, skins y achievements.
     ///
-    /// El lore es contenido nativo del creador: USU conserva el inglés original
-    /// y registra únicamente su traducción fiel al español. Las Notas continúan
+    /// El lore narrativo curado por USU tiene versiones fieles en EN / ES;
+    /// conserva la identidad militar del personaje. Las Notas continúan
     /// dependiendo del estado real del Logbook/Diario.
     ///
     /// La misión oficial USU "La Parca No Falla" permanece en el backend legacy.
@@ -31,7 +31,7 @@ namespace UniversalSurvivorUnlocks
         private static ManualLogSource hunkRuntimeLogger;
         private static bool hunkLiveVirusUiFallbackInstalled;
         private static bool hunkLiveVirusUiFixLogged;
-        private static int hunkLiveVirusUiFrameCounter;
+        private static float hunkLiveVirusUiNextCheckTime;
 
         public override string SourceIdentifier
         {
@@ -48,38 +48,16 @@ namespace UniversalSurvivorUnlocks
             get { return "HUNK"; }
         }
 
-        private static readonly string HunkSpanishDescription =
-            "HUNK es un infiltrador de élite que porta un gran arsenal de armas obtenidas mediante " +
-            "OSP (aprovisionamiento en el sitio).<color=#CCD3E0>\r\n\r\n" +
-            "< ! > Usa tu Cuchillo de combate contra enemigos más débiles para conservar munición.\r\n\r\n" +
-            "< ! > Asegurar la Muestra del virus G te otorgará una tarjeta, permitiéndote acceder a cajas de armas en cada escenario.\r\n\r\n" +
-            "< ! > Usa Paso rápido cerca de un enemigo que ataque o de un proyectil para realizar una Esquiva perfecta; después, ejecuta un Contraataque con la Primaria.\r\n\r\n" +
-            "< ! > La munición es escasa, pero puede encontrarse en cofres abiertos. Las cargas de Secundaria y la reducción de enfriamiento también afectan a la munición.\r\n\r\n" +
-            "< ! > Esto es la guerra. Sobrevivir es tu responsabilidad.\r\n\r\n";
+        private static readonly string HunkSpanishDescription = HunkLocalization.HunkSpanishDescription;
 
-        // Traducción fiel del lore nativo del creador. No se reemplaza el inglés.
-        private static readonly string HunkSpanishLore =
-            "**INT. INSTALACIÓN ABANDONADA DE UMBRELLA - NOCHE**\n\n\n" +
-            "(HUNK, el operativo silencioso y letal, está inmerso en un feroz combate contra una enorme A.B.O. " +
-            "(Arma Bio-Orgánica). Esquiva hábilmente un zarpazo de la gigantesca garra de la criatura, rueda hasta " +
-            "ponerse de pie y apunta con su subfusil. La A.B.O. ruge y carga contra HUNK sin contenerse.)\n\n" +
-            "HUNK: (gruñe) Otro día más en la oficina.\n\n" +
-            "(HUNK saca una granada cegadora y la lanza con precisión al rostro de la A.B.O. La criatura retrocede, " +
-            "cegada por la intensa luz. Aprovechando el momento, HUNK se abalanza sobre ella y trepa por su pierna con " +
-            "una agilidad sorprendente. Al llegar a la zona media de la criatura, desenfunda su cuchillo de combate.)\n\n" +
-            "(La cámara enfoca de cerca el rostro horrorizado de la A.B.O. mientras se oye un fuerte «¡corte!».)\n\n" +
-            "A.B.O.: ¡¡¡RAAAAGHHHHH!!!\n\n" +
-            "(Suena un silbato deslizante cómico mientras la A.B.O. se desploma, agarrándose la entrepierna. La pantalla " +
-            "tiembla con el impacto y escuchamos una serie de efectos exagerados: la bocina de un automóvil, el maullido " +
-            "de un gato y cristales rompiéndose.)\n\n" +
-            "SPECTRE (por radio): (Se estremece) Creo que hasta yo sentí eso.\n\n" +
-            "(La cámara vuelve a HUNK, que mira directamente al objetivo con su característica mirada fría.)\n\n" +
-            "HUNK: (impasible) Y decían que nunca daría la talla.\n\n" +
-            "(La A.B.O. gime y rueda por el suelo dolorida. Se oye el clásico sonido de «boing».)\n\n" +
-            "A.B.O.: ¡¡¡MIS... MIS MÓDULOS REGENERADORES!!!\n\n" +
-            "(Corte al COMANDANTE observando desde el centro de mando, con una expresión a medio camino entre la diversión " +
-            "y la exasperación.)\n\n" +
-            "COMANDANTE: (suspira) No importa la misión, HUNK siempre sabe dónde golpear para que duela.";
+        // Lore curado USU, inspirado por el creador y el registro militar del Logbook de RoR2.
+        // Mantener equivalencia narrativa EN / ES sin alterar la localización de habilidades.
+        // Token nativo: ofrecer también el expediente 07-P general cuando
+        // el perfil aún no tenga ruta registrada o el hook no se haya instalado.
+        // Los anexos de finales se resuelven dinámicamente por perfil.
+        private static readonly string HunkEnglishLore = HunkLore.BuildCommonLore(false);
+
+        private static readonly string HunkSpanishLore = HunkLore.BuildCommonLore(true);
 
         public override void RegisterInstalledLocalization(
             SurvivorInfo survivor,
@@ -92,15 +70,17 @@ namespace UniversalSurvivorUnlocks
             }
 
             RegisterHunkSpanishTokens();
+            // El Logbook nativo debe consultar la ruta guardada del perfil.
+            HunkLoreRouteStore.RegisterNativeLoreHook(logger);
             RegisterHunkKeywordLiteralFallbacks();
             RegisterHunkKeywordTranslations(logger);
             RegisterHunkExactVirusKeywordTokens(logger);
             // HUNK usa PassiveSkill.keywordToken con ROB_HUNK_KEYWORD_VIRUS.
             // No instalamos el antiguo fallback de UI: el token combinado se localiza directamente.
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | RobHunkBody | " +
-                "es-419 / es-ES + vista general + lore nativo traducido + skills + loadout HUNK + artefactos + cuchillos + skins + achievements"
+                "es-419 / es-ES + vista general + lore USU bilingüe + skills + loadout HUNK + artefactos + cuchillos + skins + achievements"
             );
         }
 
@@ -129,9 +109,12 @@ namespace UniversalSurvivorUnlocks
             string fallback
         )
         {
-            return IsSpanishLanguage()
-                ? HunkSpanishLore
-                : fallback ?? "";
+            // Las Notas de USU se muestran solo cuando el Logbook real
+            // permite revelar el lore (se comprueba fuera de esta Definition).
+            RoR2.UserProfile activeProfile = HunkLoreRouteStore.GetActiveLocalProfile();
+            if (IsSpanishLanguage()) return HunkLore.BuildForProfile(activeProfile, true);
+            if (IsEnglishLanguage()) return HunkLore.BuildForProfile(activeProfile, false);
+            return fallback ?? "";
         }
 
         private static void RegisterHunkSpanishTokens()
@@ -145,6 +128,7 @@ namespace UniversalSurvivorUnlocks
             // SurvivorContentProfile deriva ROB_HUNK_BODY_LORE a partir de
             // ROB_HUNK_BODY_NAME cuando el SurvivorDef no publica loreToken.
             RegisterSpanishToken("ROB_HUNK_BODY_LORE", HunkSpanishLore);
+            LanguageAPI.Add("ROB_HUNK_BODY_LORE", HunkEnglishLore, "en");
 
             RegisterHunkArtifactSpanishTokens();
 
@@ -700,7 +684,7 @@ namespace UniversalSurvivorUnlocks
                 "<color=#FFFF00>Muestra de C-Virus</color>.</style>"
             );
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[HUNK LOCALIZATION] Tokens reales del DLL registrados | " +
                 "ROB_HUNK_KEYWORD_VIRUS (combinado) + GVIRUS / TVIRUS / CVIRUS individuales."
             );
@@ -884,7 +868,7 @@ namespace UniversalSurvivorUnlocks
                     }
                 }
 
-                logger?.LogInfo(
+                UsuLog.Verbose(logger, 
                     "[HUNK LOCALIZATION] keywordTokens localizados dinámicamente: " +
                     translated + "."
                 );
@@ -1048,7 +1032,7 @@ namespace UniversalSurvivorUnlocks
 
             hunkLoadoutPanelHookInstalled = true;
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[HUNK LOCALIZATION] Fallback del panel personalizado instalado para G/T/C-Virus."
             );
         }
@@ -1077,7 +1061,7 @@ namespace UniversalSurvivorUnlocks
                 {
                     hunkVirusPanelFixLogged = true;
 
-                    hunkRuntimeLogger?.LogInfo(
+                    UsuLog.Verbose(hunkRuntimeLogger, 
                         "[HUNK LOCALIZATION] Panel OSP localizado en runtime | " +
                         "G/T/C-Virus | Sustituciones: " + replacements + "."
                     );
@@ -1347,23 +1331,23 @@ namespace UniversalSurvivorUnlocks
             RoR2Application.onUpdate += HunkLiveVirusUiUpdate;
             hunkLiveVirusUiFallbackInstalled = true;
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[HUNK LOCALIZATION] Fallback visual activo para el tooltip visible de G/T/C-Virus."
             );
         }
 
         private static void HunkLiveVirusUiUpdate()
         {
-            if (!IsSpanishLanguage())
+            // Consultas caras de UI por tiempo real (2,5 Hz máximo), sin depender
+            // del FPS ni inspeccionar el idioma cada frame. No altera los tokens.
+            float now = UnityEngine.Time.unscaledTime;
+            if (now < hunkLiveVirusUiNextCheckTime)
             {
                 return;
             }
+            hunkLiveVirusUiNextCheckTime = now + 0.4f;
 
-            // No hace falta recorrer UI en cada frame. A 120 FPS esto equivale
-            // aproximadamente a una comprobación cada 0,1 s.
-            hunkLiveVirusUiFrameCounter++;
-
-            if ((hunkLiveVirusUiFrameCounter % 12) != 0)
+            if (!IsSpanishLanguage())
             {
                 return;
             }
@@ -1424,7 +1408,7 @@ namespace UniversalSurvivorUnlocks
                 {
                     hunkLiveVirusUiFixLogged = true;
 
-                    hunkRuntimeLogger?.LogInfo(
+                    UsuLog.Verbose(hunkRuntimeLogger, 
                         "[HUNK LOCALIZATION] Tooltip visible de Virus localizado en runtime | " +
                         "Sustituciones: " + replacements + "."
                     );
@@ -1673,6 +1657,12 @@ namespace UniversalSurvivorUnlocks
 
             LanguageAPI.Add(token, spanish, "es-419");
             LanguageAPI.Add(token, spanish, "es-ES");
+        }
+
+        private static bool IsEnglishLanguage()
+        {
+            string language = Language.currentLanguageName ?? string.Empty;
+            return language.StartsWith("en", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsSpanishLanguage()

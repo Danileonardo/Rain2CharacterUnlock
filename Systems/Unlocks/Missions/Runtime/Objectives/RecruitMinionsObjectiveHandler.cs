@@ -41,14 +41,14 @@ namespace UniversalSurvivorUnlocks
 
             if (TryGetItemIndex("LemurianHarness", out ItemIndex devotionMarker))
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(logger, 
                     "[MISSION V2] RecruitMinions marcador Devoción resuelto | " +
                     $"LemurianHarness: {devotionMarker}"
             );
             }
             else
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(logger, 
                     "[MISSION V2] RecruitMinions: LemurianHarness no está " +
                     "disponible en ItemCatalog; fallback " +
                     "DevotedLemurianController activo."

@@ -1,8 +1,10 @@
-﻿using System;
+using System;
 using System.IO;
 using BepInEx;
 using BepInEx.Logging;
 using Newtonsoft.Json;
+using System.Collections.Generic;
+using RoR2;
 
 namespace UniversalSurvivorUnlocks
 {
@@ -28,6 +30,8 @@ namespace UniversalSurvivorUnlocks
             public int MissilesLaunched;
             public int TeleporterBosses;
             public bool FinalEscapeComplete;
+            // Esquema 1 compatible: opcional en guardados existentes.
+            public HashSet<string> ParticipantKeys = new HashSet<string>(StringComparer.Ordinal);
         }
 
         private static ManualLogSource logger;
@@ -42,7 +46,7 @@ namespace UniversalSurvivorUnlocks
 
         private static string FilePath
         {
-            get { return Path.Combine(Paths.ConfigPath,
+            get { return System.IO.Path.Combine(Paths.ConfigPath,
                 "UniversalSurvivorUnlocks", "AH64Campaign.json"); }
         }
 
@@ -66,6 +70,8 @@ namespace UniversalSurvivorUnlocks
                 }
                 // Datos corruptos o desproporcionados jamás liberan objetivos.
                 state = loaded;
+                if (state.ParticipantKeys == null)
+                    state.ParticipantKeys = new HashSet<string>(StringComparer.Ordinal);
                 state.FlightSeconds = Clamp(loaded.FlightSeconds, FlightGoal);
                 state.BulletShots = Clamp(loaded.BulletShots, BulletGoal);
                 state.MissilesLaunched = Clamp(loaded.MissilesLaunched, MissileGoal);
@@ -84,6 +90,29 @@ namespace UniversalSurvivorUnlocks
         { return float.IsNaN(value) || float.IsInfinity(value) ? 0f : Math.Max(0f, Math.Min(max, value)); }
         private static int Clamp(int value, int max)
         { return Math.Max(0, Math.Min(max, value)); }
+
+        // La identidad se registra solo al producir progreso de campaña
+        // verificado por el host; se conserva entre partidas en el mismo JSON.
+        internal static void RegisterContributor(CharacterMaster master)
+        {
+            if (master == null) return;
+            NetworkUser user = MissionPlayerIdentity.GetNetworkUser(master);
+            MissionPlayerIdentity identity;
+            if (user == null || !MissionPlayerIdentity.TryCreate(user, out identity) ||
+                string.IsNullOrWhiteSpace(identity.PersistentKey)) return;
+            if (state.ParticipantKeys == null)
+                state.ParticipantKeys = new HashSet<string>(StringComparer.Ordinal);
+            if (state.ParticipantKeys.Add(identity.PersistentKey)) dirty = true;
+        }
+
+        internal static bool HasContributor(CharacterMaster master)
+        {
+            if (master == null || state.ParticipantKeys == null) return false;
+            NetworkUser user = MissionPlayerIdentity.GetNetworkUser(master);
+            MissionPlayerIdentity identity;
+            return user != null && MissionPlayerIdentity.TryCreate(user, out identity) &&
+                state.ParticipantKeys.Contains(identity.PersistentKey);
+        }
 
         internal static bool ObjectivesComplete =>
             state.FlightSeconds >= FlightGoal &&
@@ -128,7 +157,7 @@ namespace UniversalSurvivorUnlocks
             string temp = path + ".tmp";
             try
             {
-                Directory.CreateDirectory(Path.GetDirectoryName(path));
+                Directory.CreateDirectory(System.IO.Path.GetDirectoryName(path));
                 File.WriteAllText(temp, JsonConvert.SerializeObject(state, Formatting.Indented));
                 if (File.Exists(path))
                 {

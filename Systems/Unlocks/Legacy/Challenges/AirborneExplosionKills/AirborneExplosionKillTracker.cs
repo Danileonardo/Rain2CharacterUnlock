@@ -95,7 +95,8 @@ namespace UniversalSurvivorUnlocks
             PlayerKillCounts.Clear();
 
 
-            logger?.LogInfo(
+            UsuLog.Verbose(
+                logger,
                 "[AirborneExplosionKills] Nueva run | " +
                 "Contadores reiniciados."
             );
@@ -225,6 +226,7 @@ namespace UniversalSurvivorUnlocks
 
 
             if (
+                UsuLog.DiagnosticEnabled &&
                 MissionLogLimiter.ShouldLogMilestone(
                     "legacy-airborne:" + playerOwner.GetInstanceID(),
                     currentCount,
@@ -232,7 +234,8 @@ namespace UniversalSurvivorUnlocks
                 )
             )
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(
+                    logger,
                     "[AirborneExplosionKills] PROGRESO | " +
                     $"Jugador: {playerName} | " +
                     $"Contador: {currentCount}"
@@ -351,7 +354,8 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
-                logger?.LogInfo(
+                UsuLog.Diagnostic(
+                    logger,
                     "[AirborneExplosionKills] " +
                     "JUGADOR TOCÓ EL SUELO | " +
                     $"Jugador: {playerName} | " +

@@ -1,4 +1,7 @@
+using System;
 using System.Collections.Generic;
+
+using Newtonsoft.Json.Linq;
 
 using BepInEx.Logging;
 
@@ -115,6 +118,22 @@ namespace UniversalSurvivorUnlocks
                         continue;
                     }
 
+                    // Extensión opt-in para la misión curativa de REX.
+                    // Nunca cambia la atribución de otras misiones Heal.
+                    JObject objectiveParameters = binding.Objective.Parameters;
+                    bool selfHealingOnly =
+                        objectiveParameters?.Value<bool?>("selfHealingOnly") ?? false;
+                    if (selfHealingOnly &&
+                        !ReferenceEquals(healingEvent.Body, use.PlayerBody))
+                    {
+                        continue;
+                    }
+
+                    if (!MeetsPriorObjectiveRequirement(binding, use.PlayerMaster))
+                    {
+                        continue;
+                    }
+
                     MissionEventContext context =
                         new MissionEventContext
                         {
@@ -150,6 +169,42 @@ namespace UniversalSurvivorUnlocks
                     break;
                 }
             }
+        }
+
+        // Igual que el requisito secuencial de KillObjectiveHandler,
+        // pero aplicable a objetivos Heal. Resuelve la misma ruta/scope
+        // sin interferir con misiones Heal que no utilicen afterObjectiveId.
+        private static bool MeetsPriorObjectiveRequirement(
+            MissionObjectiveRuntimeBinding binding,
+            CharacterMaster playerMaster)
+        {
+            string priorId = binding?.Objective?.Parameters?
+                .Value<string>("afterObjectiveId");
+            if (string.IsNullOrWhiteSpace(priorId)) return true;
+            if (binding?.Route?.Objectives == null) return false;
+
+            MissionProgressScope scope =
+                MissionProgressKeyBuilder.GetProgressScope(binding.Mission);
+            NetworkUser user = scope == MissionProgressScope.Shared
+                ? null
+                : MissionPlayerIdentity.GetNetworkUser(playerMaster);
+            if (scope == MissionProgressScope.PerPlayer && user == null)
+                return false;
+
+            for (int i = 0; i < binding.Route.Objectives.Count; i++)
+            {
+                MissionObjective prior = binding.Route.Objectives[i];
+                if (prior == null ||
+                    !string.Equals(prior.Id, priorId,
+                        StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                string storageId = MissionProgressKeyBuilder.GetStorageObjectiveId(
+                    binding.Route, binding.RouteIndex, prior, i);
+                return MissionProgressRegistry.IsObjectiveCompleted(
+                    scope, user, binding.MissionId, storageId);
+            }
+            return false;
         }
     }
 }

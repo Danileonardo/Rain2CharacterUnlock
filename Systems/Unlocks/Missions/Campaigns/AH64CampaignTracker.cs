@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using BepInEx.Logging;
@@ -39,7 +39,7 @@ namespace UniversalSurvivorUnlocks
             On.RoR2.BulletAttack.Fire += OnBulletFire;
             On.RoR2.Projectile.ProjectileController.Start += OnProjectileStart;
             Run.onServerGameOver += OnGameOver;
-            logger?.LogInfo("[AH64 CAMPAIGN] Tracker persistente inicializado.");
+            UsuLog.Verbose(logger, "[AH64 CAMPAIGN] Tracker persistente inicializado.");
         }
 
         private static bool IsActive()
@@ -97,10 +97,9 @@ namespace UniversalSurvivorUnlocks
             float now = Time.unscaledTime;
             float elapsed = Mathf.Clamp(now - lastTickTime, 0f, 0.35f);
             lastTickTime = now;
-            if (AH64CampaignProgressStore.Current.FlightSeconds <
-                AH64CampaignProgressStore.FlightGoal)
-            {
-                foreach (PlayerCharacterMasterController controller in
+            // Aunque la meta esté llena, nuevos jugadores pueden registrar
+            // vuelo personal real antes de la extracción final en Monzón.
+            foreach (PlayerCharacterMasterController controller in
                     PlayerCharacterMasterController.instances)
                 {
                     CharacterMaster master = controller?.master;
@@ -116,9 +115,11 @@ namespace UniversalSurvivorUnlocks
                     airborneTime[master] = prev + elapsed;
                     // Dos segundos de vuelo continuo validan el tramo.
                     if (prev >= 2f)
+                    {
+                        AH64CampaignProgressStore.RegisterContributor(master);
                         AH64CampaignProgressStore.AddFlight(elapsed);
+                    }
                 }
-            }
             if (now >= nextSaveTime)
             {
                 nextSaveTime = now + 10f;
@@ -137,6 +138,7 @@ namespace UniversalSurvivorUnlocks
                 {
                     // Se cuentan disparos/proyectiles, no daños infligidos.
                     int shots = Math.Max(1, Math.Min(100, (int)bullet.bulletCount));
+                    AH64CampaignProgressStore.RegisterContributor(body.master);
                     AH64CampaignProgressStore.AddBullets(shots);
                 }
             }
@@ -155,7 +157,10 @@ namespace UniversalSurvivorUnlocks
                   name.Contains("hydra"))) return;
             CharacterBody body = projectile.owner.GetComponent<CharacterBody>();
             if (IsPlayerAirborne(body))
+            {
+                AH64CampaignProgressStore.RegisterContributor(body.master);
                 AH64CampaignProgressStore.AddMissiles(1);
+            }
         }
 
         private static void OnDeath(DamageReport report)
@@ -166,25 +171,52 @@ namespace UniversalSurvivorUnlocks
             CharacterMaster master = PlayerOwnerResolver.ResolveOwningPlayerMaster(
                 report.attackerMaster);
             CharacterBody body = master?.GetBody();
-            if (IsPlayerAirborne(body)) AH64CampaignProgressStore.AddBoss();
+            if (IsPlayerAirborne(body))
+            {
+                AH64CampaignProgressStore.RegisterContributor(master);
+                AH64CampaignProgressStore.AddBoss();
+            }
         }
 
         private static void OnGameOver(Run run, GameEndingDef ending)
         {
             if (!IsActive() || ending == null ||
-                AH64CampaignProgressStore.Current.FinalEscapeComplete ||
                 !AH64CampaignProgressStore.ObjectivesComplete ||
-                !ending.isWin ||
-                (ending.cachedName ?? "").IndexOf("obliter",
-                    StringComparison.OrdinalIgnoreCase) >= 0 ||
+                !MoonEscapeEndingMatcher.IsMoonEscape(ending) ||
                 run.selectedDifficulty < DifficultyIndex.Hard)
                 return;
 
-            // Sólo la misión oficial efectiva puede conceder el unlock.
-            AH64CampaignProgressStore.CompleteFinal();
-            logger?.LogInfo("[AH64 CAMPAIGN] Protocolo 64 completado, " +
-                "concesión mediante el sistema nativo de USU.");
-            SessionUnlockManager.CompleteMission(Body);
+            // Campaña colectiva, recompensa SOLO para integrantes conectados
+            // que registraron contribuciones reales a lo largo de ella.
+            // La finalización en Monzón también exige estar en la run final.
+            var eligible = new List<NetworkUser>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            foreach (PlayerCharacterMasterController controller in
+                PlayerCharacterMasterController.instances)
+            {
+                CharacterMaster master = controller?.master;
+                if (!AH64CampaignProgressStore.HasContributor(master)) continue;
+                NetworkUser user = MissionPlayerIdentity.GetNetworkUser(master);
+                MissionPlayerIdentity identity;
+                if (user?.gameObject == null ||
+                    !MissionPlayerIdentity.TryCreate(user, out identity) ||
+                    !seen.Add(identity.Key)) continue;
+                eligible.Add(user);
+            }
+            if (eligible.Count == 0)
+            {
+                logger?.LogWarning("[AH64 CAMPAIGN] Final válido, pero " +
+                    "ningún participante de campaña está en la run. " +
+                    "No se marca final ni se entrega una recompensa global.");
+                return;
+            }
+
+            if (!AH64CampaignProgressStore.Current.FinalEscapeComplete)
+                AH64CampaignProgressStore.CompleteFinal();
+            foreach (NetworkUser user in eligible)
+                SessionUnlockManager.CompleteMissionForPlayer(Body, user);
+            logger?.LogInfo("[AH64 CAMPAIGN] Protocolo 64 mixto completado | " +
+                "Contribuyentes elegibles: " + eligible.Count);
         }
 
         private static string Bar(float count, float max, int segments = 18)

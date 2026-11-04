@@ -121,7 +121,7 @@ namespace UniversalSurvivorUnlocks
 
             if (Run.instance != null)
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(logger, 
                     "[MISSION LOBBY] Actualización ignorada: " +
                     "ya existe una run activa."
                 );
@@ -146,7 +146,7 @@ namespace UniversalSurvivorUnlocks
                 );
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 $"[MISSION LOBBY] Snapshot del host creado | " +
                 $"Misiones: {snapshot.Missions.Count} | " +
                 $"Bytes aprox.: {json.Length}" +
@@ -171,7 +171,7 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 $"[MISSION LOBBY] Snapshot fragmentado despachado | " +
                 $"Misiones: {snapshot.Missions.Count} | " +
                 $"Fragmentos: {fragmentCount}"
@@ -241,7 +241,7 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 $"[MISSION RUN] Snapshot actualizado en runtime | " +
                 $"Misiones: {snapshot.Missions.Count} | " +
                 $"Fragmentos Lobby/Run: {lobbyFragments}/{runFragments}" +
@@ -256,7 +256,7 @@ namespace UniversalSurvivorUnlocks
         {
             if (!NetworkServer.active)
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(logger, 
                     "[MISSION RUN] Cliente esperando snapshot " +
                     "congelado del host."
                 );
@@ -288,7 +288,7 @@ namespace UniversalSurvivorUnlocks
                 );
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 $"[MISSION RUN] Snapshot congelado por el host | " +
                 $"Misiones: {frozen.Missions.Count} | " +
                 $"Bytes aprox.: {json.Length} | " +
@@ -312,7 +312,7 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 $"[MISSION RUN] Snapshot congelado fragmentado despachado | " +
                 $"Misiones: {frozen.Missions.Count} | " +
                 $"Fragmentos: {fragmentCount}"
@@ -464,7 +464,7 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
-                    logger?.LogInfo(
+                    UsuLog.Diagnostic(logger, 
                         $"[MISSION RUN] Snapshot congelado del host recibido | " +
                         $"Misiones: {snapshot.Missions.Count}"
                     );
@@ -484,7 +484,7 @@ namespace UniversalSurvivorUnlocks
                     );
 
 
-                    logger?.LogInfo(
+                    UsuLog.Diagnostic(logger, 
                         $"[MISSION LOBBY] Snapshot del host recibido | " +
                         $"Misiones: {snapshot.Missions.Count}"
                     );
@@ -992,7 +992,7 @@ namespace UniversalSurvivorUnlocks
 
             if (hadSnapshot)
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(logger, 
                     "[MISSION RUN] Snapshot eliminado" +
                     FormatReason(
                         reason
@@ -1022,7 +1022,7 @@ namespace UniversalSurvivorUnlocks
 
             if (hadSnapshot)
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(logger, 
                     "[MISSION LOBBY] Snapshot eliminado" +
                     FormatReason(
                         reason

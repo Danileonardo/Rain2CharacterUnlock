@@ -50,74 +50,19 @@ namespace UniversalSurvivorUnlocks
         private static object AurielEnglishDescriptionOverlay;
 
 
-        private static readonly string AurielSpanishDescription =
-            "Su luz eterna ilumina incluso a las almas más oscuras. En su constante búsqueda " +
-            "de armonía, es mediadora, consejera y, cuando hace falta, una guerrera " +
-            "temeraria.<color=#CCD3E0>\r\n\r\n" +
-            "< ! > Vuelo angélico permite a Auriel volar a voluntad; aprovecha la altura para " +
-            "reposicionarte y mantener mejores líneas de ataque.\r\n\r\n" +
-            "< ! > Luz abrasadora genera Energía. Úsala para habilitar las habilidades de Energía " +
-            "cuyo coste coincida con la Energía disponible.\r\n\r\n" +
-            "< ! > Flagelo sagrado atrae y arrastra a los enemigos cercanos, facilitando agruparlos " +
-            "antes de atacar.\r\n\r\n" +
-            "< ! > Soplo de esperanza recupera un 5% de salud y otorga un 25% de velocidad de " +
-            "ataque y movimiento durante 4 s.";
+        private static readonly string AurielSpanishDescription = AurielLocalization.AurielSpanishDescription;
 
 
-        private static readonly string AurielEnglishDescription =
-            "Her eternal light illuminates even the darkest souls. Seeking harmony in all things, " +
-            "she is a mediator, a counselor, and when the need arises, a fearless warrior." +
-            "<color=#CCD3E0>\r\n\r\n" +
-            "< ! > Angelic Flight allows Auriel to fly at will; use the height advantage to " +
-            "reposition and maintain better lines of attack.\r\n\r\n" +
-            "< ! > Searing Light generates Energy. Use it to enable the Energy Skills whose cost " +
-            "matches the Energy currently available.\r\n\r\n" +
-            "< ! > Sacred Sweep pulls and drags nearby enemies, making it easier to group them " +
-            "before attacking.\r\n\r\n" +
-            "< ! > Bestow Hope restores 5% health and grants 25% attack speed and movement speed " +
-            "for 4 seconds.";
+        private static readonly string AurielEnglishDescription = AurielLocalization.AurielEnglishDescription;
 
 
-        private static readonly string AurielSpanishLore =
-            "Entrada recuperada de un archivo celestial. Clasificación de origen: Cielos Superiores.\n\n" +
-            "Entre las voces del Concilio Angiris, Auriel nunca fue la más estridente. No " +
-            "necesitaba serlo. Allí donde otros hablaban de valor, destino o justicia, ella " +
-            "sostenía una idea más frágil y, por ello, más difícil de destruir: la esperanza.\n\n" +
-            "Los relatos del Conflicto Eterno la describen como mediadora antes que conquistadora, " +
-            "aunque ningún demonio que confundiera compasión con debilidad sobrevivía mucho tiempo " +
-            "a ese error. Al'maiesh, la Cinta de la Esperanza, podía unir voluntades con la misma " +
-            "facilidad con la que castigaba a quienes sembraban desesperación.\n\n" +
-            "Cuando los Cielos Superiores quedaron al borde del colapso, incluso la luz de Auriel pudo " +
-            "ser encadenada. Sin embargo, mientras quedara alguien dispuesto a levantarse una vez " +
-            "más, su virtud no podía extinguirse por completo.\n\n" +
-            "El registro termina con una observación añadida por una mano desconocida:\n\n" +
-            "«No importa cuán oscuro sea este mundo. Si ella está aquí, todavía existe una razón " +
-            "para mirar hacia la luz.»";
+        private static readonly string AurielSpanishLore = LoreDialogueLineFormatter.Format(AurielLore.AurielSpanishLore);
 
 
-        private static readonly string AurielEnglishLore =
-            "Entry recovered from a celestial archive. Origin classification: High Heavens.\n\n" +
-            "Among the voices of the Angiris Council, Auriel was never the loudest. She did not " +
-            "need to be. Where others spoke of valor, fate, or justice, she upheld something more " +
-            "fragile and therefore harder to destroy: hope.\n\n" +
-            "Accounts of the Eternal Conflict describe her as a mediator before a conqueror, yet " +
-            "no demon that mistook compassion for weakness survived that mistake for long. " +
-            "Al'maiesh, the Cord of Hope, could bind wills together as readily as it punished those " +
-            "who spread despair.\n\n" +
-            "When the High Heavens stood on the edge of collapse, even Auriel's light could be " +
-            "chained. Still, as long as someone remained willing to rise once more, the virtue she " +
-            "embodied could never be extinguished completely.\n\n" +
-            "The record ends with an observation added by an unknown hand:\n\n" +
-            "\"No matter how dark this world becomes. If she is here, there is still a reason to " +
-            "look toward the light.\"";
+        private static readonly string AurielEnglishLore = LoreDialogueLineFormatter.Format(AurielLore.AurielEnglishLore);
 
 
-        private static readonly string AurielSpanishPassiveDescription =
-            "Auriel puede <style=cIsUtility>volar</style> a voluntad. Luz abrasadora genera " +
-            "<style=cIsDamage>Energía</style>, que puede usarse para lanzar " +
-            "<style=cIsDamage>habilidades de Energía</style>. Pulsa Alt izquierdo o izquierda " +
-            "en la cruceta para habilitar las <style=cIsDamage>habilidades de Energía</style> " +
-            "cuyo coste coincida con la <style=cIsDamage>Energía</style> disponible.";
+        private static readonly string AurielSpanishPassiveDescription = AurielLocalization.AurielSpanishPassiveDescription;
 
 
         public override void RegisterInstalledLocalization(
@@ -145,7 +90,7 @@ namespace UniversalSurvivorUnlocks
                 logger
             );
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | " +
                 "AurielBody | es-419 / es-ES + pasiva + vista general USU + lore"
             );
@@ -312,7 +257,7 @@ namespace UniversalSurvivorUnlocks
                 "Auriel barre el área con poder sagrado, <style=cIsUtility>atrayendo</style> a " +
                 "todos los enemigos cercanos hacia el centro del área y " +
                 "<style=cIsUtility>arrastrándolos</style> a lo largo de su trayectoria. " +
-                "[<style=cIsDamage>Haz divino</style>]"
+                "[<style=cIsDamage>Rayo divino</style>]"
             );
 
             // Utilidad
@@ -342,6 +287,71 @@ namespace UniversalSurvivorUnlocks
                 "de daño por impacto a los enemigos cercanos. Al terminar la canalización, Auriel " +
                 "libera a su alrededor una explosión de luz abrasadora que inflige " +
                 "<style=cIsDamage>600%</style> de daño. [<style=cIsDamage>Resurrección</style>]"
+            );
+
+            // Habilidades potenciadas nativas: tokens observados en Auriel.dll.
+            // Se conservan los costes, estilos y magnitudes originales.
+            // Secundaria potenciada (25 de energía)
+            RegisterSpanishToken(
+                "AURIEL_SECONDARYEMP",
+                "<style=cIsDamage>Rayo divino</style> [<style=cIsDamage>25</style>]"
+            );
+
+            RegisterSpanishToken(
+                "AURIEL_SECONDARYEMP_DESCRIPTION",
+                "Auriel concentra poder divino y <style=cIsDamage>atraviesa</style> a sus " +
+                "enemigos con un potente rayo de luz que inflige " +
+                "<style=cIsDamage>100%</style> <style=cIsDamage>+Energía</style> " +
+                "de daño por impacto y <style=cIsDamage>quema</style> su carne."
+            );
+
+            // Utilidad potenciada (50 de energía)
+            RegisterSpanishToken(
+                "AURIEL_UTILITYEMP",
+                "<style=cIsDamage>Rayo del cielo</style> [<style=cIsDamage>50</style>]"
+            );
+
+            RegisterSpanishToken(
+                "AURIEL_UTILITYEMP_DESCRIPTION",
+                "Auriel bendice el suelo con poder divino y " +
+                "<style=cIsHealing>cura</style> a sus aliados y a sí misma un " +
+                "<style=cIsHealing>5%</style> de su salud máxima " +
+                "<style=cIsDamage>+Energía</style> por segundo."
+            );
+
+            // Especial potenciada (100 de energía)
+            RegisterSpanishToken(
+                "AURIEL_SPECIALEMP",
+                "<style=cIsDamage>Resurrección</style> [<style=cIsDamage>100</style>]"
+            );
+
+            RegisterSpanishToken(
+                "AURIEL_SPECIALEMP_DESCRIPTION",
+                "Auriel canaliza el espíritu de un aliado caído. Tras " +
+                "<style=cIsUtility>2 s</style> de canalización, lo devuelve a la " +
+                "<style=cIsHealing>vida</style>. Si no hay ningún aliado que " +
+                "resucitar, Auriel <style=cIsHealing>recupera</style> toda su " +
+                "<style=cIsHealth>salud</style>."
+            );
+
+            // Token nativo de la pasiva: fallback aunque la búsqueda dinámica
+            // de SkillLocator.passiveSkill no esté disponible durante el registro.
+            RegisterSpanishToken(
+                "AURIEL_PASSIVE_DESCRIPTION",
+                AurielSpanishPassiveDescription
+            );
+
+            // Frases de cierre propias de Auriel.dll; no alteran su misión.
+            RegisterSpanishToken(
+                "AURIEL_OUTRO",
+                "...y así se marchó, mientras el poder de la esperanza fluye " +
+                "por el tejido de la creación."
+            );
+
+            RegisterSpanishToken(
+                "AURIEL_FAIL",
+                "...y así desapareció; ante la adversidad, la luz de la " +
+                "esperanza brilla con más fuerza."
             );
 
             // Skins
@@ -465,7 +475,7 @@ namespace UniversalSurvivorUnlocks
                 );
             }
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Pasiva localizada | " +
                 "AurielBody | NameToken: " +
                 (nameToken ?? "") +

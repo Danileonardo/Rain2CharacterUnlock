@@ -51,66 +51,25 @@ namespace UniversalSurvivorUnlocks
         }
 
 
-        private static readonly string SoraSpanishDescription =
-            "Sora combina ataques rápidos con la Llave Espada, la versatilidad de la Magia y una gran movilidad aérea.<style=cSub>\r\n\r\n" +
-            "< ! > Administra tus MP con cuidado; al agotarlos entrarás en Estado de recuperación y no podrás lanzar Magia temporalmente.<style=cSub>\r\n\r\n" +
-            "< ! > Durante el Estado de recuperación, Ataque se vuelve mucho más agresivo y permite encadenar golpes con mayor facilidad.<style=cSub>\r\n\r\n" +
-            "< ! > Usa Esquivar para reposicionarte rápidamente o mantén la habilidad para recorrer distancias mayores con Deslizarse.<style=cSub>\r\n\r\n" +
-            "< ! > Ataque veloz puede atravesar grupos enteros y recuperar MP al eliminar enemigos.";
+        private static readonly string SoraSpanishDescription = SoraLocalization.SoraSpanishDescription;
 
 
-        private static readonly string SoraEnglishDescription =
-            "Sora combines swift Keyblade attacks, versatile Magic, and strong aerial mobility.<style=cSub>\r\n\r\n" +
-            "< ! > Manage MP carefully; exhausting it puts Sora into Recovery State and temporarily prevents him from casting Magic.<style=cSub>\r\n\r\n" +
-            "< ! > During Recovery State, Attack becomes much more aggressive and can chain hits together more freely.<style=cSub>\r\n\r\n" +
-            "< ! > Tap Dodge to reposition quickly or hold the skill to cover longer distances with Slide.<style=cSub>\r\n\r\n" +
-            "< ! > Strike Raid can pierce entire groups and recover MP when it kills enemies.";
+        private static readonly string SoraEnglishDescription = SoraLocalization.SoraEnglishDescription;
 
 
-        private static readonly string SoraSpanishLore =
-            "Registro recuperado de una transmisión sin origen identificado.\n\n" +
-            "El joven apareció armado con una llave demasiado grande para una cerradura cualquiera. " +
-            "No parecía saber cómo había llegado hasta aquí, aunque tampoco parecía especialmente sorprendido. " +
-            "Según él, no era la primera vez que terminaba en un mundo desconocido.\n\n" +
-            "Se hace llamar Sora.\n\n" +
-            "Habla de mundos conectados por caminos invisibles, de corazones capaces de caer en la oscuridad y de " +
-            "criaturas nacidas cuando esa oscuridad los consume. La espada con forma de llave que empuña parece " +
-            "responder a su voluntad y le permite canalizar una forma de magia poco común entre los supervivientes registrados.\n\n" +
-            "Lo más extraño no es el arma.\n\n" +
-            "Es su actitud.\n\n" +
-            "Incluso rodeado de ruinas, monstruos y señales de una catástrofe que no comprende, Sora continúa " +
-            "avanzando como si estuviera seguro de que cada camino conduce finalmente a alguien a quien vale la pena encontrar.\n\n" +
-            "Quizá ésa sea la verdadera razón por la que la Llave Espada lo eligió.\n\n" +
-            "No porque sea el más fuerte, sino porque, incluso entre mundos perdidos, todavía cree que ningún corazón está realmente solo.";
+        // Diario USU narrativo extendido: dos grabaciones de Sora, EN/ES-419.
+        // El título forma parte del contenido del Logbook. La misión es independiente.
+        private static string SoraSpanishLore => USUMercSoraEncounterGate.ResolveSora(true);
 
 
-        private static readonly string SoraEnglishLore =
-            "Record recovered from a transmission of unidentified origin.\n\n" +
-            "The young man appeared carrying a key far too large for any ordinary lock. He did not seem to know " +
-            "how he had arrived here, though he did not appear particularly surprised either. According to him, " +
-            "it was not the first time he had ended up in an unfamiliar world.\n\n" +
-            "He calls himself Sora.\n\n" +
-            "He speaks of worlds connected by invisible paths, of hearts capable of falling into darkness, and of " +
-            "creatures born when that darkness consumes them. The key-shaped sword he carries appears to answer his " +
-            "will and allows him to channel a form of magic uncommon among the recorded survivors.\n\n" +
-            "The strangest thing is not the weapon.\n\n" +
-            "It is his attitude.\n\n" +
-            "Even surrounded by ruins, monsters, and signs of a catastrophe he does not understand, Sora keeps moving " +
-            "forward as though he is certain every path eventually leads to someone worth finding.\n\n" +
-            "Perhaps that is the real reason the Keyblade chose him.\n\n" +
-            "Not because he is the strongest, but because even among lost worlds he still believes that no heart is ever truly alone.";
 
 
-        private static readonly string SoraSpanishPassiveDescription =
-            "La <color=#0172eb>Cadena del Reino</color> concede a Sora habilidades mágicas especiales." +
-            Environment.NewLine +
-            "Sora puede mantenerse suspendido en el aire de forma pasiva. Además, mantener pulsado Salto hace que Sora " +
-            "<style=cIsUtility>se deslice hacia delante</style>." +
-            Environment.NewLine +
-            "Sora posee una <color=#0172eb>barra de MP</color> que le permite lanzar Magia a cambio de " +
-            "<color=#0172eb>MP</color>. Cuando los <color=#0172eb>MP</color> llegan a 0, Sora entra en " +
-            "<color=#e1279f>Estado de recuperación</color> durante <style=cIsUtility>20 s</style>; durante ese tiempo " +
-            "no puede usar Magia y <style=cIsDamage>Ataque</style> queda considerablemente potenciado.";
+        private static string SoraEnglishLore => USUMercSoraEncounterGate.ResolveSora(false);
+
+
+
+
+        private static readonly string SoraSpanishPassiveDescription = SoraLocalization.SoraSpanishPassiveDescription;
 
 
         private static readonly string SoraSpanishMagicKeyword =
@@ -139,7 +98,7 @@ namespace UniversalSurvivorUnlocks
                 logger
             );
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | " +
                 "SoraBody | es-419 / es-ES + pasiva + skills + Magia keyword + skins + lore"
             );
@@ -460,7 +419,7 @@ namespace UniversalSurvivorUnlocks
                 );
             }
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Pasiva localizada | " +
                 "SoraBody | NameToken: " +
                 (nameToken ?? "") +

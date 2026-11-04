@@ -1,11 +1,55 @@
-
-## 0.3.1 DEV — C2.3 Vanilla Unlock Method Catalog
-
-- Added a read-only catalog of official survivor unlock achievement structures.
-- Logs achievement type, server tracker type, prerequisite and reward for vanilla/DLC survivor unlocks.
-- Intended to identify reusable Mission V2 mechanics without modifying official unlock authority.
-
 # Changelog
+
+## 0.4.0 (release preparation) — Phase 1 survivor encounters
+
+- Integrated the first eight planned narrative survivor encounters, including the Mercenary–Sora conclusion. The Phase 1 scope does not include later proposed meetings such as Artificer–Arsonist.
+- Added mirrored perspectives, lore-unlock prerequisites and corrupted diary variants for encounters where the relevant Captain diary and survivor progression requirements are unmet.
+- Preserved existing vanilla survivor diary entries while replacing superseded modded-survivor lore where implemented.
+- Carried forward the official mission catalog, unlock-mode options, rewards, translations and HUNK notification work from the 0.3.3 development line.
+- Updated plugin, project assembly/file and Thunderstore manifest version declarations to `0.4.0` without changing save-data schema or dependency pins.
+
+### Release validation still required
+
+- Rebuild the DLL from this updated source; a pre-existing 0.3.3 binary is **not** a 0.4.0 build.
+- Confirm diary unlock/corruption gates, multiplayer reward participation, and all narrative entries in-game before publishing.
+
+
+## 0.3.3 (release candidate) — New survivor missions, three unlock modes and HUNK medals
+
+### What is implemented in the current source
+
+- Expanded the official Mission v2 catalog to **18 survivor missions**: **6 Individual, 7 Cooperative and 5 Mixed**, with explicit reward-eligibility rules independent of legacy progress-scope labels.
+- Added/refined the official missions for **Banshee, Wanderer, HEL-P, Warlock, Gwen, Kindred, Seamstress and AH-64**, alongside existing official cases. Older 0.3.0/0.3.1 release descriptions below are retained as historical notes.
+- Refined **Sora** to group Vengeance Umbra kills into **3 waves** with Mercenary in the party, without requiring a particular Bulwark's Ambry scene or a leave-stage condition. Wave grouping is an approximation until validated in-game.
+- Refined **Ralsei** to allow recruits from any teammate and not require Devotion Lemurians to remain alive when completing the teleporter.
+- Preserved completed **Rocket** bombing-run rounds across stages of a single game run, with a landing between rounds.
+- Required **HUNK** to reach either the actual Moon escape ending or the Obelisk sacrifice ending while meeting the continuous Volatile Battery equipment condition.
+- Added **HUNK-only operation medals** near the lower HUD, with a success message for Moon extraction and a sacrifice message for the Obelisk route. These are purely narrative; the native unlock popup and rewards remain unchanged. The medal reporter is part of a reusable future notification system.
+- Tightened the **AH-64** Monsoon campaign's final win check to require the real Moon escape rather than an unrelated win ending.
+- Updated plugin, assembly/file version and both Thunderstore manifests to `0.3.3`; retained persistence schema `2` and all dependency version pins.
+
+### Release-gate QA still required
+
+- Compile the source and check the output assembly metadata.
+- Test the 18 missions in-game, including negative cases and resets.
+- Test HUNK's two endings, medal position/animation and end-screen transitions; test Sora wave counts against different player counts.
+- Validate host/client eligibility, spectators, saved unlock ownership and completed-campaign persistence.
+- Package/review the actual Thunderstore release after successful QA. This entry **does not claim** that the build or multiplayer missions have passed in-game tests.
+
+## 0.3.2 — Multiplayer unlock notifications and ownership fixes
+
+### Fixes
+
+- Made multiplayer unlock announcements use stable, locally-resolvable achievement names instead of session-specific `USU_*_EFFECTIVE_ACHIEVEMENT_NAME_*` tokens.
+- Registered localized unlockable display names (English and Spanish), fixing native chat text such as `USU_SPYBODY_UNLOCKABLE_NAME`.
+- Avoided duplicate USU achievement and Lunar Coin rewards for characters already unlocked through USU or the Original survivor mod.
+- Kept profile repair and client-to-host acknowledgement separate from genuine new-unlock announcements.
+
+### Preserved behavior and testing
+
+- Host-authoritative mission selection, Shared/PerPlayer progress, 17 registered official missions, provider selection, save files and the universal visual preset are unchanged by this release bump.
+- Unlock distribution remains available to a connected participant who is dead when a team mission completes. The achievement popup while spectating has not been systematically validated; that notification case remains under investigation.
+- Some third-party survivor mods fail initialization on the current game build. This release does not fix those external mods.
 
 ## 0.3.1 — Universal visual preset and expanded provider support
 
@@ -28,7 +72,17 @@
 
 - Adds generic Mission v2 `ConsumeItemOnInteraction` objective, extracted from the official Acolyte unlock pattern without replacing its native unlock.
 
+## 0.3.1 DEV — C2.3 Vanilla Unlock Method Catalog
+
+- Added a read-only catalog of official survivor unlock achievement structures.
+- Logs achievement type, server tracker type, prerequisite and reward for vanilla/DLC survivor unlocks.
+- Intended to identify reusable Mission V2 mechanics without modifying official unlock authority.
+
 ## 0.3.1 (development) — Current game dependency alignment
+
+- Added `KingEnderBrine-ScrollableLobbyUI-1.10.5` as a required dependency for large survivor/skill/skin rosters.
+- Added BepInEx hard dependency `com.KingEnderBrine.ScrollableLobbyUI` >= `1.10.5`.
+- ScrollableLobbyUI remains an external UI/QoL dependency; USU does not patch or alter its behavior.
 
 - Risk Of Options is now a **required dependency** instead of a soft integration.
 - Minimum/packaged dependency: `Rune580-Risk_Of_Options-2.8.6`.
@@ -613,3 +667,22 @@ When using r2modman or Thunderstore Mod Manager, the file is located inside the 
 - The new authority guard verifies official/vanilla-DLC survivors receive neither Generated candidates nor persisted `Source=Generated` ownership.
 - Official-content violations are reported as errors and are never silently rewritten.
 - C2 implementation scope is now code-complete; one accumulated Windows/runtime pass remains to validate C2.2-C2.6 together on RoR2 1.5.0/DLC4.
+
+## 0.3.1 DEV — C4 Provider Coexistence validation bridge
+
+- C2 accumulated runtime validation completed successfully on RoR2 1.5.0 / Hallowed Concepts.
+- Added passive `ProviderCoexistenceAuditService` for the four-provider row: Original / USU / Custom / Generated.
+- Audits available provider slots, remembered USU preset, active Provider/Source consistency and Generated reroll readiness.
+- Performs Generated and Custom restore dry-runs only on in-memory clones; no audit operation writes `Survivors.json` or changes runtime authority.
+- Compares active Generated mission against its dormant snapshot when both exist and reports mismatches.
+- C4 code scope is complete; Windows compile and a runtime pass with at least one valid modded survivor are still required for functional Generated/provider validation.
+
+## 0.3.1-dev — C5 Release Candidate gate
+- Persistencia de normalizaciones de schema al arrancar, usando el guardado atómico/backup existente.
+- Nueva auditoría `[PERSISTENCE MIGRATION]` después de Sync para revisar migración 0.3.0 → 0.3.1 y coexistencia de slots provider/source.
+- `build-release.bat` añadido para ejecutar desde CMD el verificador de release endurecido sin tener que escribir comandos PowerShell manualmente.
+- C5 no autoriza publicación por sí solo: C4 Generated/provider runtime y la migración con un `Survivors.json` real siguen siendo gates funcionales.
+
+- C5.2: startup diagnostics compacted; per-survivor vanilla method/coverage/semantic details, DLC4 detail, provider-entry detail and mission snapshot body detail now require `Logging.VerboseLogging=true`. Summary/warning/error lines remain visible.
+
+- C5.2: compacted normal startup logging. Per-survivor compatibility/audit details now require `Logging.VerboseLogging=true`; summaries, warnings and errors remain visible.

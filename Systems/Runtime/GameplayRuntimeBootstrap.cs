@@ -1,4 +1,4 @@
-﻿using BepInEx.Logging;
+using BepInEx.Logging;
 
 namespace UniversalSurvivorUnlocks
 {
@@ -151,6 +151,8 @@ namespace UniversalSurvivorUnlocks
 
             // AH-64: campaña persistente entre runs, separada de MissionProgressRegistry.
             AH64CampaignTracker.Initialize(logger);
+            USUVanillaDiaryVictoryTracker.Initialize(logger);
+            CWTCampaignTracker.Initialize(logger);
 
             UsuLog.Verbose(
                 logger,

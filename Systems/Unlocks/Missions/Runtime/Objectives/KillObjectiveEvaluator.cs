@@ -226,11 +226,56 @@ namespace UniversalSurvivorUnlocks
                     body.bodyIndex
                 );
 
-            return string.Equals(
+            return MatchesBodyName(
                 currentBody,
-                requiredBody,
-                StringComparison.OrdinalIgnoreCase
+                requiredBody
             );
+        }
+
+        // Admite un Body o alternativas separadas por '|'.
+        // Ejemplo (Tinkaton): SuperRoboBallBossBody|RoboBallBossBody.
+        // Mantiene las coincidencias exactas sin distinguir mayúsculas.
+        internal static bool MatchesBodyName(
+            string currentBody,
+            string requiredBody
+        )
+        {
+            if (
+                string.IsNullOrWhiteSpace(currentBody) ||
+                string.IsNullOrWhiteSpace(requiredBody)
+            )
+            {
+                return false;
+            }
+
+            // Ruta rápida para todos los presets que usan un solo Body.
+            if (requiredBody.IndexOf('|') < 0)
+            {
+                return string.Equals(
+                    currentBody,
+                    requiredBody.Trim(),
+                    StringComparison.OrdinalIgnoreCase
+                );
+            }
+
+            string[] alternatives = requiredBody.Split('|');
+            for (int i = 0; i < alternatives.Length; i++)
+            {
+                string candidate = alternatives[i].Trim();
+                if (
+                    candidate.Length > 0 &&
+                    string.Equals(
+                        currentBody,
+                        candidate,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

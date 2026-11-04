@@ -17,9 +17,54 @@ namespace UniversalSurvivorUnlocks
         public override string BodyName { get { return "WarlockBody"; } }
         public override string DefinitionName { get { return "Warlock"; } }
 
-        private static readonly string SpanishOverview = "Warlock es un superviviente pequeño pero poderoso que recupera y potencia sus habilidades con la sangre de sus enemigos.<color=#CCD3E0>\n\n< ! > Combina <color=#981e33>Maná carmesí</color> con <color=#b97f8a>Metamagia</color> para conseguir efectos todavía más poderosos.\n\n< ! > Oleada sobrenatural sirve para desplazarte por el escenario, pero recuerda que también es tu principal fuente de daño.\n\n< ! > Maleficio permite aumentar considerablemente el daño y los ataques en área.\n\n< ! > Puedes acumular Maná carmesí y Metamagia sin límite. Reservarlos para desatar una gran descarga de habilidades puede ser devastador.\n\n";
+        private static readonly string SpanishOverview = WarlockLocalization.SpanishOverview;
         // Traducción completa de las Notas ORIGINALES de Plnk, no un lore nuevo.
-        private static readonly string SpanishLore = "<style=cStack>> El informe automatizado 5761726c6f636b ya está disponible en el registro del sitio 47617279204779676178.\n> Consulta el registro 506174726f6e para obtener información adicional durante la revisión.\n> Tipo de informe: transcripción generada automáticamente; perfiles de habla base: «Curly», «Succubus».\n> - Origen: 456c64726974636820546f6d65 (artefacto de material desconocido n.º 4791).\n> Prioridad: alta.\n> Contenido del informe:\n\n-- Inicio del fragmento marcado para revisión --</style>\n\n¡Argh! ¡No puedo creer que [el captor] me haga esto! ¡Sin equipo, sin refuerzos, solo yo, arrojado a [el plano blanco] completamente solo! ¿En qué está pensando [el captor]? ¿Es una misión suicida?\n\nTengo que librarme de esto. Quizá podría decir que estoy enfermo. «Perdón, [mi captor], he caído [enfermo]. No puedo cumplir la misión, lo siento».\n\nComo si eso fuera a funcionar. Tengo que hacer algo grande. Tal vez, si reúno suficientes almas, pueda liberarme de [el contrato]. O quizá... ¡quizá hasta podría acabar con [el captor]! ¡Sí! ¡Eso es! ¡Podría ser libre! Juro por mi ojo que jamás volveré a obedecer una orden de ese maldi—\n\n<style=cDeath>「HOLA, PEQUEÑÍN」.</style>\n\nY-yo... ¡Hola, [mi captor]! ¿Cómo estás en esta hermosa [velada]?\n\n<style=cDeath>「OH, MARAVILLOSAMENTE. AÚN MEJOR AHORA QUE VISITO A MI PEQUEÑA [MASCOTA] FAVORITA. ¿CÓMO VAN TUS PREPARATIVOS PARA LA MISIÓN?」</style>\n\nAh, sí, ¡la misión! Todo está listo para mi excursión a [el plano blanco]. Pero parece que me ha dado algo. Estoy tan enfermo que apenas puedo ponerme de pie. Tal vez podría pospo—\n\n<style=cDeath>「ESPLÉNDIDO. PARTIRÁS CON EL PRIMER DESTELLO DE LA ESTRELLA ROJA」.</style>\n\nP-por supuesto, [mi captor]... ¡Haré cuanto pueda para cumplir tu voluntad!\n\n<style=cDeath>「HARÁS MUCHO MÁS QUE ESO. SI [el plano blanco] NO RECLAMA TU CADÁVER, TENDRÁS ÉXITO... O SERÁS CASTIGADO. NO QUERRÁS UN CASTIGO, ¿VERDAD, [JUGUETE]?」</style>\n\n¡Por supuesto que no, [mi captor]! ¡Regresaré triunfante!\n\n<style=cDeath>「¡OHOHO! ¡POR SUPUESTO QUE SÍ, MI QUERIDA [MASCOTA]! ME HARÁS SENTIR ORGULLO, ¿NO ES ASÍ? DEBO RETIRARME; TENGO OTRAS [MASCOTAS] QUE ATENDER. ¡TA-TA!」</style>\n\n...Triunfante, de pie sobre tu cadáver reseco.\n\n<style=cStack>-- Fin de la grabación --\n\n-- Fin del fragmento marcado para revisión --\n\n> ERRORES DE TRADUCCIÓN: 7\n> 1> No se pudo traducir por completo [el captor].\n> 2> No se pudo traducir por completo [el plano blanco].\n> 3> No se pudo traducir por completo [mi captor].\n> 4> No se pudo traducir por completo [enfermo].\n> 5> No se pudo traducir por completo [el contrato].\n> 6> No se pudo traducir por completo [velada].\n> 7> No se pudo traducir por completo [mascota/juguete].\n\n> Consulta el informe 57687920617265207468657365207265706f72742049447320736f206c6f6e67 para obtener el fragmento completo de audio.\n==============================================================</style>";
+        private static readonly string SpanishLore = WarlockLore.SpanishLore;
+
+        // Continuación USU: el relato original del proveedor jamás se edita.
+        // ES: el prefijo es SpanishLore; EN: prefijo obtenido del token del creador.
+        private const string UsuLoreStartSpanish = WarlockLore.UsuLoreStartSpanish;
+        private const string UsuLoreStartEnglish = WarlockLore.UsuLoreStartEnglish;
+        private static readonly string SpanishContinuation = WarlockLore.SpanishContinuation;
+        private static readonly string EnglishContinuation = WarlockLore.EnglishContinuation;
+        private static bool loreHookRegistered;
+
+        private static void EnsureLoreHook()
+        {
+            if (loreHookRegistered) return;
+            loreHookRegistered = true;
+            On.RoR2.Language.GetLocalizedStringByToken += AppendNativeWarlockLore;
+        }
+
+        // The native Logbook reads a token rather than ResolveLore().
+        // Use the original localization first (including EN by Plnk), then
+        // append USU once, without replacing the creator's English text.
+        private static string AppendNativeWarlockLore(
+            On.RoR2.Language.orig_GetLocalizedStringByToken orig,
+            Language language, string token)
+        {
+            string original = orig(language, token);
+            // El mismo hook existente también localiza las descripciones que
+            // Warlock genera dinámicamente (estadísticas configurables).
+            // No altera el inglés ni los datos entregados por el mod.
+            if (IsSpanish() && WarlockSkillLocalization.TryLocalizeRuntime(token, original, out string localized))
+                return localized;
+            if (!string.Equals(token, "KENKO_WARLOCK_LORE", StringComparison.Ordinal))
+                return original;
+            return AppendLoreIfMissing(original, IsSpanish());
+        }
+
+        private static string AppendLoreIfMissing(string original, bool spanish)
+        {
+            if (string.IsNullOrWhiteSpace(original) ||
+                string.Equals(original.Trim(), "KENKO_WARLOCK_LORE", StringComparison.OrdinalIgnoreCase))
+                return original ?? "";
+            string marker = spanish ? UsuLoreStartSpanish : UsuLoreStartEnglish;
+            if (original.IndexOf(marker, StringComparison.OrdinalIgnoreCase) >= 0)
+                return original;
+            return original + "\n\n<style=cStack>" + marker + "</style>\n\n" +
+                (spanish ? SpanishContinuation : EnglishContinuation);
+        }
 
         public override void RegisterInstalledLocalization(SurvivorInfo survivor, ManualLogSource logger)
         {
@@ -42,8 +87,13 @@ namespace UniversalSurvivorUnlocks
             // El Diario nativo obtiene el relato desde KENKO_WARLOCK_LORE.
             // ResolveLore() solo cubre las Notas mostradas dentro de USU.
             RegisterSpanishToken("KENKO_WARLOCK_LORE", SpanishLore);
-            logger?.LogInfo("[LOCALIZATION] Definition activa | WarlockBody | " +
-                "ES Vista general + pasiva + 4 habilidades + Original + Notas; EN y Original preservados");
+            // Dynamic suffix for native Logbook in EN/ES; no English
+            // replacement registration because the creator owns that text.
+            WarlockSkillLocalization.Register();
+            EnsureLoreHook();
+            VerifiedExtraTooltipLocalization.Register(survivor, logger);
+            UsuLog.Verbose(logger, "[LOCALIZATION] Definition activa | WarlockBody | " +
+                "ES Vista general + pasiva + habilidades potenciadas + Ritual/Scepter + skins + Original + Notas; EN preservado");
         }
 
         public override string ResolveSubtitle(SurvivorContentProfile profile, string fallback)
@@ -59,7 +109,10 @@ namespace UniversalSurvivorUnlocks
         public override string ResolveLore(SurvivorContentProfile profile, string fallback)
         {
             // La visibilidad de las Notas la controla el Logbook nativo.
-            return IsSpanish() ? SpanishLore : fallback ?? "";
+            // Notes inside USU also get the continuation. If the native
+            // hook already appended it, the marker prevents duplicates.
+            if (IsSpanish()) return AppendLoreIfMissing(SpanishLore, true);
+            return AppendLoreIfMissing(fallback, false);
         }
 
         public override string ResolveOriginalMissionName(SurvivorContentProfile profile, string fallback)

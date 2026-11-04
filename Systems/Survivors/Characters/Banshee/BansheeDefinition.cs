@@ -18,14 +18,19 @@ namespace UniversalSurvivorUnlocks
         public override string SourceIdentifier { get { return "com.kenko.Banshee"; } }
         public override string BodyName { get { return "BansheeBody"; } }
         public override string DefinitionName { get { return "Banshee"; } }
-        private const string SpanishDescription = "Banshee es una superviviente aérea que destaca al entrar y salir del combate a corta distancia.<color=#CCD3E0>\n\n< ! > El Paraguas ATK tarda en golpear, pero es excelente para elevarte. También puedes atacar mientras flotas si no tienes un enemigo fijado.\n\n< ! > Acumula cargas de Ataque en picada antes de liberarlas para causar un daño devastador en la zona de impacto óptima.\n\n< ! > Los Propulsores HDN mejoran mucho tu movilidad aérea. Úsalos con moderación para esquivar proyectiles mortales.\n\n< ! > La Granada CAL agrupa a los enemigos. Apunta al centro con Ataque en picada para maximizar su eficacia.\n\n";
-        // Adaptación narrativa de USU basada en el lore original del autor; EN original sin cambios.
-        private const string SpanishLore = "EXPEDIENTE RESERVADO — CASA DEL MÁS ALLÁ\nÁrea: armamento aéreo FLT\n\nAl principio, nadie se atrevió a llamarlas armas. Eran herramientas: instrumentos de vuelo, de observación, de trabajo. Pero en la estricta jerarquía de la Casa del Más Allá, bastó una nueva orden para convertir cada función útil en una forma de destruir. Surgieron nuevas facciones, cada una ansiosa por demostrar qué podía hacerse con las tecnologías recién descubiertas.\n\nEl paraguas FLT parecía un objeto demasiado sencillo para despertar temor. Sus mecanismos sostenían a una operadora en el aire, le permitían cambiar de dirección en un instante y aproximarse a objetivos que se creían fuera de su alcance. Los ingenieros siguieron afinándolo hasta que el cielo dejó de ser una vía de escape y se convirtió en un frente de combate.\n\nEntre las nuevas fuerzas estaban las Banshees. No necesitaban mantener una posición ni prolongar el enfrentamiento: descendían, atacaban y volvían a elevarse. Sus paraguas FLT les daban dominio del espacio aéreo; los fuegos fatuos perseguían a sus presas, y las granadas capaces de colapsar la gravedad reunían a los enemigos en un mismo punto, justo antes de que llegara el golpe desde las alturas.\n\nLos informes describían las pruebas como un éxito. Ninguno precisaba qué debía entenderse por «éxito». En los márgenes, una sola observación sobrevivió a las correcciones del archivo: «Si hasta la gravedad puede obedecer, ¿qué otra cosa queda por someter?».\n\nLa Casa del Más Allá no respondió. Sus próximos diseños ya estaban destinados a ir más lejos: más allá del sol y de la luna.\n\n[FIN DEL EXPEDIENTE]";
+        private const string SpanishDescription = BansheeLocalization.SpanishDescription;
+        // USU Diario I autorizado: adaptación del lore del creador (Casa del Más Allá,
+        // jerarquía estricta, paraguas FLT, fuegos fatuos y experimentos gravitatorios).
+        // Historial de origen conservado en DIARIOS/LORE_ORIGINAL_AUTOR_EN.txt.
+        // Narrativa ES/EN publicada en el token nativo del Logbook, sin cambiar misiones.
+        private static readonly string SpanishLore = LoreDialogueLineFormatter.Format(BansheeLore.SpanishLore);
+        private static readonly string EnglishLore = LoreDialogueLineFormatter.Format(BansheeLore.EnglishLore);
         public override void RegisterInstalledLocalization(SurvivorInfo survivor, ManualLogSource logger)
         {
             if (survivor == null || !Matches(survivor)) return;
             RegisterSpanishToken("KENKO_BANSHEE_DESCRIPTION", SpanishDescription);
             RegisterSpanishToken("KENKO_BANSHEE_LORE", SpanishLore);
+            RegisterEnglishToken("KENKO_BANSHEE_LORE", EnglishLore);
             RegisterSpanishToken("KENKO_BANSHEE_NAME", "Banshee");
             RegisterSpanishToken("KENKO_BANSHEE_SUBTITLE", "Heraldo de la Casa del Más Allá");
             RegisterSpanishToken("KENKO_BANSHEE_OUTRO_FLAVOR", "...y así partió, con sus susurros resonando por toda la eternidad.");
@@ -51,7 +56,7 @@ namespace UniversalSurvivorUnlocks
             RegisterSpanishToken("KENKO_BANSHEE_SPECIAL_CALAMITAS_DESCRIPTION", FormatLongSkillText("Lanza una granada que crea un agujero negro inestable. Después de <style=cIsUtility>2</style> segundos, el agujero negro colapsa e inflige <style=cIsDamage>700% de daño</style>."));
             RegisterSpanishToken("KENKO_BANSHEE_SPECIAL_SCEP_CALAMITAS_DESCRIPTION", FormatLongSkillText("Lanza 3 granadas que crean agujeros negros inestables. Después de <style=cIsUtility>5</style> segundos, los agujeros negros colapsan e infligen <style=cIsDamage>700% de daño</style>."));
             RegisterBansheeKeywordLocalization(logger);
-            logger?.LogInfo("[LOCALIZATION] Definition activa | BansheeBody | ES 1 pasiva + 8 habilidades + 1 logro original + 2 keywords + lore ampliado USU; skins específicas no verificadas");
+            UsuLog.Verbose(logger, "[LOCALIZATION] Definition activa | BansheeBody | ES 1 pasiva + 8 habilidades + 1 logro original + 2 keywords + diario USU ES/EN; skins específicas no verificadas");
         }
         public override string ResolveSubtitle(SurvivorContentProfile profile, string fallback)
         {
@@ -63,20 +68,15 @@ namespace UniversalSurvivorUnlocks
         }
         public override string ResolveLore(SurvivorContentProfile profile, string fallback)
         {
-            return IsSpanish() ? SpanishLore : fallback ?? "";
+            return IsSpanish() ? SpanishLore : EnglishLore;
         }
 
         // El mod publica keywords como texto literal en SkillDef.keywordTokens.
         // Capturamos los tokens que el propio mod cargado asignó a sus habilidades,
         // sin adivinar nombres ni afectar otras traducciones/personajes.
-        private const string OmenSpanishKeyword =
-            "<style=cKeywordName>Presagio</style><style=cSub>Al completar esta habilidad, dispara " +
-            "un fuego fatuo etéreo que inflige <style=cIsDamage>200% de daño</style> " +
-            "al impactar y recupera <style=cIsUtility>1 carga</style> de tu habilidad secundaria.</style>";
+        private const string OmenSpanishKeyword = BansheeLocalization.OmenSpanishKeyword;
 
-        private const string AerodynamicSpanishKeyword =
-            "<style=cKeywordName>Aerodinámico</style><style=cSub>Esta habilidad inflige más daño " +
-            "cuanta mayor sea la distancia recorrida antes del impacto.</style>";
+        private const string AerodynamicSpanishKeyword = BansheeLocalization.AerodynamicSpanishKeyword;
 
         private static void RegisterBansheeKeywordLocalization(ManualLogSource logger)
         {
@@ -139,7 +139,7 @@ namespace UniversalSurvivorUnlocks
                         }
                     }
                 }
-                logger?.LogInfo("[BANSHEE LOCALIZATION] Keywords | Presagio: " + omenFound +
+                UsuLog.Verbose(logger, "[BANSHEE LOCALIZATION] Keywords | Presagio: " + omenFound +
                     " | Aerodinámico: " + aerodynamicFound + " | Solo ES-419 / ES-ES.");
             }
             catch (Exception ex)
@@ -157,6 +157,11 @@ namespace UniversalSurvivorUnlocks
             if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(translation)) return;
             LanguageAPI.Add(token, translation, "es-419");
             LanguageAPI.Add(token, translation, "es-ES");
+        }
+        private static void RegisterEnglishToken(string token, string translation)
+        {
+            if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(translation)) return;
+            LanguageAPI.Add(token, translation, "en");
         }
     }
 }

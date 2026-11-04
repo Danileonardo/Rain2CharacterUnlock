@@ -332,7 +332,7 @@ namespace UniversalSurvivorUnlocks
                 true;
 
 
-            logger?.LogInfo(
+            UsuLog.Diagnostic(logger, 
                 "[MISSION PERF] ActivityPlan construido | " +
                 $"Bodies activos: {ActiveBodyCount} | " +
                 $"Tipos activos: {ActiveTypeCount}"
@@ -343,7 +343,7 @@ namespace UniversalSurvivorUnlocks
                 ActiveTypes.Count > 0
             )
             {
-                logger?.LogInfo(
+                UsuLog.Diagnostic(logger, 
                     "[MISSION PERF] Tipos requeridos | " +
                     string.Join(
                         ", ",

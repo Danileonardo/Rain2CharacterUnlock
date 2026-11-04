@@ -41,55 +41,23 @@ namespace UniversalSurvivorUnlocks
             get { return "Scout"; }
         }
 
-        private const string ScoutAgileKeywordEnglish =
-            "<style=cKeywordName>Agile</style><style=cSub>The skill can be used while sprinting.</style>";
+        private const string ScoutAgileKeywordEnglish = ScoutLocalization.ScoutAgileKeywordEnglish;
 
-        private const string ScoutAtomicCritsKeywordEnglish =
-            "<style=cKeywordName>Atomic Crits</style><style=cSub>Damage is increased by 125% and all attacks apply Weaken.</style>";
+        private const string ScoutAtomicCritsKeywordEnglish = ScoutLocalization.ScoutAtomicCritsKeywordEnglish;
 
-        private const string ScoutAgileKeywordSpanish =
-            "<style=cKeywordName>Ágil</style><style=cSub>La habilidad puede usarse mientras corres.</style>";
+        private const string ScoutAgileKeywordSpanish = ScoutLocalization.ScoutAgileKeywordSpanish;
 
-        private const string ScoutAtomicCritsKeywordSpanish =
-            "<style=cKeywordName>Críticos atómicos</style><style=cSub>El daño aumenta un 125% y todos los ataques aplican Debilitar.</style>";
+        private const string ScoutAtomicCritsKeywordSpanish = ScoutLocalization.ScoutAtomicCritsKeywordSpanish;
 
-        private static readonly string ScoutSpanishDescription =
-            "Scout es un superviviente extremadamente móvil de daño explosivo que puede concentrarse en enemigos individuales con facilidad." +
-            "<color=#CCD3E0>\r\n\r\n" +
-            "< ! > Usa el retroceso de tu Escopeta salpicadora para alcanzar lugares altos o evitar ataques enemigos.\r\n\r\n" +
-            "< ! > Combinar tu Pelota de béisbol y Cuchilla puede infligir un daño enorme desde lejos.\r\n\r\n" +
-            "< ! > El Bate puede generar la mayor cantidad de carga del Núcleo atómico cuando hay grupos grandes de enemigos.\r\n\r\n" +
-            "< ! > Las cargas adicionales de Explosión atómica aumentan su duración, mientras que la reducción de enfriamiento aumenta la velocidad de carga del Núcleo atómico.\r\n\r\n";
+        private static readonly string ScoutSpanishDescription = ScoutLocalization.ScoutSpanishDescription;
 
-        // Traducción íntegra del lore nativo publicado por Scout.
-        private static readonly string ScoutSpanishLore =
-            "Una huida de la central eléctrica. Un accidente que se propagaría como la pólvora por las noticias, de causa desconocida. " +
-            "Un trabajador solitario se aleja lentamente, tambaleándose, con su bate como único apoyo. Vagó sin rumbo, con el dolor y la conmoción recorriéndole el cuerpo. " +
-            "Al acercarse a lo que parecía ser una vía ferroviaria abandonada, a la distancia apenas podía distinguir lo que, lógicamente, consideró otra persona. " +
-            "Había algo extraño en su aura, así que mantuvo la guardia en alto e intentó identificar cualquier posible amenaza en la figura.\r\n\r\n" +
-            "“Es una buena hora para dar un paseo; ¿te molesta si te acompaño junto a estas viejas vías?”\r\n\r\n" +
-            "“¿Q-Quién eres…? ¿Q-qué quieres de mí?”\r\n\r\n" +
-            "“Mi identidad no te incumbe.”\r\n" +
-            "“... aunque puedo notar que has tenido una noche bastante dura. Cerca de las puertas de la Muerte, ¿eh?”\r\n" +
-            "“Puede que tenga algo que pueda ayudarte a salir de esto, una… especie de oferta.”\r\n\r\n" +
-            "“¿U-un… trato..?”\r\n\r\n" +
-            "“Precisamente.”\r\n\r\n" +
-            "Se le cerró la garganta, el corazón comenzó a acelerarse y su mente empezó a fingir que nada de esto estaba ocurriendo. " +
-            "Vaciló y finalmente dejó escapar el aliento que había contenido durante lo que pareció una eternidad mientras la persona hablaba. " +
-            "¿Era miedo lo que sentía? ¿Confusión? ¿O era la idea de poder tener el mundo al alcance de la mano lo que lo empujaba hacia una tentación casi eufórica? " +
-            "Fuera lo que fuese, continuó escuchando atentamente, concentrándose y descifrando cada palabra. Tal vez esto pudiera sacarlo de aquel infierno.\r\n\r\n" +
-            "“Puedo sentir la radiación que emanas… hm…”\r\n" +
-            "“... tengo justo lo que necesitas. ¿Qué te parece si convierto eso en algo que te dé poder, eh? Hacerte mejor y más fuerte que antes a cambio de… veamos… algunos favores. " +
-            "Suena bien, ¿no? A mí me lo parece.”\r\n" +
-            "“También tengo unos viejos amigos que pueden ayudar con el procedimiento.”\r\n\r\n" +
-            "“... P-pero ¿qué hay de mi trabajo?”\r\n" +
-            "“¿Adónde iré? Preferiría no quedarme sin empleo…”\r\n\r\n" +
-            "“Qué curioso que lo menciones. He oído de un trabajo que va hacia algún lugar en las profundidades del espacio. Imagino que allí podrían aprovechar tu nueva velocidad y agilidad cuando todo esté terminado.”\r\n" +
-            "“... y un consejo: gana algo de confianza. Puede mejorar tus posibilidades.”\r\n\r\n" +
-            "“Hm…”\r\n" +
-            "“... Está bien, trato hecho… quienquiera que seas.”\r\n\r\n" +
-            "“Maravilloso.”\r\n\r\n" +
-            "A lo lejos se oye el sonido de un tren. Mientras reducía la velocidad y resonaba el silbato de su vieja locomotora, los dos desaparecieron.";
+        // Diario narrativo USU: "The Last Train Out". Se conserva el origen
+        // radiactivo del mod y la personalidad de Scout (TF2). Las frases
+        // de audio originales de TF2 siguen EN INGLES tambien en es-419/es-ES.
+        // No afecta misiones, habilidades ni la DLL de OfficialScoutMod.
+        private static object ScoutEnglishLoreOverlay;
+
+
 
         public override void RegisterInstalledLocalization(
             SurvivorInfo survivor,
@@ -102,13 +70,14 @@ namespace UniversalSurvivorUnlocks
             }
 
             RegisterScoutSpanishTokens();
+            RegisterScoutEnglishLoreOverlay();
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[LOCALIZATION] Definition activa | ScoutBody | " +
-                "es-419 / es-ES + vista general + lore nativo + pasiva + skills + keywords"
+                "es-419 / es-ES / en + vista general + diario USU + pasiva + skills + keywords"
             );
 
-            logger?.LogInfo(
+            UsuLog.Verbose(logger, 
                 "[SCOUT LOCALIZATION] Tokens registrados | identidad + skills + " +
                 "Agile/Atomic Crits literales + encabezados Passive/Swap. " +
                 "Sed Termonuclear legacy sin cambios."
@@ -140,9 +109,33 @@ namespace UniversalSurvivorUnlocks
             string fallback
         )
         {
-            return IsSpanishLanguage()
-                ? ScoutSpanishLore
-                : fallback ?? "";
+            if (IsSpanishLanguage())
+            {
+                return USUScoutHuntressEncounterGate.ResolveScoutLore(true);
+            }
+
+            if (IsEnglishLanguage())
+            {
+                return USUScoutHuntressEncounterGate.ResolveScoutLore(false);
+            }
+
+            return fallback ?? "";
+        }
+
+        private static void RegisterScoutEnglishLoreOverlay()
+        {
+            if (ScoutEnglishLoreOverlay != null)
+            {
+                return;
+            }
+
+            // La DLL original publica un token ingles de lore. El overlay
+            // permite que el Logbook nativo muestre el diario curado de USU.
+            ScoutEnglishLoreOverlay = LanguageAPI.AddOverlay(
+                "KENKO_SCOUT_LORE",
+                USUScoutHuntressEncounterGate.ResolveScoutLore(false),
+                "en"
+            );
         }
 
         private static void RegisterScoutSpanishTokens()
@@ -151,12 +144,12 @@ namespace UniversalSurvivorUnlocks
             RegisterSpanishToken("KENKO_SCOUT_NAME", "Scout");
             RegisterSpanishToken("KENKO_SCOUT_SUBTITLE", "Fuerza de la naturaleza");
             RegisterSpanishToken("KENKO_SCOUT_DESCRIPTION", ScoutSpanishDescription);
-            RegisterSpanishToken("KENKO_SCOUT_LORE", ScoutSpanishLore);
+            RegisterSpanishToken("KENKO_SCOUT_LORE", USUScoutHuntressEncounterGate.ResolveScoutLore(true));
 
             // Textos de final publicados por el creador.
             RegisterSpanishToken(
                 "KENKO_SCOUT_OUTRO_FLAVOR",
-                "... la hierba crece, los pájaros vuelan, el sol brilla y, hermano, yo hago daño a la gente."
+                "Grass grows, birds fly, sun shines, and brother, I hurt people."
             );
             RegisterSpanishToken(
                 "KENKO_SCOUT_OUTRO_FAILURE",
@@ -271,6 +264,12 @@ namespace UniversalSurvivorUnlocks
 
             LanguageAPI.Add(token, spanish, "es-419");
             LanguageAPI.Add(token, spanish, "es-ES");
+        }
+
+        private static bool IsEnglishLanguage()
+        {
+            string language = Language.currentLanguageName ?? "";
+            return language.StartsWith("en", StringComparison.OrdinalIgnoreCase);
         }
 
         private static bool IsSpanishLanguage()
